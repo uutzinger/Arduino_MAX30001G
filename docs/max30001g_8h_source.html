@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">MAX30001G
-   &#160;<span id="projectnumber">main</span>
+   &#160;<span id="projectnumber">1.0.1</span>
    </div>
    <div id="projectbrief">Arduino library for MAX30001G ECG and BIOZ AFE</div>
   </td>
@@ -221,442 +221,442 @@ $(document).ready(function(){initNavTree('max30001g_8h_source.html',''); initRes
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;  </div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a0bf226974e982cf4c2a8083176796f77">scanBIOZ</a>(uint8_t avg = 2, <span class="keywordtype">bool</span> fast = <span class="keyword">false</span>, <span class="keywordtype">bool</span> fourleads = <span class="keyword">false</span>, <span class="keywordtype">bool</span> fullRange = <span class="keyword">false</span>);</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;  </div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a0bf226974e982cf4c2a8083176796f77">scanBIOZ</a>(<span class="keyword">const</span> <a class="code" href="structBIOZScanConfig.html">BIOZScanConfig</a>&amp; config, <span class="keywordtype">bool</span> reuseCurrents = <span class="keyword">false</span>);</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;  </div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ad68a63e2e6577cdc48690a9ee42646c3">startBIOZScan</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;  </div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a528ac6f7ef02128a5e657fc01e992188">stopBIOZScan</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160; </div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a0a6e10794e0cc425ddb9fdfa2ca3182c">stepBIOZScan</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160; </div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;  <span class="comment">// Registers: max30001g_regs.cpp</span></div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a0bf226974e982cf4c2a8083176796f77">scanBIOZ</a>(<span class="keyword">const</span> <a class="code" href="structBIOZScanConfig.html">BIOZScanConfig</a>&amp; config, <span class="keywordtype">bool</span> reuseCurrents = <span class="keyword">false</span>);</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;  </div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ad68a63e2e6577cdc48690a9ee42646c3">startBIOZScan</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;  </div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a528ac6f7ef02128a5e657fc01e992188">stopBIOZScan</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160; </div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a0a6e10794e0cc425ddb9fdfa2ca3182c">stepBIOZScan</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160; </div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160; </div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;  <span class="comment">/* @brief Read all known MAX30001G registers into global register mirrors. */</span></div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a8164be5b51a2e3c265e3cb55751889c3">readAllRegisters</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;  </div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;  <span class="comment">/* @brief Read INFO register into global mirror. */</span></div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a216a47e38946e0342c9673e3efc396c5">readInfo</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;  </div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;  <span class="comment">/* @brief Read status register(s) and refresh status flags. */</span></div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a2855464ef9deb3666f5e6193e1ad86d3">readStatusRegisters</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160; </div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;  <span class="comment">/* @brief Save current register configuration into internal snapshot. */</span></div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ae4cd1175dd8d8f9f992327aa05853b3b">saveConfig</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;  </div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;  <span class="comment">/* @brief Restore register configuration from internal snapshot. */</span></div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac128c011c4ab1292a06ecbac35c38c1c">restoreConfig</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;  </div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;  <span class="comment">/* @brief Read and print saved/current configuration related registers. */</span></div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a5dd72a27d89c172de93593dd03a6dfeb">printConfig</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;  </div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;  <span class="comment">/* @brief Print all known register mirrors for debugging. */</span></div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#aa5e8611157fa8d16814550176abc6817">printAllRegisters</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;  </div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;  <span class="comment">/* @brief Print INFO register decode. */</span></div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ade7e9f9ce37f85823559702ae0a03478">printInfo</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;  </div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;  <span class="comment">/* @brief Print STATUS register decode. */</span></div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a9cc5de108e4bae15bf3612ba7cc15a81">printStatus</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160; </div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;  <span class="comment">// System: max30001g_system.h</span></div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;  <span class="comment">// Registers: max30001g_regs.cpp</span></div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160; </div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;  <span class="comment">/* @brief Read all known MAX30001G registers into global register mirrors. */</span></div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a8164be5b51a2e3c265e3cb55751889c3">readAllRegisters</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;  </div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;  <span class="comment">/* @brief Read INFO register into global mirror. */</span></div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a216a47e38946e0342c9673e3efc396c5">readInfo</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;  </div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;  <span class="comment">/* @brief Read status register(s) and refresh status flags. */</span></div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a2855464ef9deb3666f5e6193e1ad86d3">readStatusRegisters</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160; </div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;  <span class="comment">/* @brief Save current register configuration into internal snapshot. */</span></div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ae4cd1175dd8d8f9f992327aa05853b3b">saveConfig</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;  </div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;  <span class="comment">/* @brief Restore register configuration from internal snapshot. */</span></div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac128c011c4ab1292a06ecbac35c38c1c">restoreConfig</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;  </div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;  <span class="comment">/* @brief Read and print saved/current configuration related registers. */</span></div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a5dd72a27d89c172de93593dd03a6dfeb">printConfig</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;  </div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;  <span class="comment">/* @brief Print all known register mirrors for debugging. */</span></div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#aa5e8611157fa8d16814550176abc6817">printAllRegisters</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;  </div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;  <span class="comment">/* @brief Print INFO register decode. */</span></div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ade7e9f9ce37f85823559702ae0a03478">printInfo</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;  </div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;  <span class="comment">/* @brief Print STATUS register decode. */</span></div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a9cc5de108e4bae15bf3612ba7cc15a81">printStatus</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160; </div>
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160; </div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;  <span class="comment">/* @brief Issue synchronization command to align conversion timing. */</span></div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac0b1a4aa43c3c1836f006d9f44eeb0b0">synch</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;  </div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;  <span class="comment">/* @brief Issue software reset to device. */</span></div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#af9d8a5118ddd8348ba57b06eaf26ef91">swReset</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;  </div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac9abc6858b9f6cc5d155d2088ec0853b">setFMSTR</a>(uint8_t <a class="code" href="max30001g__globals_8cpp.html#a62fd1dbb5bb6cf6b02f337f9e3640f30">fmstr</a>);</div>
-<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160; </div>
-<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;  <a class="code" href="structHealthCheckResult.html">HealthCheckResult</a> <a class="code" href="classMAX30001G.html#ae74c8a876ed23d726eb631f9f9a4dac8">healthCheck</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160; </div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;  <span class="comment">// Read Data: max30001g_readdata.cpp</span></div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;  <span class="comment">// System: max30001g_system.h</span></div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160; </div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;  <span class="comment">/* @brief Issue synchronization command to align conversion timing. */</span></div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac0b1a4aa43c3c1836f006d9f44eeb0b0">synch</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;  </div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;  <span class="comment">/* @brief Issue software reset to device. */</span></div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#af9d8a5118ddd8348ba57b06eaf26ef91">swReset</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;  </div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac9abc6858b9f6cc5d155d2088ec0853b">setFMSTR</a>(uint8_t <a class="code" href="max30001g__globals_8cpp.html#a62fd1dbb5bb6cf6b02f337f9e3640f30">fmstr</a>);</div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160; </div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;  <a class="code" href="structHealthCheckResult.html">HealthCheckResult</a> <a class="code" href="classMAX30001G.html#ae74c8a876ed23d726eb631f9f9a4dac8">healthCheck</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160; </div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160; </div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ada9bb98ec2675acf377a17fc608b69f9">FIFOReset</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160; </div>
-<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a9745c8beff38b073b3c8d22bf09fe2bc">readECG_FIFO</a>(<span class="keywordtype">bool</span> reportRaw);</div>
-<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160; </div>
-<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ace06fa8aad93b5b371bb6a5d47e8d96c">readBIOZ_FIFO</a>(<span class="keywordtype">bool</span> reportRaw);</div>
-<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;  </div>
-<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;  <span class="keywordtype">float</span> <a class="code" href="classMAX30001G.html#a5b3770c566b18b1af2f0277a385a412c">readECG</a>(<span class="keywordtype">bool</span> reportRaw);</div>
-<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;  </div>
-<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac149d46f8be10e0c3e021861732c7962">readRTOR</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160; </div>
-<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;  <span class="keywordtype">float</span> <a class="code" href="classMAX30001G.html#a2d7be63caf6369e9da7db66791e38778">readBIOZ</a>(<span class="keywordtype">bool</span> reportRaw);</div>
-<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160; </div>
-<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;  <span class="comment">// Interrupts: max30001g_interrupt.cpp</span></div>
+<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;  <span class="comment">// Read Data: max30001g_readdata.cpp</span></div>
+<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160; </div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ada9bb98ec2675acf377a17fc608b69f9">FIFOReset</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160; </div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a9745c8beff38b073b3c8d22bf09fe2bc">readECG_FIFO</a>(<span class="keywordtype">bool</span> reportRaw);</div>
+<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160; </div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ace06fa8aad93b5b371bb6a5d47e8d96c">readBIOZ_FIFO</a>(<span class="keywordtype">bool</span> reportRaw);</div>
+<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;  </div>
+<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;  <span class="keywordtype">float</span> <a class="code" href="classMAX30001G.html#a5b3770c566b18b1af2f0277a385a412c">readECG</a>(<span class="keywordtype">bool</span> reportRaw);</div>
+<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;  </div>
+<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac149d46f8be10e0c3e021861732c7962">readRTOR</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160; </div>
+<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;  <span class="keywordtype">float</span> <a class="code" href="classMAX30001G.html#a2d7be63caf6369e9da7db66791e38778">readBIOZ</a>(<span class="keywordtype">bool</span> reportRaw);</div>
+<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160; </div>
 <div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160; </div>
-<div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a34810679ff936a4e8d847d47b7281642">serviceAllInterrupts</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160; </div>
-<div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classMAX30001G.html#a7339f28567520574f328969f47c1e1e7">servicePendingInterrupts</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160; </div>
-<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ab4bbd33808a1df2c7fe8024f045af164">readAndClearFaults</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160; </div>
-<div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a07ed32e9c1c72670a312de79bed6f445">clearLatchedStatusFlags</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160; </div>
-<div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classMAX30001G.html#a63f538499fd05cfa9b6a91efe32b2359">setInterruptEventCallback</a>(<a class="code" href="classMAX30001G.html#afd5657c975d738da119bedededfa6b4d">InterruptEvent</a> event, <a class="code" href="classMAX30001G.html#ad998a44c2584fb26d9a55b731ec25e3f">InterruptCallback</a> cb, <span class="keywordtype">void</span>* context = <span class="keyword">nullptr</span>);</div>
-<div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160; </div>
-<div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classMAX30001G.html#a4b4cbd83f1ae09d97cb44082fd21bd54">setInterruptAggregateCallback</a>(<a class="code" href="classMAX30001G.html#ad998a44c2584fb26d9a55b731ec25e3f">InterruptCallback</a> cb, <span class="keywordtype">void</span>* context = <span class="keyword">nullptr</span>, uint32_t statusMask = 0x00FFFFFFUL);</div>
-<div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160; </div>
-<div class="line"><a name="l00484"></a><span class="lineno">  484</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#afc5071a6d3de701c0ef9baa825a0144a">clearInterruptEventCallback</a>(<a class="code" href="classMAX30001G.html#afd5657c975d738da119bedededfa6b4d">InterruptEvent</a> event);</div>
-<div class="line"><a name="l00485"></a><span class="lineno">  485</span>&#160; </div>
-<div class="line"><a name="l00489"></a><span class="lineno">  489</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a31b0528337007a45b14fb6e1f79914b2">clearInterruptAggregateCallback</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00490"></a><span class="lineno">  490</span>&#160; </div>
-<div class="line"><a name="l00494"></a><span class="lineno">  494</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac5640f95da4ff566777dde9a0aa446e2">clearAllInterruptCallbacks</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00495"></a><span class="lineno">  495</span>&#160; </div>
-<div class="line"><a name="l00500"></a><span class="lineno">  500</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a30f1fb7534ed4f9eb059aca955ff8a9c">handleECGFifoInterrupt</a>(<span class="keywordtype">bool</span> reportRaw = <span class="keyword">false</span>);</div>
-<div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160; </div>
-<div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a741830bb5f94468bf5df44b337325138">handleBIOZFifoInterrupt</a>(<span class="keywordtype">bool</span> reportRaw = <span class="keyword">false</span>);</div>
-<div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160; </div>
-<div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a4e8fe380637b875cefe510e7b543760a">handleRtoRInterrupt</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160; </div>
-<div class="line"><a name="l00523"></a><span class="lineno"><a class="line" href="classMAX30001G.html#a49c24dbbd3400e85adaad6fcdc66a8c5">  523</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classMAX30001G.html#a49c24dbbd3400e85adaad6fcdc66a8c5">setInterrupt1</a>(<span class="keywordtype">bool</span> ecg, <span class="keywordtype">bool</span> bioz, <span class="keywordtype">bool</span> rtor, <span class="keywordtype">bool</span> leadon, <span class="keywordtype">bool</span> leadoff, <span class="keywordtype">bool</span> bioz_fourwire = <span class="keyword">false</span>) {</div>
-<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;    <span class="keywordflow">return</span> setInterrupt(<a class="code" href="max30001g__defs_8h.html#aeec7c1cbadfcf7073a23dbcbf5a7dd6b">MAX30001_EN_INT1</a>, ecg, bioz, rtor, leadon, leadoff, bioz_fourwire);</div>
-<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;  }</div>
-<div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;  </div>
-<div class="line"><a name="l00537"></a><span class="lineno"><a class="line" href="classMAX30001G.html#a67c1e29e58abd5dc25655087bf025149">  537</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classMAX30001G.html#a67c1e29e58abd5dc25655087bf025149">setInterrupt2</a>(<span class="keywordtype">bool</span> ecg, <span class="keywordtype">bool</span> bioz, <span class="keywordtype">bool</span> rtor, <span class="keywordtype">bool</span> leadon, <span class="keywordtype">bool</span> leadoff, <span class="keywordtype">bool</span> bioz_fourwire = <span class="keyword">false</span>) {</div>
-<div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;    <span class="keywordflow">return</span> setInterrupt(<a class="code" href="max30001g__defs_8h.html#a798dd71740eb693fe3d6f9cb56fba155">MAX30001_EN_INT2</a>, ecg, bioz, rtor, leadon, leadoff, bioz_fourwire);</div>
-<div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;  }</div>
-<div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160; </div>
-<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ab8ce63185b8d26affcf125f17f647e8c">setDefaultInterruptClearing</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160; </div>
-<div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a05e061092d1bf2b0a8c5d67c43f6fe75">setFIFOInterruptThreshold</a>(uint8_t ecg, uint8_t bioz);</div>
-<div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160; </div>
-<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;  <span class="comment">// ECG Configuration: max30001g_configure_ecg.cpp</span></div>
+<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;  <span class="comment">// Interrupts: max30001g_interrupt.cpp</span></div>
+<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160; </div>
+<div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a34810679ff936a4e8d847d47b7281642">serviceAllInterrupts</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160; </div>
+<div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classMAX30001G.html#a7339f28567520574f328969f47c1e1e7">servicePendingInterrupts</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160; </div>
+<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ab4bbd33808a1df2c7fe8024f045af164">readAndClearFaults</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160; </div>
+<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a07ed32e9c1c72670a312de79bed6f445">clearLatchedStatusFlags</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160; </div>
+<div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classMAX30001G.html#a63f538499fd05cfa9b6a91efe32b2359">setInterruptEventCallback</a>(<a class="code" href="classMAX30001G.html#afd5657c975d738da119bedededfa6b4d">InterruptEvent</a> event, <a class="code" href="classMAX30001G.html#ad998a44c2584fb26d9a55b731ec25e3f">InterruptCallback</a> cb, <span class="keywordtype">void</span>* context = <span class="keyword">nullptr</span>);</div>
+<div class="line"><a name="l00471"></a><span class="lineno">  471</span>&#160; </div>
+<div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classMAX30001G.html#a4b4cbd83f1ae09d97cb44082fd21bd54">setInterruptAggregateCallback</a>(<a class="code" href="classMAX30001G.html#ad998a44c2584fb26d9a55b731ec25e3f">InterruptCallback</a> cb, <span class="keywordtype">void</span>* context = <span class="keyword">nullptr</span>, uint32_t statusMask = 0x00FFFFFFUL);</div>
+<div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160; </div>
+<div class="line"><a name="l00486"></a><span class="lineno">  486</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#afc5071a6d3de701c0ef9baa825a0144a">clearInterruptEventCallback</a>(<a class="code" href="classMAX30001G.html#afd5657c975d738da119bedededfa6b4d">InterruptEvent</a> event);</div>
+<div class="line"><a name="l00487"></a><span class="lineno">  487</span>&#160; </div>
+<div class="line"><a name="l00491"></a><span class="lineno">  491</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a31b0528337007a45b14fb6e1f79914b2">clearInterruptAggregateCallback</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00492"></a><span class="lineno">  492</span>&#160; </div>
+<div class="line"><a name="l00496"></a><span class="lineno">  496</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac5640f95da4ff566777dde9a0aa446e2">clearAllInterruptCallbacks</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00497"></a><span class="lineno">  497</span>&#160; </div>
+<div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a30f1fb7534ed4f9eb059aca955ff8a9c">handleECGFifoInterrupt</a>(<span class="keywordtype">bool</span> reportRaw = <span class="keyword">false</span>);</div>
+<div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160; </div>
+<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a741830bb5f94468bf5df44b337325138">handleBIOZFifoInterrupt</a>(<span class="keywordtype">bool</span> reportRaw = <span class="keyword">false</span>);</div>
+<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160; </div>
+<div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a4e8fe380637b875cefe510e7b543760a">handleRtoRInterrupt</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160; </div>
+<div class="line"><a name="l00525"></a><span class="lineno"><a class="line" href="classMAX30001G.html#a49c24dbbd3400e85adaad6fcdc66a8c5">  525</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classMAX30001G.html#a49c24dbbd3400e85adaad6fcdc66a8c5">setInterrupt1</a>(<span class="keywordtype">bool</span> ecg, <span class="keywordtype">bool</span> bioz, <span class="keywordtype">bool</span> rtor, <span class="keywordtype">bool</span> leadon, <span class="keywordtype">bool</span> leadoff, <span class="keywordtype">bool</span> bioz_fourwire = <span class="keyword">false</span>) {</div>
+<div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;    <span class="keywordflow">return</span> setInterrupt(<a class="code" href="max30001g__defs_8h.html#aeec7c1cbadfcf7073a23dbcbf5a7dd6b">MAX30001_EN_INT1</a>, ecg, bioz, rtor, leadon, leadoff, bioz_fourwire);</div>
+<div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;  }</div>
+<div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160;  </div>
+<div class="line"><a name="l00539"></a><span class="lineno"><a class="line" href="classMAX30001G.html#a67c1e29e58abd5dc25655087bf025149">  539</a></span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classMAX30001G.html#a67c1e29e58abd5dc25655087bf025149">setInterrupt2</a>(<span class="keywordtype">bool</span> ecg, <span class="keywordtype">bool</span> bioz, <span class="keywordtype">bool</span> rtor, <span class="keywordtype">bool</span> leadon, <span class="keywordtype">bool</span> leadoff, <span class="keywordtype">bool</span> bioz_fourwire = <span class="keyword">false</span>) {</div>
+<div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;    <span class="keywordflow">return</span> setInterrupt(<a class="code" href="max30001g__defs_8h.html#a798dd71740eb693fe3d6f9cb56fba155">MAX30001_EN_INT2</a>, ecg, bioz, rtor, leadon, leadoff, bioz_fourwire);</div>
+<div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;  }</div>
+<div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160; </div>
+<div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ab8ce63185b8d26affcf125f17f647e8c">setDefaultInterruptClearing</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160; </div>
+<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a05e061092d1bf2b0a8c5d67c43f6fe75">setFIFOInterruptThreshold</a>(uint8_t ecg, uint8_t bioz);</div>
+<div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160; </div>
 <div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160; </div>
-<div class="line"><a name="l00564"></a><span class="lineno">  564</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a2718c69c35df51b83d8f9ad45b753ec2">setECGSamplingRate</a>(uint8_t ECG);</div>
-<div class="line"><a name="l00565"></a><span class="lineno">  565</span>&#160; </div>
-<div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a1c07b81d74b000cb00e65fc1c8917829">setECGfilter</a>(uint8_t lpf, uint8_t hpf);</div>
-<div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;  </div>
-<div class="line"><a name="l00593"></a><span class="lineno">  593</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a048db4a162e1cec673f32536d1feb2da">setECGgain</a>(uint8_t gain);</div>
-<div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;  </div>
-<div class="line"><a name="l00600"></a><span class="lineno">  600</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac69ce571cd507b86989776dcacba8d3d">setECGLeadPolarity</a>(<span class="keywordtype">bool</span> inverted, <span class="keywordtype">bool</span> open);</div>
-<div class="line"><a name="l00601"></a><span class="lineno">  601</span>&#160;  </div>
-<div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a89fa7d1231059ec61f8fae63d1d363a8">setECGAutoRecovery</a>(<span class="keywordtype">int</span> threshold_voltage);</div>
-<div class="line"><a name="l00607"></a><span class="lineno">  607</span>&#160;  </div>
-<div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160;  <span class="comment">/* @brief Disable ECG fast-recovery mode and return to normal operation. */</span></div>
-<div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a2a9bbbc18760e9bc46167112ddba5d66">setECGNormalRecovery</a>(<span class="keywordtype">void</span>);@details</div>
-<div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;  </div>
-<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;  <span class="comment">/* @brief Enter manual ECG fast-recovery mode. */</span></div>
-<div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ab2a6efc459e0ece5f81cd2a416d17c70">startECGManualRecovery</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160;  </div>
-<div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;  <span class="comment">/* @brief Exit manual ECG fast-recovery mode. */</span></div>
-<div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a7ec5ab4f5a6b474f18ddc66cb1cea148">stopECGManualRecovery</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160; </div>
-<div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;  <span class="comment">// BIOZ Configuration: max30001g_configure_bioz.cpp</span></div>
+<div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160;  <span class="comment">// ECG Configuration: max30001g_configure_ecg.cpp</span></div>
+<div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160; </div>
+<div class="line"><a name="l00566"></a><span class="lineno">  566</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a2718c69c35df51b83d8f9ad45b753ec2">setECGSamplingRate</a>(uint8_t ECG);</div>
+<div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160; </div>
+<div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a1c07b81d74b000cb00e65fc1c8917829">setECGfilter</a>(uint8_t lpf, uint8_t hpf);</div>
+<div class="line"><a name="l00586"></a><span class="lineno">  586</span>&#160;  </div>
+<div class="line"><a name="l00595"></a><span class="lineno">  595</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a048db4a162e1cec673f32536d1feb2da">setECGgain</a>(uint8_t gain);</div>
+<div class="line"><a name="l00596"></a><span class="lineno">  596</span>&#160;  </div>
+<div class="line"><a name="l00602"></a><span class="lineno">  602</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac69ce571cd507b86989776dcacba8d3d">setECGLeadPolarity</a>(<span class="keywordtype">bool</span> inverted, <span class="keywordtype">bool</span> open);</div>
+<div class="line"><a name="l00603"></a><span class="lineno">  603</span>&#160;  </div>
+<div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a89fa7d1231059ec61f8fae63d1d363a8">setECGAutoRecovery</a>(<span class="keywordtype">int</span> threshold_voltage);</div>
+<div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;  </div>
+<div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;  <span class="comment">/* @brief Disable ECG fast-recovery mode and return to normal operation. */</span></div>
+<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a2a9bbbc18760e9bc46167112ddba5d66">setECGNormalRecovery</a>(<span class="keywordtype">void</span>);@details</div>
+<div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;  </div>
+<div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160;  <span class="comment">/* @brief Enter manual ECG fast-recovery mode. */</span></div>
+<div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ab2a6efc459e0ece5f81cd2a416d17c70">startECGManualRecovery</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00615"></a><span class="lineno">  615</span>&#160;  </div>
+<div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160;  <span class="comment">/* @brief Exit manual ECG fast-recovery mode. */</span></div>
+<div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a7ec5ab4f5a6b474f18ddc66cb1cea148">stopECGManualRecovery</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160; </div>
 <div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160; </div>
-<div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a8411425feb8743974b873e16e45f500e">setBIOZSamplingRate</a>(uint8_t speed_select);</div>
-<div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a6c03163386678b7dfdb27b8ef8d1f6df">setBIOZgain</a>(uint8_t gain, <span class="keywordtype">bool</span> lowNoise);</div>
-<div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160; </div>
-<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#aeacf6cd1a5c623c29533963106b963d4">setBIOZModulationFrequencyByFrequency</a>(uint16_t frequency_hz);</div>
-<div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160; </div>
-<div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a69877a8d994c0477aeb5de8823038195">setBIOZModulationFrequencybyIndex</a>(uint8_t frequency_selector);</div>
-<div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160; </div>
-<div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a289f879f5d8838f16e492ef0ab754196">setBIOZmag</a>(uint32_t current_nA);</div>
-<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160; </div>
-<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac4a365012743bd4ca598b16ed893237b">setBIOZPhaseOffsetbyIndex</a>(uint8_t selector);</div>
-<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160; </div>
-<div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#aaf591e304709859c84a3c483100cf268">setBIOZPhaseOffsetbyPhase</a>(<span class="keywordtype">float</span> phase_deg);</div>
-<div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160; </div>
-<div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#aaf591e304709859c84a3c483100cf268">setBIOZPhaseOffsetbyPhase</a>(uint16_t frequency_hz, <span class="keywordtype">float</span> phase_deg);</div>
-<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160; </div>
-<div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a0a3c4ad087494b74883dad3599a98ce3">setBIOZfilter</a>(uint8_t ahpf, uint8_t lpf, uint8_t hpf);</div>
-<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160; </div>
-<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a8e9da3702659cafb4af66e42197b57b1">setBIOZmodulation</a>(uint8_t mode);</div>
-<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160; </div>
-<div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#afcb9a12c81da41713e67e8e380dd9224">setBIOZCurrentMonitor</a>(<span class="keywordtype">bool</span> enable);</div>
-<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160; </div>
-<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;  <span class="comment">// Leads Configuration: max30001g_configure_leads.cpp</span></div>
+<div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;  <span class="comment">// BIOZ Configuration: max30001g_configure_bioz.cpp</span></div>
+<div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00622"></a><span class="lineno">  622</span>&#160; </div>
+<div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a8411425feb8743974b873e16e45f500e">setBIOZSamplingRate</a>(uint8_t speed_select);</div>
+<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a6c03163386678b7dfdb27b8ef8d1f6df">setBIOZgain</a>(uint8_t gain, <span class="keywordtype">bool</span> lowNoise);</div>
+<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160; </div>
+<div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#aeacf6cd1a5c623c29533963106b963d4">setBIOZModulationFrequencyByFrequency</a>(uint16_t frequency_hz);</div>
+<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160; </div>
+<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a69877a8d994c0477aeb5de8823038195">setBIOZModulationFrequencybyIndex</a>(uint8_t frequency_selector);</div>
+<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160; </div>
+<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a289f879f5d8838f16e492ef0ab754196">setBIOZmag</a>(uint32_t current_nA);</div>
+<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160; </div>
+<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac4a365012743bd4ca598b16ed893237b">setBIOZPhaseOffsetbyIndex</a>(uint8_t selector);</div>
+<div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160; </div>
+<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#aaf591e304709859c84a3c483100cf268">setBIOZPhaseOffsetbyPhase</a>(<span class="keywordtype">float</span> phase_deg);</div>
+<div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160; </div>
+<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#aaf591e304709859c84a3c483100cf268">setBIOZPhaseOffsetbyPhase</a>(uint16_t frequency_hz, <span class="keywordtype">float</span> phase_deg);</div>
+<div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160; </div>
+<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a0a3c4ad087494b74883dad3599a98ce3">setBIOZfilter</a>(uint8_t ahpf, uint8_t lpf, uint8_t hpf);</div>
+<div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160; </div>
+<div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a8e9da3702659cafb4af66e42197b57b1">setBIOZmodulation</a>(uint8_t mode);</div>
+<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160; </div>
+<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#afcb9a12c81da41713e67e8e380dd9224">setBIOZCurrentMonitor</a>(<span class="keywordtype">bool</span> enable);</div>
+<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160; </div>
 <div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160; </div>
-<div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a64587ae92d875dbc57646ccf4aff72e1">setLeadsOnDetection</a>(<span class="keywordtype">bool</span> enable);</div>
-<div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160; </div>
-<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a24ae33f43bc232c139bf66399cc61025">setLeadsOffDetection</a>(<span class="keywordtype">bool</span> enable, <span class="keywordtype">bool</span> bioz_4, uint8_t electrode_impedance);</div>
-<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160; </div>
-<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac93c5241b86ca4794a688c16ef4e629f">setLeadsBias</a>(<span class="keywordtype">bool</span> enable, uint8_t resistance);</div>
-<div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160; </div>
-<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;  <span class="comment">// RtoR Configuration: max30001g_configure_rtor.cpp</span></div>
+<div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;  <span class="comment">// Leads Configuration: max30001g_configure_leads.cpp</span></div>
+<div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160; </div>
+<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a64587ae92d875dbc57646ccf4aff72e1">setLeadsOnDetection</a>(<span class="keywordtype">bool</span> enable);</div>
+<div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160; </div>
+<div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a24ae33f43bc232c139bf66399cc61025">setLeadsOffDetection</a>(<span class="keywordtype">bool</span> enable, <span class="keywordtype">bool</span> bioz_4, uint8_t electrode_impedance);</div>
+<div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160; </div>
+<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ac93c5241b86ca4794a688c16ef4e629f">setLeadsBias</a>(<span class="keywordtype">bool</span> enable, uint8_t resistance);</div>
+<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160; </div>
 <div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160; </div>
-<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a048448116d8f1360b10d3c771d50f1d0">setDefaultRtoR</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160; </div>
-<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ace811866809e13c75cffeeb76b7c69aa">setDefaultNoRtoR</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160; </div>
-<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a206323a1e534ad54d1263fbc803f1704">setRtoR</a>(<span class="keywordtype">bool</span> enable, uint8_t ptsf, uint8_t pavg, uint8_t gain, uint8_t wndw, uint8_t hoff, uint8_t ravg, uint8_t rhsf);</div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160; </div>
-<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;  <span class="comment">// Test Signal and Calibration: max30001g_calibration.cpp</span></div>
+<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;  <span class="comment">// RtoR Configuration: max30001g_configure_rtor.cpp</span></div>
+<div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160; </div>
+<div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a048448116d8f1360b10d3c771d50f1d0">setDefaultRtoR</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160; </div>
+<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;   <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#ace811866809e13c75cffeeb76b7c69aa">setDefaultNoRtoR</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160; </div>
+<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a206323a1e534ad54d1263fbc803f1704">setRtoR</a>(<span class="keywordtype">bool</span> enable, uint8_t ptsf, uint8_t pavg, uint8_t gain, uint8_t wndw, uint8_t hoff, uint8_t ravg, uint8_t rhsf);</div>
+<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160; </div>
 <div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160; </div>
-<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a87b327a9e65219b6ccb1b989f5cb98f1">setDefaultNoTestSignal</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;  </div>
-<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a13272e7194982ff9a325309f25f7c70e">setDefaultECGTestSignal</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;  </div>
-<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a0f5c0838739dd1496323f84199a10055">setDefaultBIOZTestSignal</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;  </div>
-<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a0553f3f70d28c3006ffea72da098d206">setDefaultECGandBIOZTestSignal</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160; </div>
-<div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a72114313a301baf6d742efba99169bfb">setTestSignal</a>(</div>
-<div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;    <span class="keywordtype">bool</span> enableECGCalSignal,</div>
-<div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160;    <span class="keywordtype">bool</span> enableBIOZCalSignal,</div>
-<div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;    <span class="keywordtype">bool</span> unipolar,</div>
-<div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;    <span class="keywordtype">bool</span> cal_vmag,</div>
-<div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160;    uint8_t freq,</div>
-<div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;    uint8_t dutycycle</div>
-<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;  );</div>
-<div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160; </div>
-<div class="line"><a name="l00897"></a><span class="lineno">  897</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a895b608aac1898054afa682d64f86f32">setDefaultBIOZTestImpedance</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00898"></a><span class="lineno">  898</span>&#160; </div>
-<div class="line"><a name="l00902"></a><span class="lineno">  902</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a8c9548bcf50a863ccf32389bae5da885">setDefaultNoBIOZTestImpedance</a>(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00903"></a><span class="lineno">  903</span>&#160; </div>
-<div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#aeb817c81309a003daa1fdfc4eaf4e82e">setBIOZTestImpedance</a>(</div>
-<div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160;    <span class="keywordtype">bool</span> enable,</div>
-<div class="line"><a name="l00968"></a><span class="lineno">  968</span>&#160;    <span class="keywordtype">bool</span> useHighResistance,</div>
-<div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;    <span class="keywordtype">bool</span> enableModulation,</div>
-<div class="line"><a name="l00970"></a><span class="lineno">  970</span>&#160;    uint8_t rnomValue,</div>
-<div class="line"><a name="l00971"></a><span class="lineno">  971</span>&#160;    uint8_t rmodValue,</div>
-<div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160;    uint8_t modFreq</div>
-<div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;  );</div>
-<div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160; </div>
-<div class="line"><a name="l00975"></a><span class="lineno">  975</span>&#160;<span class="comment">/******************************************************************************************************/</span></div>
-<div class="line"><a name="l00976"></a><span class="lineno">  976</span>&#160;<span class="comment">/******************************************************************************************************/</span></div>
+<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;  <span class="comment">// Test Signal and Calibration: max30001g_calibration.cpp</span></div>
+<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160; </div>
+<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a87b327a9e65219b6ccb1b989f5cb98f1">setDefaultNoTestSignal</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;  </div>
+<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a13272e7194982ff9a325309f25f7c70e">setDefaultECGTestSignal</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;  </div>
+<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a0f5c0838739dd1496323f84199a10055">setDefaultBIOZTestSignal</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;  </div>
+<div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a0553f3f70d28c3006ffea72da098d206">setDefaultECGandBIOZTestSignal</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160; </div>
+<div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a72114313a301baf6d742efba99169bfb">setTestSignal</a>(</div>
+<div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;    <span class="keywordtype">bool</span> enableECGCalSignal,</div>
+<div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;    <span class="keywordtype">bool</span> enableBIOZCalSignal,</div>
+<div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160;    <span class="keywordtype">bool</span> unipolar,</div>
+<div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;    <span class="keywordtype">bool</span> cal_vmag,</div>
+<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;    uint8_t freq,</div>
+<div class="line"><a name="l00893"></a><span class="lineno">  893</span>&#160;    uint8_t dutycycle</div>
+<div class="line"><a name="l00894"></a><span class="lineno">  894</span>&#160;  );</div>
+<div class="line"><a name="l00895"></a><span class="lineno">  895</span>&#160; </div>
+<div class="line"><a name="l00899"></a><span class="lineno">  899</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a895b608aac1898054afa682d64f86f32">setDefaultBIOZTestImpedance</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00900"></a><span class="lineno">  900</span>&#160; </div>
+<div class="line"><a name="l00904"></a><span class="lineno">  904</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#a8c9548bcf50a863ccf32389bae5da885">setDefaultNoBIOZTestImpedance</a>(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l00905"></a><span class="lineno">  905</span>&#160; </div>
+<div class="line"><a name="l00968"></a><span class="lineno">  968</span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classMAX30001G.html#aeb817c81309a003daa1fdfc4eaf4e82e">setBIOZTestImpedance</a>(</div>
+<div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;    <span class="keywordtype">bool</span> enable,</div>
+<div class="line"><a name="l00970"></a><span class="lineno">  970</span>&#160;    <span class="keywordtype">bool</span> useHighResistance,</div>
+<div class="line"><a name="l00971"></a><span class="lineno">  971</span>&#160;    <span class="keywordtype">bool</span> enableModulation,</div>
+<div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160;    uint8_t rnomValue,</div>
+<div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;    uint8_t rmodValue,</div>
+<div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160;    uint8_t modFreq</div>
+<div class="line"><a name="l00975"></a><span class="lineno">  975</span>&#160;  );</div>
+<div class="line"><a name="l00976"></a><span class="lineno">  976</span>&#160; </div>
 <div class="line"><a name="l00977"></a><span class="lineno">  977</span>&#160;<span class="comment">/******************************************************************************************************/</span></div>
 <div class="line"><a name="l00978"></a><span class="lineno">  978</span>&#160;<span class="comment">/******************************************************************************************************/</span></div>
-<div class="line"><a name="l00979"></a><span class="lineno">  979</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00980"></a><span class="lineno">  980</span>&#160; </div>
-<div class="line"><a name="l00981"></a><span class="lineno">  981</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00982"></a><span class="lineno">  982</span>&#160;  <span class="comment">// Register related: max30001g_regs.cpp</span></div>
+<div class="line"><a name="l00979"></a><span class="lineno">  979</span>&#160;<span class="comment">/******************************************************************************************************/</span></div>
+<div class="line"><a name="l00980"></a><span class="lineno">  980</span>&#160;<span class="comment">/******************************************************************************************************/</span></div>
+<div class="line"><a name="l00981"></a><span class="lineno">  981</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00982"></a><span class="lineno">  982</span>&#160; </div>
 <div class="line"><a name="l00983"></a><span class="lineno">  983</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l00984"></a><span class="lineno">  984</span>&#160;  </div>
-<div class="line"><a name="l00989"></a><span class="lineno">  989</span>&#160;  <span class="keywordtype">void</span> printEN_INT(<a class="code" href="unionmax30001__en__int__reg__t.html">max30001_en_int_reg_t</a> en_int);</div>
-<div class="line"><a name="l00990"></a><span class="lineno">  990</span>&#160;  </div>
-<div class="line"><a name="l00991"></a><span class="lineno">  991</span>&#160;  <span class="comment">/* @brief Print EN_INT1 register decode. */</span></div>
-<div class="line"><a name="l00992"></a><span class="lineno">  992</span>&#160;  <span class="keywordtype">void</span> printEN_INT1(<span class="keywordtype">void</span>) { printEN_INT(<a class="code" href="max30001g__globals_8cpp.html#ac7940d0c092b20520e1ab3cf4080281b">en_int1</a>); }</div>
-<div class="line"><a name="l00993"></a><span class="lineno">  993</span>&#160;  </div>
-<div class="line"><a name="l00994"></a><span class="lineno">  994</span>&#160;  <span class="comment">/* @brief Print EN_INT2 register decode. */</span></div>
-<div class="line"><a name="l00995"></a><span class="lineno">  995</span>&#160;  <span class="keywordtype">void</span> printEN_INT2(<span class="keywordtype">void</span>) { printEN_INT(<a class="code" href="max30001g__globals_8cpp.html#a30e2eb9e3635cf350b27e86cfaec15ce">en_int2</a>); }</div>
-<div class="line"><a name="l00996"></a><span class="lineno">  996</span>&#160;  </div>
-<div class="line"><a name="l00997"></a><span class="lineno">  997</span>&#160;  <span class="comment">/* @brief Print MNGR_INT register decode. */</span></div>
-<div class="line"><a name="l00998"></a><span class="lineno">  998</span>&#160;  <span class="keywordtype">void</span> printMNGR_INT(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l00999"></a><span class="lineno">  999</span>&#160;  </div>
-<div class="line"><a name="l01000"></a><span class="lineno"> 1000</span>&#160;  <span class="comment">/* @brief Print MNGR_DYN register decode. */</span></div>
-<div class="line"><a name="l01001"></a><span class="lineno"> 1001</span>&#160;  <span class="keywordtype">void</span> printMNGR_DYN(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01002"></a><span class="lineno"> 1002</span>&#160; </div>
-<div class="line"><a name="l01003"></a><span class="lineno"> 1003</span>&#160;  <span class="comment">/* @brief Print CNFG_GEN register decode. */</span></div>
-<div class="line"><a name="l01004"></a><span class="lineno"> 1004</span>&#160;  <span class="keywordtype">void</span> printCNFG_GEN(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01005"></a><span class="lineno"> 1005</span>&#160;  </div>
-<div class="line"><a name="l01006"></a><span class="lineno"> 1006</span>&#160;  <span class="comment">/* @brief Print CNFG_CAL register decode. */</span></div>
-<div class="line"><a name="l01007"></a><span class="lineno"> 1007</span>&#160;  <span class="keywordtype">void</span> printCNFG_CAL(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01008"></a><span class="lineno"> 1008</span>&#160;  </div>
-<div class="line"><a name="l01009"></a><span class="lineno"> 1009</span>&#160;  <span class="comment">/* @brief Print CNFG_EMUX register decode. */</span></div>
-<div class="line"><a name="l01010"></a><span class="lineno"> 1010</span>&#160;  <span class="keywordtype">void</span> printCNFG_EMUX(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01011"></a><span class="lineno"> 1011</span>&#160;  </div>
-<div class="line"><a name="l01012"></a><span class="lineno"> 1012</span>&#160;  <span class="comment">/* @brief Print CNFG_ECG register decode. */</span></div>
-<div class="line"><a name="l01013"></a><span class="lineno"> 1013</span>&#160;  <span class="keywordtype">void</span> printCNFG_ECG(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01014"></a><span class="lineno"> 1014</span>&#160;  </div>
-<div class="line"><a name="l01015"></a><span class="lineno"> 1015</span>&#160;  <span class="comment">/* @brief Print CNFG_BMUX register decode. */</span></div>
-<div class="line"><a name="l01016"></a><span class="lineno"> 1016</span>&#160;  <span class="keywordtype">void</span> printCNFG_BMUX(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01017"></a><span class="lineno"> 1017</span>&#160;  </div>
-<div class="line"><a name="l01018"></a><span class="lineno"> 1018</span>&#160;  <span class="comment">/* @brief Print CNFG_BIOZ register decode. */</span></div>
-<div class="line"><a name="l01019"></a><span class="lineno"> 1019</span>&#160;  <span class="keywordtype">void</span> printCNFG_BIOZ(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01020"></a><span class="lineno"> 1020</span>&#160;  </div>
-<div class="line"><a name="l01021"></a><span class="lineno"> 1021</span>&#160;  <span class="comment">/* @brief Print CNFG_BIOZ_LC register decode. */</span></div>
-<div class="line"><a name="l01022"></a><span class="lineno"> 1022</span>&#160;  <span class="keywordtype">void</span> printCNFG_BIOZ_LC(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01023"></a><span class="lineno"> 1023</span>&#160;  </div>
-<div class="line"><a name="l01024"></a><span class="lineno"> 1024</span>&#160;  <span class="comment">/* @brief Print CNFG_RTOR1 register decode. */</span></div>
-<div class="line"><a name="l01025"></a><span class="lineno"> 1025</span>&#160;  <span class="keywordtype">void</span> printCNFG_RTOR1(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;  </div>
-<div class="line"><a name="l01027"></a><span class="lineno"> 1027</span>&#160;  <span class="comment">/* @brief Print CNFG_RTOR2 register decode. */</span></div>
-<div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160;  <span class="keywordtype">void</span> printCNFG_RTOR2(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01029"></a><span class="lineno"> 1029</span>&#160; </div>
-<div class="line"><a name="l01030"></a><span class="lineno"> 1030</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l01031"></a><span class="lineno"> 1031</span>&#160;  <span class="comment">// System: max30001g_system.h</span></div>
+<div class="line"><a name="l00984"></a><span class="lineno">  984</span>&#160;  <span class="comment">// Register related: max30001g_regs.cpp</span></div>
+<div class="line"><a name="l00985"></a><span class="lineno">  985</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00986"></a><span class="lineno">  986</span>&#160;  </div>
+<div class="line"><a name="l00991"></a><span class="lineno">  991</span>&#160;  <span class="keywordtype">void</span> printEN_INT(<a class="code" href="unionmax30001__en__int__reg__t.html">max30001_en_int_reg_t</a> en_int);</div>
+<div class="line"><a name="l00992"></a><span class="lineno">  992</span>&#160;  </div>
+<div class="line"><a name="l00993"></a><span class="lineno">  993</span>&#160;  <span class="comment">/* @brief Print EN_INT1 register decode. */</span></div>
+<div class="line"><a name="l00994"></a><span class="lineno">  994</span>&#160;  <span class="keywordtype">void</span> printEN_INT1(<span class="keywordtype">void</span>) { printEN_INT(<a class="code" href="max30001g__globals_8cpp.html#ac7940d0c092b20520e1ab3cf4080281b">en_int1</a>); }</div>
+<div class="line"><a name="l00995"></a><span class="lineno">  995</span>&#160;  </div>
+<div class="line"><a name="l00996"></a><span class="lineno">  996</span>&#160;  <span class="comment">/* @brief Print EN_INT2 register decode. */</span></div>
+<div class="line"><a name="l00997"></a><span class="lineno">  997</span>&#160;  <span class="keywordtype">void</span> printEN_INT2(<span class="keywordtype">void</span>) { printEN_INT(<a class="code" href="max30001g__globals_8cpp.html#a30e2eb9e3635cf350b27e86cfaec15ce">en_int2</a>); }</div>
+<div class="line"><a name="l00998"></a><span class="lineno">  998</span>&#160;  </div>
+<div class="line"><a name="l00999"></a><span class="lineno">  999</span>&#160;  <span class="comment">/* @brief Print MNGR_INT register decode. */</span></div>
+<div class="line"><a name="l01000"></a><span class="lineno"> 1000</span>&#160;  <span class="keywordtype">void</span> printMNGR_INT(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01001"></a><span class="lineno"> 1001</span>&#160;  </div>
+<div class="line"><a name="l01002"></a><span class="lineno"> 1002</span>&#160;  <span class="comment">/* @brief Print MNGR_DYN register decode. */</span></div>
+<div class="line"><a name="l01003"></a><span class="lineno"> 1003</span>&#160;  <span class="keywordtype">void</span> printMNGR_DYN(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01004"></a><span class="lineno"> 1004</span>&#160; </div>
+<div class="line"><a name="l01005"></a><span class="lineno"> 1005</span>&#160;  <span class="comment">/* @brief Print CNFG_GEN register decode. */</span></div>
+<div class="line"><a name="l01006"></a><span class="lineno"> 1006</span>&#160;  <span class="keywordtype">void</span> printCNFG_GEN(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01007"></a><span class="lineno"> 1007</span>&#160;  </div>
+<div class="line"><a name="l01008"></a><span class="lineno"> 1008</span>&#160;  <span class="comment">/* @brief Print CNFG_CAL register decode. */</span></div>
+<div class="line"><a name="l01009"></a><span class="lineno"> 1009</span>&#160;  <span class="keywordtype">void</span> printCNFG_CAL(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01010"></a><span class="lineno"> 1010</span>&#160;  </div>
+<div class="line"><a name="l01011"></a><span class="lineno"> 1011</span>&#160;  <span class="comment">/* @brief Print CNFG_EMUX register decode. */</span></div>
+<div class="line"><a name="l01012"></a><span class="lineno"> 1012</span>&#160;  <span class="keywordtype">void</span> printCNFG_EMUX(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01013"></a><span class="lineno"> 1013</span>&#160;  </div>
+<div class="line"><a name="l01014"></a><span class="lineno"> 1014</span>&#160;  <span class="comment">/* @brief Print CNFG_ECG register decode. */</span></div>
+<div class="line"><a name="l01015"></a><span class="lineno"> 1015</span>&#160;  <span class="keywordtype">void</span> printCNFG_ECG(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01016"></a><span class="lineno"> 1016</span>&#160;  </div>
+<div class="line"><a name="l01017"></a><span class="lineno"> 1017</span>&#160;  <span class="comment">/* @brief Print CNFG_BMUX register decode. */</span></div>
+<div class="line"><a name="l01018"></a><span class="lineno"> 1018</span>&#160;  <span class="keywordtype">void</span> printCNFG_BMUX(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01019"></a><span class="lineno"> 1019</span>&#160;  </div>
+<div class="line"><a name="l01020"></a><span class="lineno"> 1020</span>&#160;  <span class="comment">/* @brief Print CNFG_BIOZ register decode. */</span></div>
+<div class="line"><a name="l01021"></a><span class="lineno"> 1021</span>&#160;  <span class="keywordtype">void</span> printCNFG_BIOZ(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01022"></a><span class="lineno"> 1022</span>&#160;  </div>
+<div class="line"><a name="l01023"></a><span class="lineno"> 1023</span>&#160;  <span class="comment">/* @brief Print CNFG_BIOZ_LC register decode. */</span></div>
+<div class="line"><a name="l01024"></a><span class="lineno"> 1024</span>&#160;  <span class="keywordtype">void</span> printCNFG_BIOZ_LC(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01025"></a><span class="lineno"> 1025</span>&#160;  </div>
+<div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;  <span class="comment">/* @brief Print CNFG_RTOR1 register decode. */</span></div>
+<div class="line"><a name="l01027"></a><span class="lineno"> 1027</span>&#160;  <span class="keywordtype">void</span> printCNFG_RTOR1(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160;  </div>
+<div class="line"><a name="l01029"></a><span class="lineno"> 1029</span>&#160;  <span class="comment">/* @brief Print CNFG_RTOR2 register decode. */</span></div>
+<div class="line"><a name="l01030"></a><span class="lineno"> 1030</span>&#160;  <span class="keywordtype">void</span> printCNFG_RTOR2(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01031"></a><span class="lineno"> 1031</span>&#160; </div>
 <div class="line"><a name="l01032"></a><span class="lineno"> 1032</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l01033"></a><span class="lineno"> 1033</span>&#160; </div>
-<div class="line"><a name="l01034"></a><span class="lineno"> 1034</span>&#160;  <span class="comment">// Read registers and update global variables based on register values</span></div>
-<div class="line"><a name="l01035"></a><span class="lineno"> 1035</span>&#160;  </div>
-<div class="line"><a name="l01037"></a><span class="lineno"> 1037</span>&#160;  <span class="keywordtype">void</span> updateGlobalECG_samplingRate(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01038"></a><span class="lineno"> 1038</span>&#160;  </div>
-<div class="line"><a name="l01040"></a><span class="lineno"> 1040</span>&#160;  <span class="keywordtype">void</span> updateGlobalBIOZ_samplingRate(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01041"></a><span class="lineno"> 1041</span>&#160;  </div>
-<div class="line"><a name="l01042"></a><span class="lineno"> 1042</span>&#160;  <span class="comment">/* @brief Update calibration frequency global from current registers. */</span></div>
-<div class="line"><a name="l01043"></a><span class="lineno"> 1043</span>&#160;  <span class="keywordtype">void</span> updateGlobalCAL_fcal(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01044"></a><span class="lineno"> 1044</span>&#160;  </div>
-<div class="line"><a name="l01045"></a><span class="lineno"> 1045</span>&#160;  <span class="comment">/* @brief Update ECG latency global from current timing/filter state. */</span></div>
-<div class="line"><a name="l01046"></a><span class="lineno"> 1046</span>&#160;  <span class="keywordtype">void</span> updateGlobalECG_latency(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01047"></a><span class="lineno"> 1047</span>&#160;  </div>
-<div class="line"><a name="l01048"></a><span class="lineno"> 1048</span>&#160;  <span class="comment">/* @brief Update BIOZ modulation-frequency global from current registers. */</span></div>
-<div class="line"><a name="l01049"></a><span class="lineno"> 1049</span>&#160;  <span class="keywordtype">void</span> updateGlobalBIOZ_frequency(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01050"></a><span class="lineno"> 1050</span>&#160;  </div>
-<div class="line"><a name="l01051"></a><span class="lineno"> 1051</span>&#160;  <span class="comment">/* @brief Update BIOZ test-impedance globals from current registers. */</span></div>
-<div class="line"><a name="l01052"></a><span class="lineno"> 1052</span>&#160;  <span class="keywordtype">void</span> updateGlobalBIOZ_test_impedance(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01053"></a><span class="lineno"> 1053</span>&#160;  </div>
-<div class="line"><a name="l01054"></a><span class="lineno"> 1054</span>&#160;  <span class="comment">/* @brief Update ECG LPF frequency global from current registers. */</span></div>
-<div class="line"><a name="l01055"></a><span class="lineno"> 1055</span>&#160;  <span class="keywordtype">void</span> updateGlobalECG_lpf(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01056"></a><span class="lineno"> 1056</span>&#160;  </div>
-<div class="line"><a name="l01057"></a><span class="lineno"> 1057</span>&#160;  <span class="comment">/* @brief Update BIOZ DLPF frequency global from current registers. */</span></div>
-<div class="line"><a name="l01058"></a><span class="lineno"> 1058</span>&#160;  <span class="keywordtype">void</span> updateGlobalBIOZ_dlpf(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01059"></a><span class="lineno"> 1059</span>&#160; </div>
-<div class="line"><a name="l01060"></a><span class="lineno"> 1060</span>&#160;  <span class="comment">/* @brief Update RCAL modulation-frequency global from current registers. */</span></div>
-<div class="line"><a name="l01061"></a><span class="lineno"> 1061</span>&#160;  <span class="keywordtype">void</span> updateGlobalRCAL_freq(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01062"></a><span class="lineno"> 1062</span>&#160; </div>
-<div class="line"><a name="l01063"></a><span class="lineno"> 1063</span>&#160;  <span class="comment">/* @brief Recompute timing-dependent globals from current register state. */</span></div>
-<div class="line"><a name="l01064"></a><span class="lineno"> 1064</span>&#160;  <span class="keywordtype">void</span> refreshTimingGlobals(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01065"></a><span class="lineno"> 1065</span>&#160; </div>
-<div class="line"><a name="l01066"></a><span class="lineno"> 1066</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l01067"></a><span class="lineno"> 1067</span>&#160;  <span class="comment">// Read Data: max30001g_readdata.cpp (internal single-sample helpers)</span></div>
+<div class="line"><a name="l01033"></a><span class="lineno"> 1033</span>&#160;  <span class="comment">// System: max30001g_system.h</span></div>
+<div class="line"><a name="l01034"></a><span class="lineno"> 1034</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l01035"></a><span class="lineno"> 1035</span>&#160; </div>
+<div class="line"><a name="l01036"></a><span class="lineno"> 1036</span>&#160;  <span class="comment">// Read registers and update global variables based on register values</span></div>
+<div class="line"><a name="l01037"></a><span class="lineno"> 1037</span>&#160;  </div>
+<div class="line"><a name="l01039"></a><span class="lineno"> 1039</span>&#160;  <span class="keywordtype">void</span> updateGlobalECG_samplingRate(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01040"></a><span class="lineno"> 1040</span>&#160;  </div>
+<div class="line"><a name="l01042"></a><span class="lineno"> 1042</span>&#160;  <span class="keywordtype">void</span> updateGlobalBIOZ_samplingRate(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01043"></a><span class="lineno"> 1043</span>&#160;  </div>
+<div class="line"><a name="l01044"></a><span class="lineno"> 1044</span>&#160;  <span class="comment">/* @brief Update calibration frequency global from current registers. */</span></div>
+<div class="line"><a name="l01045"></a><span class="lineno"> 1045</span>&#160;  <span class="keywordtype">void</span> updateGlobalCAL_fcal(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01046"></a><span class="lineno"> 1046</span>&#160;  </div>
+<div class="line"><a name="l01047"></a><span class="lineno"> 1047</span>&#160;  <span class="comment">/* @brief Update ECG latency global from current timing/filter state. */</span></div>
+<div class="line"><a name="l01048"></a><span class="lineno"> 1048</span>&#160;  <span class="keywordtype">void</span> updateGlobalECG_latency(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01049"></a><span class="lineno"> 1049</span>&#160;  </div>
+<div class="line"><a name="l01050"></a><span class="lineno"> 1050</span>&#160;  <span class="comment">/* @brief Update BIOZ modulation-frequency global from current registers. */</span></div>
+<div class="line"><a name="l01051"></a><span class="lineno"> 1051</span>&#160;  <span class="keywordtype">void</span> updateGlobalBIOZ_frequency(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01052"></a><span class="lineno"> 1052</span>&#160;  </div>
+<div class="line"><a name="l01053"></a><span class="lineno"> 1053</span>&#160;  <span class="comment">/* @brief Update BIOZ test-impedance globals from current registers. */</span></div>
+<div class="line"><a name="l01054"></a><span class="lineno"> 1054</span>&#160;  <span class="keywordtype">void</span> updateGlobalBIOZ_test_impedance(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01055"></a><span class="lineno"> 1055</span>&#160;  </div>
+<div class="line"><a name="l01056"></a><span class="lineno"> 1056</span>&#160;  <span class="comment">/* @brief Update ECG LPF frequency global from current registers. */</span></div>
+<div class="line"><a name="l01057"></a><span class="lineno"> 1057</span>&#160;  <span class="keywordtype">void</span> updateGlobalECG_lpf(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01058"></a><span class="lineno"> 1058</span>&#160;  </div>
+<div class="line"><a name="l01059"></a><span class="lineno"> 1059</span>&#160;  <span class="comment">/* @brief Update BIOZ DLPF frequency global from current registers. */</span></div>
+<div class="line"><a name="l01060"></a><span class="lineno"> 1060</span>&#160;  <span class="keywordtype">void</span> updateGlobalBIOZ_dlpf(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01061"></a><span class="lineno"> 1061</span>&#160; </div>
+<div class="line"><a name="l01062"></a><span class="lineno"> 1062</span>&#160;  <span class="comment">/* @brief Update RCAL modulation-frequency global from current registers. */</span></div>
+<div class="line"><a name="l01063"></a><span class="lineno"> 1063</span>&#160;  <span class="keywordtype">void</span> updateGlobalRCAL_freq(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01064"></a><span class="lineno"> 1064</span>&#160; </div>
+<div class="line"><a name="l01065"></a><span class="lineno"> 1065</span>&#160;  <span class="comment">/* @brief Recompute timing-dependent globals from current register state. */</span></div>
+<div class="line"><a name="l01066"></a><span class="lineno"> 1066</span>&#160;  <span class="keywordtype">void</span> refreshTimingGlobals(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01067"></a><span class="lineno"> 1067</span>&#160; </div>
 <div class="line"><a name="l01068"></a><span class="lineno"> 1068</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l01069"></a><span class="lineno"> 1069</span>&#160; </div>
+<div class="line"><a name="l01069"></a><span class="lineno"> 1069</span>&#160;  <span class="comment">// Read Data: max30001g_readdata.cpp (internal single-sample helpers)</span></div>
 <div class="line"><a name="l01070"></a><span class="lineno"> 1070</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l01071"></a><span class="lineno"> 1071</span>&#160;  <span class="comment">// Interrupts: max30001g_interrupt.cpp</span></div>
+<div class="line"><a name="l01071"></a><span class="lineno"> 1071</span>&#160; </div>
 <div class="line"><a name="l01072"></a><span class="lineno"> 1072</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l01073"></a><span class="lineno"> 1073</span>&#160; </div>
-<div class="line"><a name="l01086"></a><span class="lineno"> 1086</span>&#160;  <span class="keywordtype">bool</span> setInterrupt(uint8_t interrupt, <span class="keywordtype">bool</span> ecg, <span class="keywordtype">bool</span> bioz, <span class="keywordtype">bool</span> rtor, <span class="keywordtype">bool</span> leadon, <span class="keywordtype">bool</span> leadoff, <span class="keywordtype">bool</span> bioz_fourwire);</div>
-<div class="line"><a name="l01087"></a><span class="lineno"> 1087</span>&#160; </div>
-<div class="line"><a name="l01092"></a><span class="lineno"> 1092</span>&#160;  <span class="keywordtype">void</span> latchStatusFlags(uint32_t statusWord);</div>
-<div class="line"><a name="l01093"></a><span class="lineno"> 1093</span>&#160; </div>
-<div class="line"><a name="l01098"></a><span class="lineno"> 1098</span>&#160;  uint32_t readStatusAndLatchFlags(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01099"></a><span class="lineno"> 1099</span>&#160; </div>
-<div class="line"><a name="l01100"></a><span class="lineno"> 1100</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l01101"></a><span class="lineno"> 1101</span>&#160;  <span class="comment">// SPI Communication: max30001g_comm.cpp</span></div>
+<div class="line"><a name="l01073"></a><span class="lineno"> 1073</span>&#160;  <span class="comment">// Interrupts: max30001g_interrupt.cpp</span></div>
+<div class="line"><a name="l01074"></a><span class="lineno"> 1074</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l01075"></a><span class="lineno"> 1075</span>&#160; </div>
+<div class="line"><a name="l01088"></a><span class="lineno"> 1088</span>&#160;  <span class="keywordtype">bool</span> setInterrupt(uint8_t interrupt, <span class="keywordtype">bool</span> ecg, <span class="keywordtype">bool</span> bioz, <span class="keywordtype">bool</span> rtor, <span class="keywordtype">bool</span> leadon, <span class="keywordtype">bool</span> leadoff, <span class="keywordtype">bool</span> bioz_fourwire);</div>
+<div class="line"><a name="l01089"></a><span class="lineno"> 1089</span>&#160; </div>
+<div class="line"><a name="l01094"></a><span class="lineno"> 1094</span>&#160;  <span class="keywordtype">void</span> latchStatusFlags(uint32_t statusWord);</div>
+<div class="line"><a name="l01095"></a><span class="lineno"> 1095</span>&#160; </div>
+<div class="line"><a name="l01100"></a><span class="lineno"> 1100</span>&#160;  uint32_t readStatusAndLatchFlags(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01101"></a><span class="lineno"> 1101</span>&#160; </div>
 <div class="line"><a name="l01102"></a><span class="lineno"> 1102</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l01108"></a><span class="lineno"> 1108</span>&#160;<span class="comment"></span>  <span class="keywordtype">void</span> writeRegister(uint8_t address, uint32_t data);</div>
-<div class="line"><a name="l01109"></a><span class="lineno"> 1109</span>&#160; </div>
-<div class="line"><a name="l01115"></a><span class="lineno"> 1115</span>&#160;  uint32_t readRegister24(uint8_t address);</div>
-<div class="line"><a name="l01116"></a><span class="lineno"> 1116</span>&#160; </div>
-<div class="line"><a name="l01122"></a><span class="lineno"> 1122</span>&#160;  uint32_t readRegister(uint8_t address) { <span class="keywordflow">return</span> readRegister24(address); }</div>
-<div class="line"><a name="l01123"></a><span class="lineno"> 1123</span>&#160; </div>
-<div class="line"><a name="l01129"></a><span class="lineno"> 1129</span>&#160;  uint8_t readRegisterByte(uint8_t address);</div>
-<div class="line"><a name="l01130"></a><span class="lineno"> 1130</span>&#160; </div>
-<div class="line"><a name="l01136"></a><span class="lineno"> 1136</span>&#160;  uint8_t readRegister8(uint8_t address) { <span class="keywordflow">return</span> readRegisterByte(address); };</div>
-<div class="line"><a name="l01137"></a><span class="lineno"> 1137</span>&#160; </div>
-<div class="line"><a name="l01144"></a><span class="lineno"> 1144</span>&#160;  <span class="keywordtype">bool</span> verifyWrite(uint8_t address, uint32_t expectedValue);</div>
-<div class="line"><a name="l01145"></a><span class="lineno"> 1145</span>&#160; </div>
-<div class="line"><a name="l01152"></a><span class="lineno"> 1152</span>&#160;  <span class="keywordtype">bool</span> verifRegister(uint8_t address, uint32_t expectedValue) { <span class="keywordflow">return</span> verifyWrite(address, expectedValue); }</div>
-<div class="line"><a name="l01153"></a><span class="lineno"> 1153</span>&#160; </div>
-<div class="line"><a name="l01158"></a><span class="lineno"> 1158</span>&#160;  <span class="keywordtype">bool</span> spiCheck();</div>
-<div class="line"><a name="l01159"></a><span class="lineno"> 1159</span>&#160; </div>
-<div class="line"><a name="l01160"></a><span class="lineno"> 1160</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l01161"></a><span class="lineno"> 1161</span>&#160;  <span class="comment">// BIOZ: Impedance spectroscopy helper functions</span></div>
+<div class="line"><a name="l01103"></a><span class="lineno"> 1103</span>&#160;  <span class="comment">// SPI Communication: max30001g_comm.cpp</span></div>
+<div class="line"><a name="l01104"></a><span class="lineno"> 1104</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l01110"></a><span class="lineno"> 1110</span>&#160;<span class="comment"></span>  <span class="keywordtype">void</span> writeRegister(uint8_t address, uint32_t data);</div>
+<div class="line"><a name="l01111"></a><span class="lineno"> 1111</span>&#160; </div>
+<div class="line"><a name="l01117"></a><span class="lineno"> 1117</span>&#160;  uint32_t readRegister24(uint8_t address);</div>
+<div class="line"><a name="l01118"></a><span class="lineno"> 1118</span>&#160; </div>
+<div class="line"><a name="l01124"></a><span class="lineno"> 1124</span>&#160;  uint32_t readRegister(uint8_t address) { <span class="keywordflow">return</span> readRegister24(address); }</div>
+<div class="line"><a name="l01125"></a><span class="lineno"> 1125</span>&#160; </div>
+<div class="line"><a name="l01131"></a><span class="lineno"> 1131</span>&#160;  uint8_t readRegisterByte(uint8_t address);</div>
+<div class="line"><a name="l01132"></a><span class="lineno"> 1132</span>&#160; </div>
+<div class="line"><a name="l01138"></a><span class="lineno"> 1138</span>&#160;  uint8_t readRegister8(uint8_t address) { <span class="keywordflow">return</span> readRegisterByte(address); };</div>
+<div class="line"><a name="l01139"></a><span class="lineno"> 1139</span>&#160; </div>
+<div class="line"><a name="l01146"></a><span class="lineno"> 1146</span>&#160;  <span class="keywordtype">bool</span> verifyWrite(uint8_t address, uint32_t expectedValue);</div>
+<div class="line"><a name="l01147"></a><span class="lineno"> 1147</span>&#160; </div>
+<div class="line"><a name="l01154"></a><span class="lineno"> 1154</span>&#160;  <span class="keywordtype">bool</span> verifRegister(uint8_t address, uint32_t expectedValue) { <span class="keywordflow">return</span> verifyWrite(address, expectedValue); }</div>
+<div class="line"><a name="l01155"></a><span class="lineno"> 1155</span>&#160; </div>
+<div class="line"><a name="l01160"></a><span class="lineno"> 1160</span>&#160;  <span class="keywordtype">bool</span> spiCheck();</div>
+<div class="line"><a name="l01161"></a><span class="lineno"> 1161</span>&#160; </div>
 <div class="line"><a name="l01162"></a><span class="lineno"> 1162</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l01163"></a><span class="lineno"> 1163</span>&#160; </div>
-<div class="line"><a name="l01169"></a><span class="lineno"> 1169</span>&#160;  int32_t closestCurrent(int32_t current);</div>
-<div class="line"><a name="l01170"></a><span class="lineno"> 1170</span>&#160; </div>
-<div class="line"><a name="l01178"></a><span class="lineno"> 1178</span>&#160;  <span class="keywordtype">float</span> impedancemodel(<span class="keywordtype">float</span> theta, <span class="keywordtype">float</span> magnitude, <span class="keywordtype">float</span> phase);</div>
-<div class="line"><a name="l01179"></a><span class="lineno"> 1179</span>&#160; </div>
-<div class="line"><a name="l01187"></a><span class="lineno"> 1187</span>&#160;  <a class="code" href="structImpedanceModel.html">ImpedanceModel</a> fitImpedance(<span class="keyword">const</span> <span class="keywordtype">float</span>* phases, <span class="keyword">const</span> <span class="keywordtype">float</span>* impedances, <span class="keywordtype">int</span> num_points);</div>
-<div class="line"><a name="l01188"></a><span class="lineno"> 1188</span>&#160; </div>
-<div class="line"><a name="l01189"></a><span class="lineno"> 1189</span>&#160;  uint8_t biozScanPhaseCountForFreq(uint8_t freq_idx) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l01190"></a><span class="lineno"> 1190</span>&#160;  uint8_t biozScanSelectAHpf(<span class="keywordtype">float</span> lowest_frequency_hz) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l01191"></a><span class="lineno"> 1191</span>&#160;  <span class="keywordtype">float</span> biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, <span class="keywordtype">float</span> outlier_sigma, <span class="keywordtype">bool</span>&amp; hasSamples);</div>
-<div class="line"><a name="l01192"></a><span class="lineno"> 1192</span>&#160; </div>
-<div class="line"><a name="l01193"></a><span class="lineno"> 1193</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l01194"></a><span class="lineno"> 1194</span>&#160;  <span class="comment">// Device</span></div>
+<div class="line"><a name="l01163"></a><span class="lineno"> 1163</span>&#160;  <span class="comment">// BIOZ: Impedance spectroscopy helper functions</span></div>
+<div class="line"><a name="l01164"></a><span class="lineno"> 1164</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l01165"></a><span class="lineno"> 1165</span>&#160; </div>
+<div class="line"><a name="l01171"></a><span class="lineno"> 1171</span>&#160;  int32_t closestCurrent(int32_t current);</div>
+<div class="line"><a name="l01172"></a><span class="lineno"> 1172</span>&#160; </div>
+<div class="line"><a name="l01180"></a><span class="lineno"> 1180</span>&#160;  <span class="keywordtype">float</span> impedancemodel(<span class="keywordtype">float</span> theta, <span class="keywordtype">float</span> magnitude, <span class="keywordtype">float</span> phase);</div>
+<div class="line"><a name="l01181"></a><span class="lineno"> 1181</span>&#160; </div>
+<div class="line"><a name="l01189"></a><span class="lineno"> 1189</span>&#160;  <a class="code" href="structImpedanceModel.html">ImpedanceModel</a> fitImpedance(<span class="keyword">const</span> <span class="keywordtype">float</span>* phases, <span class="keyword">const</span> <span class="keywordtype">float</span>* impedances, <span class="keywordtype">int</span> num_points);</div>
+<div class="line"><a name="l01190"></a><span class="lineno"> 1190</span>&#160; </div>
+<div class="line"><a name="l01191"></a><span class="lineno"> 1191</span>&#160;  uint8_t biozScanPhaseCountForFreq(uint8_t freq_idx) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l01192"></a><span class="lineno"> 1192</span>&#160;  uint8_t biozScanSelectAHpf(<span class="keywordtype">float</span> lowest_frequency_hz) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l01193"></a><span class="lineno"> 1193</span>&#160;  <span class="keywordtype">float</span> biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, <span class="keywordtype">float</span> outlier_sigma, <span class="keywordtype">bool</span>&amp; hasSamples);</div>
+<div class="line"><a name="l01194"></a><span class="lineno"> 1194</span>&#160; </div>
 <div class="line"><a name="l01195"></a><span class="lineno"> 1195</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
-<div class="line"><a name="l01196"></a><span class="lineno"> 1196</span>&#160;  <span class="keyword">enum</span> SetupProfile : uint8_t {</div>
-<div class="line"><a name="l01197"></a><span class="lineno"> 1197</span>&#160;    PROFILE_NONE = 0,</div>
-<div class="line"><a name="l01198"></a><span class="lineno"> 1198</span>&#160;    PROFILE_ECG,</div>
-<div class="line"><a name="l01199"></a><span class="lineno"> 1199</span>&#160;    PROFILE_ECG_CAL,</div>
-<div class="line"><a name="l01200"></a><span class="lineno"> 1200</span>&#160;    PROFILE_BIOZ,</div>
-<div class="line"><a name="l01201"></a><span class="lineno"> 1201</span>&#160;    PROFILE_BIOZ_CAL,</div>
-<div class="line"><a name="l01202"></a><span class="lineno"> 1202</span>&#160;    PROFILE_BIOZ_IMP_CAL,</div>
-<div class="line"><a name="l01203"></a><span class="lineno"> 1203</span>&#160;    PROFILE_ECG_AND_BIOZ,</div>
-<div class="line"><a name="l01204"></a><span class="lineno"> 1204</span>&#160;    PROFILE_BIOZ_SCAN</div>
-<div class="line"><a name="l01205"></a><span class="lineno"> 1205</span>&#160;  };</div>
-<div class="line"><a name="l01206"></a><span class="lineno"> 1206</span>&#160; </div>
-<div class="line"><a name="l01207"></a><span class="lineno"> 1207</span>&#160;  <span class="keyword">enum</span> BiozScanState : uint8_t {</div>
-<div class="line"><a name="l01208"></a><span class="lineno"> 1208</span>&#160;    BIOZ_SCAN_IDLE = 0,</div>
-<div class="line"><a name="l01209"></a><span class="lineno"> 1209</span>&#160;    BIOZ_SCAN_INIT,</div>
-<div class="line"><a name="l01210"></a><span class="lineno"> 1210</span>&#160;    BIOZ_SCAN_CONFIG_FREQ,</div>
-<div class="line"><a name="l01211"></a><span class="lineno"> 1211</span>&#160;    BIOZ_SCAN_PREPARE_ATTEMPT,</div>
-<div class="line"><a name="l01212"></a><span class="lineno"> 1212</span>&#160;    BIOZ_SCAN_CONFIG_PHASE,</div>
-<div class="line"><a name="l01213"></a><span class="lineno"> 1213</span>&#160;    BIOZ_SCAN_WAIT_DATA,</div>
-<div class="line"><a name="l01214"></a><span class="lineno"> 1214</span>&#160;    BIOZ_SCAN_PROCESS_PHASE,</div>
-<div class="line"><a name="l01215"></a><span class="lineno"> 1215</span>&#160;    BIOZ_SCAN_EVALUATE_ATTEMPT,</div>
-<div class="line"><a name="l01216"></a><span class="lineno"> 1216</span>&#160;    BIOZ_SCAN_FINALIZE_FREQ,</div>
-<div class="line"><a name="l01217"></a><span class="lineno"> 1217</span>&#160;    BIOZ_SCAN_FINISH</div>
-<div class="line"><a name="l01218"></a><span class="lineno"> 1218</span>&#160;  };</div>
-<div class="line"><a name="l01219"></a><span class="lineno"> 1219</span>&#160; </div>
-<div class="line"><a name="l01220"></a><span class="lineno"> 1220</span>&#160;  <span class="keywordtype">int</span> _csPin;   <span class="comment">// chip select for SPI</span></div>
-<div class="line"><a name="l01221"></a><span class="lineno"> 1221</span>&#160;  <span class="keywordtype">int</span> _intPin1; <span class="comment">// interrupt pin INTB (EN_INT1)</span></div>
-<div class="line"><a name="l01222"></a><span class="lineno"> 1222</span>&#160;  <span class="keywordtype">int</span> _intPin2; <span class="comment">// interrupt pin INT2B (EN_INT2), optional</span></div>
-<div class="line"><a name="l01223"></a><span class="lineno"> 1223</span>&#160; </div>
-<div class="line"><a name="l01227"></a><span class="lineno"> 1227</span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> onAFE_IRQ1(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01231"></a><span class="lineno"> 1231</span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> onAFE_IRQ2(<span class="keywordtype">void</span>);</div>
-<div class="line"><a name="l01232"></a><span class="lineno"> 1232</span>&#160; </div>
-<div class="line"><a name="l01233"></a><span class="lineno"> 1233</span>&#160;  SetupProfile _profile;</div>
-<div class="line"><a name="l01234"></a><span class="lineno"> 1234</span>&#160;  <span class="keywordtype">bool</span> _configured;</div>
-<div class="line"><a name="l01235"></a><span class="lineno"> 1235</span>&#160;  <span class="keywordtype">bool</span> _running;</div>
-<div class="line"><a name="l01236"></a><span class="lineno"> 1236</span>&#160; </div>
-<div class="line"><a name="l01237"></a><span class="lineno"> 1237</span>&#160;  <span class="keywordtype">bool</span> _useECG;</div>
-<div class="line"><a name="l01238"></a><span class="lineno"> 1238</span>&#160;  <span class="keywordtype">bool</span> _useBIOZ;</div>
-<div class="line"><a name="l01239"></a><span class="lineno"> 1239</span>&#160;  <span class="keywordtype">bool</span> _useRTOR;</div>
-<div class="line"><a name="l01240"></a><span class="lineno"> 1240</span>&#160; </div>
-<div class="line"><a name="l01241"></a><span class="lineno"> 1241</span>&#160;  <span class="keywordtype">bool</span> _drainECGOnUpdate;</div>
-<div class="line"><a name="l01242"></a><span class="lineno"> 1242</span>&#160;  <span class="keywordtype">bool</span> _drainBIOZOnUpdate;</div>
-<div class="line"><a name="l01243"></a><span class="lineno"> 1243</span>&#160;  <span class="keywordtype">bool</span> _readRTOROnUpdate;</div>
-<div class="line"><a name="l01244"></a><span class="lineno"> 1244</span>&#160; </div>
-<div class="line"><a name="l01245"></a><span class="lineno"> 1245</span>&#160;  <span class="keywordtype">bool</span> _applyLeadSettingsOnStart;</div>
-<div class="line"><a name="l01246"></a><span class="lineno"> 1246</span>&#160;  <span class="keywordtype">bool</span> _leadBiasEnable;</div>
-<div class="line"><a name="l01247"></a><span class="lineno"> 1247</span>&#160;  uint8_t _leadBiasResistance;</div>
-<div class="line"><a name="l01248"></a><span class="lineno"> 1248</span>&#160;  <span class="keywordtype">bool</span> _leadOffEnable;</div>
-<div class="line"><a name="l01249"></a><span class="lineno"> 1249</span>&#160;  <span class="keywordtype">bool</span> _leadOffBioz4;</div>
-<div class="line"><a name="l01250"></a><span class="lineno"> 1250</span>&#160;  uint8_t _leadOffElectrodeImpedance;</div>
-<div class="line"><a name="l01251"></a><span class="lineno"> 1251</span>&#160;  <span class="keywordtype">bool</span> _leadOnEnable;</div>
-<div class="line"><a name="l01252"></a><span class="lineno"> 1252</span>&#160; </div>
-<div class="line"><a name="l01253"></a><span class="lineno"> 1253</span>&#160;  <a class="code" href="structConfigSnapshot.html">ConfigSnapshot</a> _savedConfig;</div>
+<div class="line"><a name="l01196"></a><span class="lineno"> 1196</span>&#160;  <span class="comment">// Device</span></div>
+<div class="line"><a name="l01197"></a><span class="lineno"> 1197</span>&#160;  <span class="comment">// ---------------------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l01198"></a><span class="lineno"> 1198</span>&#160;  <span class="keyword">enum</span> SetupProfile : uint8_t {</div>
+<div class="line"><a name="l01199"></a><span class="lineno"> 1199</span>&#160;    PROFILE_NONE = 0,</div>
+<div class="line"><a name="l01200"></a><span class="lineno"> 1200</span>&#160;    PROFILE_ECG,</div>
+<div class="line"><a name="l01201"></a><span class="lineno"> 1201</span>&#160;    PROFILE_ECG_CAL,</div>
+<div class="line"><a name="l01202"></a><span class="lineno"> 1202</span>&#160;    PROFILE_BIOZ,</div>
+<div class="line"><a name="l01203"></a><span class="lineno"> 1203</span>&#160;    PROFILE_BIOZ_CAL,</div>
+<div class="line"><a name="l01204"></a><span class="lineno"> 1204</span>&#160;    PROFILE_BIOZ_IMP_CAL,</div>
+<div class="line"><a name="l01205"></a><span class="lineno"> 1205</span>&#160;    PROFILE_ECG_AND_BIOZ,</div>
+<div class="line"><a name="l01206"></a><span class="lineno"> 1206</span>&#160;    PROFILE_BIOZ_SCAN</div>
+<div class="line"><a name="l01207"></a><span class="lineno"> 1207</span>&#160;  };</div>
+<div class="line"><a name="l01208"></a><span class="lineno"> 1208</span>&#160; </div>
+<div class="line"><a name="l01209"></a><span class="lineno"> 1209</span>&#160;  <span class="keyword">enum</span> BiozScanState : uint8_t {</div>
+<div class="line"><a name="l01210"></a><span class="lineno"> 1210</span>&#160;    BIOZ_SCAN_IDLE = 0,</div>
+<div class="line"><a name="l01211"></a><span class="lineno"> 1211</span>&#160;    BIOZ_SCAN_INIT,</div>
+<div class="line"><a name="l01212"></a><span class="lineno"> 1212</span>&#160;    BIOZ_SCAN_CONFIG_FREQ,</div>
+<div class="line"><a name="l01213"></a><span class="lineno"> 1213</span>&#160;    BIOZ_SCAN_PREPARE_ATTEMPT,</div>
+<div class="line"><a name="l01214"></a><span class="lineno"> 1214</span>&#160;    BIOZ_SCAN_CONFIG_PHASE,</div>
+<div class="line"><a name="l01215"></a><span class="lineno"> 1215</span>&#160;    BIOZ_SCAN_WAIT_DATA,</div>
+<div class="line"><a name="l01216"></a><span class="lineno"> 1216</span>&#160;    BIOZ_SCAN_PROCESS_PHASE,</div>
+<div class="line"><a name="l01217"></a><span class="lineno"> 1217</span>&#160;    BIOZ_SCAN_EVALUATE_ATTEMPT,</div>
+<div class="line"><a name="l01218"></a><span class="lineno"> 1218</span>&#160;    BIOZ_SCAN_FINALIZE_FREQ,</div>
+<div class="line"><a name="l01219"></a><span class="lineno"> 1219</span>&#160;    BIOZ_SCAN_FINISH</div>
+<div class="line"><a name="l01220"></a><span class="lineno"> 1220</span>&#160;  };</div>
+<div class="line"><a name="l01221"></a><span class="lineno"> 1221</span>&#160; </div>
+<div class="line"><a name="l01222"></a><span class="lineno"> 1222</span>&#160;  <span class="keywordtype">int</span> _csPin;   <span class="comment">// chip select for SPI</span></div>
+<div class="line"><a name="l01223"></a><span class="lineno"> 1223</span>&#160;  <span class="keywordtype">int</span> _intPin1; <span class="comment">// interrupt pin INTB (EN_INT1)</span></div>
+<div class="line"><a name="l01224"></a><span class="lineno"> 1224</span>&#160;  <span class="keywordtype">int</span> _intPin2; <span class="comment">// interrupt pin INT2B (EN_INT2), optional</span></div>
+<div class="line"><a name="l01225"></a><span class="lineno"> 1225</span>&#160; </div>
+<div class="line"><a name="l01229"></a><span class="lineno"> 1229</span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> onAFE_IRQ1(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01233"></a><span class="lineno"> 1233</span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> onAFE_IRQ2(<span class="keywordtype">void</span>);</div>
+<div class="line"><a name="l01234"></a><span class="lineno"> 1234</span>&#160; </div>
+<div class="line"><a name="l01235"></a><span class="lineno"> 1235</span>&#160;  SetupProfile _profile;</div>
+<div class="line"><a name="l01236"></a><span class="lineno"> 1236</span>&#160;  <span class="keywordtype">bool</span> _configured;</div>
+<div class="line"><a name="l01237"></a><span class="lineno"> 1237</span>&#160;  <span class="keywordtype">bool</span> _running;</div>
+<div class="line"><a name="l01238"></a><span class="lineno"> 1238</span>&#160; </div>
+<div class="line"><a name="l01239"></a><span class="lineno"> 1239</span>&#160;  <span class="keywordtype">bool</span> _useECG;</div>
+<div class="line"><a name="l01240"></a><span class="lineno"> 1240</span>&#160;  <span class="keywordtype">bool</span> _useBIOZ;</div>
+<div class="line"><a name="l01241"></a><span class="lineno"> 1241</span>&#160;  <span class="keywordtype">bool</span> _useRTOR;</div>
+<div class="line"><a name="l01242"></a><span class="lineno"> 1242</span>&#160; </div>
+<div class="line"><a name="l01243"></a><span class="lineno"> 1243</span>&#160;  <span class="keywordtype">bool</span> _drainECGOnUpdate;</div>
+<div class="line"><a name="l01244"></a><span class="lineno"> 1244</span>&#160;  <span class="keywordtype">bool</span> _drainBIOZOnUpdate;</div>
+<div class="line"><a name="l01245"></a><span class="lineno"> 1245</span>&#160;  <span class="keywordtype">bool</span> _readRTOROnUpdate;</div>
+<div class="line"><a name="l01246"></a><span class="lineno"> 1246</span>&#160; </div>
+<div class="line"><a name="l01247"></a><span class="lineno"> 1247</span>&#160;  <span class="keywordtype">bool</span> _applyLeadSettingsOnStart;</div>
+<div class="line"><a name="l01248"></a><span class="lineno"> 1248</span>&#160;  <span class="keywordtype">bool</span> _leadBiasEnable;</div>
+<div class="line"><a name="l01249"></a><span class="lineno"> 1249</span>&#160;  uint8_t _leadBiasResistance;</div>
+<div class="line"><a name="l01250"></a><span class="lineno"> 1250</span>&#160;  <span class="keywordtype">bool</span> _leadOffEnable;</div>
+<div class="line"><a name="l01251"></a><span class="lineno"> 1251</span>&#160;  <span class="keywordtype">bool</span> _leadOffBioz4;</div>
+<div class="line"><a name="l01252"></a><span class="lineno"> 1252</span>&#160;  uint8_t _leadOffElectrodeImpedance;</div>
+<div class="line"><a name="l01253"></a><span class="lineno"> 1253</span>&#160;  <span class="keywordtype">bool</span> _leadOnEnable;</div>
 <div class="line"><a name="l01254"></a><span class="lineno"> 1254</span>&#160; </div>
-<div class="line"><a name="l01255"></a><span class="lineno"> 1255</span>&#160;  <span class="comment">// BIOZ scan current profile cache (for reuse across scans)</span></div>
-<div class="line"><a name="l01256"></a><span class="lineno"> 1256</span>&#160;  <span class="keywordtype">bool</span> _scanCurrentProfileValid;</div>
-<div class="line"><a name="l01257"></a><span class="lineno"> 1257</span>&#160;  int32_t _scanCurrentProfile[<a class="code" href="max30001g__defs_8h.html#a1550cf6c8eb56b28c9e8e8c3f7074191">MAX30001_BIOZ_NUM_FREQUENCIES</a>];</div>
-<div class="line"><a name="l01258"></a><span class="lineno"> 1258</span>&#160;  uint8_t _scanProfileFreqStart;</div>
-<div class="line"><a name="l01259"></a><span class="lineno"> 1259</span>&#160;  uint8_t _scanProfileFreqEnd;</div>
-<div class="line"><a name="l01260"></a><span class="lineno"> 1260</span>&#160;  <span class="keywordtype">bool</span> _scanProfileFast;</div>
-<div class="line"><a name="l01261"></a><span class="lineno"> 1261</span>&#160; </div>
-<div class="line"><a name="l01262"></a><span class="lineno"> 1262</span>&#160;  <a class="code" href="structBIOZScanConfig.html">BIOZScanConfig</a> _scanRuntimeConfig;</div>
-<div class="line"><a name="l01263"></a><span class="lineno"> 1263</span>&#160;  <span class="keywordtype">bool</span> _scanReuseCurrents;</div>
-<div class="line"><a name="l01264"></a><span class="lineno"> 1264</span>&#160;  <span class="keywordtype">bool</span> _scanInProgress;</div>
-<div class="line"><a name="l01265"></a><span class="lineno"> 1265</span>&#160;  <span class="keywordtype">bool</span> _scanCompleted;</div>
-<div class="line"><a name="l01266"></a><span class="lineno"> 1266</span>&#160; </div>
-<div class="line"><a name="l01267"></a><span class="lineno"> 1267</span>&#160;  BiozScanState _BIOZScanState;</div>
-<div class="line"><a name="l01268"></a><span class="lineno"> 1268</span>&#160;  uint8_t _scanFreqIndex;</div>
-<div class="line"><a name="l01269"></a><span class="lineno"> 1269</span>&#160;  uint8_t _scanPhaseIndex;</div>
-<div class="line"><a name="l01270"></a><span class="lineno"> 1270</span>&#160;  uint8_t _scanAttempt;</div>
-<div class="line"><a name="l01271"></a><span class="lineno"> 1271</span>&#160;  uint8_t _scanNumPhaseMeasurements;</div>
-<div class="line"><a name="l01272"></a><span class="lineno"> 1272</span>&#160;  uint32_t _scanWaitDeadlineMs;</div>
-<div class="line"><a name="l01273"></a><span class="lineno"> 1273</span>&#160; </div>
-<div class="line"><a name="l01274"></a><span class="lineno"> 1274</span>&#160;  <span class="keywordtype">float</span> _scanThresholdMin;</div>
-<div class="line"><a name="l01275"></a><span class="lineno"> 1275</span>&#160;  <span class="keywordtype">float</span> _scanThresholdMax;</div>
-<div class="line"><a name="l01276"></a><span class="lineno"> 1276</span>&#160;  <span class="keywordtype">float</span> _scanAdcTarget;</div>
-<div class="line"><a name="l01277"></a><span class="lineno"> 1277</span>&#160; </div>
-<div class="line"><a name="l01278"></a><span class="lineno"> 1278</span>&#160;  <span class="keywordtype">bool</span> _scanSawValid;</div>
-<div class="line"><a name="l01279"></a><span class="lineno"> 1279</span>&#160;  <span class="keywordtype">bool</span> _scanSawInvalidOrRange;</div>
-<div class="line"><a name="l01280"></a><span class="lineno"> 1280</span>&#160;  <span class="keywordtype">bool</span> _scanAnyAboveTarget;</div>
-<div class="line"><a name="l01281"></a><span class="lineno"> 1281</span>&#160;  <span class="keywordtype">bool</span> _scanAnyInTarget;</div>
-<div class="line"><a name="l01282"></a><span class="lineno"> 1282</span>&#160;  <span class="keywordtype">float</span> _scanMaxAbsRaw;</div>
-<div class="line"><a name="l01283"></a><span class="lineno"> 1283</span>&#160; </div>
-<div class="line"><a name="l01284"></a><span class="lineno"> 1284</span>&#160;  int32_t _scanCurrent[<a class="code" href="max30001g__defs_8h.html#a1550cf6c8eb56b28c9e8e8c3f7074191">MAX30001_BIOZ_NUM_FREQUENCIES</a>];</div>
-<div class="line"><a name="l01285"></a><span class="lineno"> 1285</span>&#160;  <span class="keywordtype">float</span> _scanFrequency[<a class="code" href="max30001g__defs_8h.html#a1550cf6c8eb56b28c9e8e8c3f7074191">MAX30001_BIOZ_NUM_FREQUENCIES</a>];</div>
-<div class="line"><a name="l01286"></a><span class="lineno"> 1286</span>&#160;  <span class="keywordtype">float</span> _scanImpedance[<a class="code" href="max30001g__defs_8h.html#a1550cf6c8eb56b28c9e8e8c3f7074191">MAX30001_BIOZ_NUM_FREQUENCIES</a>][<a class="code" href="max30001g__defs_8h.html#a81f1759af1765d67af075e1d3081c2a9">MAX30001_BIOZ_NUM_PHASES</a>];</div>
-<div class="line"><a name="l01287"></a><span class="lineno"> 1287</span>&#160;  <span class="keywordtype">float</span> _scanPhaseDeg[<a class="code" href="max30001g__defs_8h.html#a1550cf6c8eb56b28c9e8e8c3f7074191">MAX30001_BIOZ_NUM_FREQUENCIES</a>][<a class="code" href="max30001g__defs_8h.html#a81f1759af1765d67af075e1d3081c2a9">MAX30001_BIOZ_NUM_PHASES</a>];</div>
-<div class="line"><a name="l01288"></a><span class="lineno"> 1288</span>&#160;};</div>
-<div class="line"><a name="l01289"></a><span class="lineno"> 1289</span>&#160; <span class="comment">// end of MAX30001G_Public_API</span></div>
-<div class="line"><a name="l01291"></a><span class="lineno"> 1291</span>&#160; </div>
-<div class="line"><a name="l01292"></a><span class="lineno"> 1292</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// MAX30001G_H</span></div>
+<div class="line"><a name="l01255"></a><span class="lineno"> 1255</span>&#160;  <a class="code" href="structConfigSnapshot.html">ConfigSnapshot</a> _savedConfig;</div>
+<div class="line"><a name="l01256"></a><span class="lineno"> 1256</span>&#160; </div>
+<div class="line"><a name="l01257"></a><span class="lineno"> 1257</span>&#160;  <span class="comment">// BIOZ scan current profile cache (for reuse across scans)</span></div>
+<div class="line"><a name="l01258"></a><span class="lineno"> 1258</span>&#160;  <span class="keywordtype">bool</span> _scanCurrentProfileValid;</div>
+<div class="line"><a name="l01259"></a><span class="lineno"> 1259</span>&#160;  int32_t _scanCurrentProfile[<a class="code" href="max30001g__defs_8h.html#a1550cf6c8eb56b28c9e8e8c3f7074191">MAX30001_BIOZ_NUM_FREQUENCIES</a>];</div>
+<div class="line"><a name="l01260"></a><span class="lineno"> 1260</span>&#160;  uint8_t _scanProfileFreqStart;</div>
+<div class="line"><a name="l01261"></a><span class="lineno"> 1261</span>&#160;  uint8_t _scanProfileFreqEnd;</div>
+<div class="line"><a name="l01262"></a><span class="lineno"> 1262</span>&#160;  <span class="keywordtype">bool</span> _scanProfileFast;</div>
+<div class="line"><a name="l01263"></a><span class="lineno"> 1263</span>&#160; </div>
+<div class="line"><a name="l01264"></a><span class="lineno"> 1264</span>&#160;  <a class="code" href="structBIOZScanConfig.html">BIOZScanConfig</a> _scanRuntimeConfig;</div>
+<div class="line"><a name="l01265"></a><span class="lineno"> 1265</span>&#160;  <span class="keywordtype">bool</span> _scanReuseCurrents;</div>
+<div class="line"><a name="l01266"></a><span class="lineno"> 1266</span>&#160;  <span class="keywordtype">bool</span> _scanInProgress;</div>
+<div class="line"><a name="l01267"></a><span class="lineno"> 1267</span>&#160;  <span class="keywordtype">bool</span> _scanCompleted;</div>
+<div class="line"><a name="l01268"></a><span class="lineno"> 1268</span>&#160; </div>
+<div class="line"><a name="l01269"></a><span class="lineno"> 1269</span>&#160;  BiozScanState _BIOZScanState;</div>
+<div class="line"><a name="l01270"></a><span class="lineno"> 1270</span>&#160;  uint8_t _scanFreqIndex;</div>
+<div class="line"><a name="l01271"></a><span class="lineno"> 1271</span>&#160;  uint8_t _scanPhaseIndex;</div>
+<div class="line"><a name="l01272"></a><span class="lineno"> 1272</span>&#160;  uint8_t _scanAttempt;</div>
+<div class="line"><a name="l01273"></a><span class="lineno"> 1273</span>&#160;  uint8_t _scanNumPhaseMeasurements;</div>
+<div class="line"><a name="l01274"></a><span class="lineno"> 1274</span>&#160;  uint32_t _scanWaitDeadlineMs;</div>
+<div class="line"><a name="l01275"></a><span class="lineno"> 1275</span>&#160; </div>
+<div class="line"><a name="l01276"></a><span class="lineno"> 1276</span>&#160;  <span class="keywordtype">float</span> _scanThresholdMin;</div>
+<div class="line"><a name="l01277"></a><span class="lineno"> 1277</span>&#160;  <span class="keywordtype">float</span> _scanThresholdMax;</div>
+<div class="line"><a name="l01278"></a><span class="lineno"> 1278</span>&#160;  <span class="keywordtype">float</span> _scanAdcTarget;</div>
+<div class="line"><a name="l01279"></a><span class="lineno"> 1279</span>&#160; </div>
+<div class="line"><a name="l01280"></a><span class="lineno"> 1280</span>&#160;  <span class="keywordtype">bool</span> _scanSawValid;</div>
+<div class="line"><a name="l01281"></a><span class="lineno"> 1281</span>&#160;  <span class="keywordtype">bool</span> _scanSawInvalidOrRange;</div>
+<div class="line"><a name="l01282"></a><span class="lineno"> 1282</span>&#160;  <span class="keywordtype">bool</span> _scanAnyAboveTarget;</div>
+<div class="line"><a name="l01283"></a><span class="lineno"> 1283</span>&#160;  <span class="keywordtype">bool</span> _scanAnyInTarget;</div>
+<div class="line"><a name="l01284"></a><span class="lineno"> 1284</span>&#160;  <span class="keywordtype">float</span> _scanMaxAbsRaw;</div>
+<div class="line"><a name="l01285"></a><span class="lineno"> 1285</span>&#160; </div>
+<div class="line"><a name="l01286"></a><span class="lineno"> 1286</span>&#160;  int32_t _scanCurrent[<a class="code" href="max30001g__defs_8h.html#a1550cf6c8eb56b28c9e8e8c3f7074191">MAX30001_BIOZ_NUM_FREQUENCIES</a>];</div>
+<div class="line"><a name="l01287"></a><span class="lineno"> 1287</span>&#160;  <span class="keywordtype">float</span> _scanFrequency[<a class="code" href="max30001g__defs_8h.html#a1550cf6c8eb56b28c9e8e8c3f7074191">MAX30001_BIOZ_NUM_FREQUENCIES</a>];</div>
+<div class="line"><a name="l01288"></a><span class="lineno"> 1288</span>&#160;  <span class="keywordtype">float</span> _scanImpedance[<a class="code" href="max30001g__defs_8h.html#a1550cf6c8eb56b28c9e8e8c3f7074191">MAX30001_BIOZ_NUM_FREQUENCIES</a>][<a class="code" href="max30001g__defs_8h.html#a81f1759af1765d67af075e1d3081c2a9">MAX30001_BIOZ_NUM_PHASES</a>];</div>
+<div class="line"><a name="l01289"></a><span class="lineno"> 1289</span>&#160;  <span class="keywordtype">float</span> _scanPhaseDeg[<a class="code" href="max30001g__defs_8h.html#a1550cf6c8eb56b28c9e8e8c3f7074191">MAX30001_BIOZ_NUM_FREQUENCIES</a>][<a class="code" href="max30001g__defs_8h.html#a81f1759af1765d67af075e1d3081c2a9">MAX30001_BIOZ_NUM_PHASES</a>];</div>
+<div class="line"><a name="l01290"></a><span class="lineno"> 1290</span>&#160;};</div>
+<div class="line"><a name="l01291"></a><span class="lineno"> 1291</span>&#160; <span class="comment">// end of MAX30001G_Public_API</span></div>
+<div class="line"><a name="l01293"></a><span class="lineno"> 1293</span>&#160; </div>
+<div class="line"><a name="l01294"></a><span class="lineno"> 1294</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// MAX30001G_H</span></div>
 <div class="ttc" id="aclassMAX30001G_html"><div class="ttname"><a href="classMAX30001G.html">MAX30001G</a></div><div class="ttdoc">MAX30001G device driver class used by Arduino sketches.</div><div class="ttdef"><b>Definition:</b> max30001g.h:34</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a048448116d8f1360b10d3c771d50f1d0"><div class="ttname"><a href="classMAX30001G.html#a048448116d8f1360b10d3c771d50f1d0">MAX30001G::setDefaultRtoR</a></div><div class="ttdeci">void setDefaultRtoR(void)</div><div class="ttdoc">Apply default RTOR settings and enable RTOR detection.</div><div class="ttdef"><b>Definition:</b> max30001g_configure_rtor.cpp:9</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a048db4a162e1cec673f32536d1feb2da"><div class="ttname"><a href="classMAX30001G.html#a048db4a162e1cec673f32536d1feb2da">MAX30001G::setECGgain</a></div><div class="ttdeci">void setECGgain(uint8_t gain)</div><div class="ttdoc">Set ECG PGA gain.</div><div class="ttdef"><b>Definition:</b> max30001g_configure_ecg.cpp:113</div></div>
@@ -664,8 +664,8 @@ $(document).ready(function(){initNavTree('max30001g_8h_source.html',''); initRes
 <div class="ttc" id="aclassMAX30001G_html_a05e061092d1bf2b0a8c5d67c43f6fe75"><div class="ttname"><a href="classMAX30001G.html#a05e061092d1bf2b0a8c5d67c43f6fe75">MAX30001G::setFIFOInterruptThreshold</a></div><div class="ttdeci">void setFIFOInterruptThreshold(uint8_t ecg, uint8_t bioz)</div><div class="ttdoc">Set FIFO threshold that triggers ECG/BIOZ FIFO interrupts.</div><div class="ttdef"><b>Definition:</b> max30001g_interrupt.cpp:555</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a07ed32e9c1c72670a312de79bed6f445"><div class="ttname"><a href="classMAX30001G.html#a07ed32e9c1c72670a312de79bed6f445">MAX30001G::clearLatchedStatusFlags</a></div><div class="ttdeci">void clearLatchedStatusFlags(void)</div><div class="ttdoc">Clear software-latched interrupt/fault flags.</div><div class="ttdef"><b>Definition:</b> max30001g_interrupt.cpp:90</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a0a3c4ad087494b74883dad3599a98ce3"><div class="ttname"><a href="classMAX30001G.html#a0a3c4ad087494b74883dad3599a98ce3">MAX30001G::setBIOZfilter</a></div><div class="ttdeci">void setBIOZfilter(uint8_t ahpf, uint8_t lpf, uint8_t hpf)</div><div class="ttdoc">Configure BIOZ analog and digital filters.</div><div class="ttdef"><b>Definition:</b> max30001g_configure_bioz.cpp:540</div></div>
-<div class="ttc" id="aclassMAX30001G_html_a0a6e10794e0cc425ddb9fdfa2ca3182c"><div class="ttname"><a href="classMAX30001G.html#a0a6e10794e0cc425ddb9fdfa2ca3182c">MAX30001G::stepBIOZScan</a></div><div class="ttdeci">void stepBIOZScan(void)</div><div class="ttdoc">Advance state-machine style BIOZ scan flow by one step.</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:1724</div></div>
-<div class="ttc" id="aclassMAX30001G_html_a0bf226974e982cf4c2a8083176796f77"><div class="ttname"><a href="classMAX30001G.html#a0bf226974e982cf4c2a8083176796f77">MAX30001G::scanBIOZ</a></div><div class="ttdeci">void scanBIOZ(uint8_t avg=2, bool fast=false, bool fourleads=false, bool fullRange=false)</div><div class="ttdoc">Run impedance scan using basic options.</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:2025</div></div>
+<div class="ttc" id="aclassMAX30001G_html_a0a6e10794e0cc425ddb9fdfa2ca3182c"><div class="ttname"><a href="classMAX30001G.html#a0a6e10794e0cc425ddb9fdfa2ca3182c">MAX30001G::stepBIOZScan</a></div><div class="ttdeci">void stepBIOZScan(void)</div><div class="ttdoc">Advance state-machine style BIOZ scan flow by one step.</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:1729</div></div>
+<div class="ttc" id="aclassMAX30001G_html_a0bf226974e982cf4c2a8083176796f77"><div class="ttname"><a href="classMAX30001G.html#a0bf226974e982cf4c2a8083176796f77">MAX30001G::scanBIOZ</a></div><div class="ttdeci">void scanBIOZ(uint8_t avg=2, bool fast=false, bool fourleads=false, bool fullRange=false)</div><div class="ttdoc">Run impedance scan using basic options.</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:2045</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a0f5c0838739dd1496323f84199a10055"><div class="ttname"><a href="classMAX30001G.html#a0f5c0838739dd1496323f84199a10055">MAX30001G::setDefaultBIOZTestSignal</a></div><div class="ttdeci">void setDefaultBIOZTestSignal(void)</div><div class="ttdoc">Apply default BIOZ voltage calibration signal settings.</div><div class="ttdef"><b>Definition:</b> max30001g_calibration.cpp:56</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a13272e7194982ff9a325309f25f7c70e"><div class="ttname"><a href="classMAX30001G.html#a13272e7194982ff9a325309f25f7c70e">MAX30001G::setDefaultECGTestSignal</a></div><div class="ttdeci">void setDefaultECGTestSignal(void)</div><div class="ttdoc">Apply default ECG voltage calibration signal settings.</div><div class="ttdef"><b>Definition:</b> max30001g_calibration.cpp:38</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a142395384adb4690fec6a05d2b984b07"><div class="ttname"><a href="classMAX30001G.html#a142395384adb4690fec6a05d2b984b07">MAX30001G::begin</a></div><div class="ttdeci">void begin(void)</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:215</div></div>
@@ -684,19 +684,19 @@ $(document).ready(function(){initNavTree('max30001g_8h_source.html',''); initRes
 <div class="ttc" id="aclassMAX30001G_html_a30f1fb7534ed4f9eb059aca955ff8a9c"><div class="ttname"><a href="classMAX30001G.html#a30f1fb7534ed4f9eb059aca955ff8a9c">MAX30001G::handleECGFifoInterrupt</a></div><div class="ttdeci">void handleECGFifoInterrupt(bool reportRaw=false)</div><div class="ttdoc">Convenience callback handler: read ECG FIFO.</div><div class="ttdef"><b>Definition:</b> max30001g_interrupt.cpp:338</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a31b0528337007a45b14fb6e1f79914b2"><div class="ttname"><a href="classMAX30001G.html#a31b0528337007a45b14fb6e1f79914b2">MAX30001G::clearInterruptAggregateCallback</a></div><div class="ttdeci">void clearInterruptAggregateCallback(void)</div><div class="ttdoc">Clear aggregate interrupt callback.</div><div class="ttdef"><b>Definition:</b> max30001g_interrupt.cpp:310</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a34810679ff936a4e8d847d47b7281642"><div class="ttname"><a href="classMAX30001G.html#a34810679ff936a4e8d847d47b7281642">MAX30001G::serviceAllInterrupts</a></div><div class="ttdeci">void serviceAllInterrupts(void)</div><div class="ttdoc">Read STATUS and update interrupt-driven global flags.</div><div class="ttdef"><b>Definition:</b> max30001g_interrupt.cpp:178</div></div>
-<div class="ttc" id="aclassMAX30001G_html_a46d342112180f5d06a2b7baa3653bbe4"><div class="ttname"><a href="classMAX30001G.html#a46d342112180f5d06a2b7baa3653bbe4">MAX30001G::enableAFE</a></div><div class="ttdeci">void enableAFE(bool ECG, bool BIOZ, bool RtoR)</div><div class="ttdoc">Enable or disable ECG, BIOZ, and R-to-R engines.</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:2531</div></div>
-<div class="ttc" id="aclassMAX30001G_html_a49c24dbbd3400e85adaad6fcdc66a8c5"><div class="ttname"><a href="classMAX30001G.html#a49c24dbbd3400e85adaad6fcdc66a8c5">MAX30001G::setInterrupt1</a></div><div class="ttdeci">bool setInterrupt1(bool ecg, bool bioz, bool rtor, bool leadon, bool leadoff, bool bioz_fourwire=false)</div><div class="ttdoc">Configure interrupt line INT1 event enables.</div><div class="ttdef"><b>Definition:</b> max30001g.h:523</div></div>
+<div class="ttc" id="aclassMAX30001G_html_a46d342112180f5d06a2b7baa3653bbe4"><div class="ttname"><a href="classMAX30001G.html#a46d342112180f5d06a2b7baa3653bbe4">MAX30001G::enableAFE</a></div><div class="ttdeci">void enableAFE(bool ECG, bool BIOZ, bool RtoR)</div><div class="ttdoc">Enable or disable ECG, BIOZ, and R-to-R engines.</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:2568</div></div>
+<div class="ttc" id="aclassMAX30001G_html_a49c24dbbd3400e85adaad6fcdc66a8c5"><div class="ttname"><a href="classMAX30001G.html#a49c24dbbd3400e85adaad6fcdc66a8c5">MAX30001G::setInterrupt1</a></div><div class="ttdeci">bool setInterrupt1(bool ecg, bool bioz, bool rtor, bool leadon, bool leadoff, bool bioz_fourwire=false)</div><div class="ttdoc">Configure interrupt line INT1 event enables.</div><div class="ttdef"><b>Definition:</b> max30001g.h:525</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a4b4cbd83f1ae09d97cb44082fd21bd54"><div class="ttname"><a href="classMAX30001G.html#a4b4cbd83f1ae09d97cb44082fd21bd54">MAX30001G::setInterruptAggregateCallback</a></div><div class="ttdeci">bool setInterruptAggregateCallback(InterruptCallback cb, void *context=nullptr, uint32_t statusMask=0x00FFFFFFUL)</div><div class="ttdoc">Register aggregate callback invoked for status bits matching a mask.</div><div class="ttdef"><b>Definition:</b> max30001g_interrupt.cpp:282</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a4e8fe380637b875cefe510e7b543760a"><div class="ttname"><a href="classMAX30001G.html#a4e8fe380637b875cefe510e7b543760a">MAX30001G::handleRtoRInterrupt</a></div><div class="ttdeci">void handleRtoRInterrupt(void)</div><div class="ttdoc">Convenience callback handler: read RTOR data.</div><div class="ttdef"><b>Definition:</b> max30001g_interrupt.cpp:346</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a4f7e63175e8a19e4e29e507b82fa5199"><div class="ttname"><a href="classMAX30001G.html#a4f7e63175e8a19e4e29e507b82fa5199">MAX30001G::setupECGandBIOZ</a></div><div class="ttdeci">void setupECGandBIOZ(uint8_t ecg_speed=1, uint8_t ecg_gain=2, bool ecg_threeleads=true, uint8_t bioz_speed=0, uint8_t bioz_gain=1, uint8_t bioz_dlpf=1, uint8_t bioz_dhpf=0, uint16_t bioz_frequency=8000, uint16_t bioz_current=8000, float bioz_phase=0.0f, bool leadbias=true, bool leadsoffdetect=false, bool bioz_fourleads=false)</div><div class="ttdoc">Configure simultaneous ECG and BIOZ operation.</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:1159</div></div>
-<div class="ttc" id="aclassMAX30001G_html_a528ac6f7ef02128a5e657fc01e992188"><div class="ttname"><a href="classMAX30001G.html#a528ac6f7ef02128a5e657fc01e992188">MAX30001G::stopBIOZScan</a></div><div class="ttdeci">void stopBIOZScan(void)</div><div class="ttdoc">Stop state-machine style BIOZ scan flow.</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:1622</div></div>
+<div class="ttc" id="aclassMAX30001G_html_a528ac6f7ef02128a5e657fc01e992188"><div class="ttname"><a href="classMAX30001G.html#a528ac6f7ef02128a5e657fc01e992188">MAX30001G::stopBIOZScan</a></div><div class="ttdeci">void stopBIOZScan(void)</div><div class="ttdoc">Stop state-machine style BIOZ scan flow.</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:1627</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a5522b4e5b4341f8873ea9825d15b376e"><div class="ttname"><a href="classMAX30001G.html#a5522b4e5b4341f8873ea9825d15b376e">MAX30001G::setupBIOZ</a></div><div class="ttdeci">void setupBIOZ(uint8_t speed=0, uint8_t gain=1, uint8_t ahpf=1, uint8_t dlpf=1, uint8_t dhpf=0, uint16_t frequency=40000, uint16_t current=8000, float phase=0.0f, bool leadbias=true, bool leadsoffdetect=false, bool fourleads=false)</div><div class="ttdoc">Configure a ready-to-use BIOZ profile.</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:602</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a5b3770c566b18b1af2f0277a385a412c"><div class="ttname"><a href="classMAX30001G.html#a5b3770c566b18b1af2f0277a385a412c">MAX30001G::readECG</a></div><div class="ttdeci">float readECG(bool reportRaw)</div><div class="ttdoc">Read one ECG FIFO sample.</div><div class="ttdef"><b>Definition:</b> max30001g_readdata.cpp:116</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a5dd72a27d89c172de93593dd03a6dfeb"><div class="ttname"><a href="classMAX30001G.html#a5dd72a27d89c172de93593dd03a6dfeb">MAX30001G::printConfig</a></div><div class="ttdeci">void printConfig(void)</div><div class="ttdef"><b>Definition:</b> max30001g_regs.cpp:70</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a63f538499fd05cfa9b6a91efe32b2359"><div class="ttname"><a href="classMAX30001G.html#a63f538499fd05cfa9b6a91efe32b2359">MAX30001G::setInterruptEventCallback</a></div><div class="ttdeci">bool setInterruptEventCallback(InterruptEvent event, InterruptCallback cb, void *context=nullptr)</div><div class="ttdoc">Register callback for one specific interrupt event.</div><div class="ttdef"><b>Definition:</b> max30001g_interrupt.cpp:266</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a64587ae92d875dbc57646ccf4aff72e1"><div class="ttname"><a href="classMAX30001G.html#a64587ae92d875dbc57646ccf4aff72e1">MAX30001G::setLeadsOnDetection</a></div><div class="ttdeci">void setLeadsOnDetection(bool enable)</div><div class="ttdoc">Enable/disable ultra-low-power lead-on detection.</div><div class="ttdef"><b>Definition:</b> max30001g_configure_leads.cpp:7</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a67505fafb95abde3e04f09608620ee16"><div class="ttname"><a href="classMAX30001G.html#a67505fafb95abde3e04f09608620ee16">MAX30001G::MAX30001G</a></div><div class="ttdeci">MAX30001G(uint8_t csPin, int intPin1=-1, int intPin2=-1)</div><div class="ttdoc">Construct a MAX30001G device instance.</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:90</div></div>
-<div class="ttc" id="aclassMAX30001G_html_a67c1e29e58abd5dc25655087bf025149"><div class="ttname"><a href="classMAX30001G.html#a67c1e29e58abd5dc25655087bf025149">MAX30001G::setInterrupt2</a></div><div class="ttdeci">bool setInterrupt2(bool ecg, bool bioz, bool rtor, bool leadon, bool leadoff, bool bioz_fourwire=false)</div><div class="ttdoc">Configure interrupt line INT2 event enables.</div><div class="ttdef"><b>Definition:</b> max30001g.h:537</div></div>
+<div class="ttc" id="aclassMAX30001G_html_a67c1e29e58abd5dc25655087bf025149"><div class="ttname"><a href="classMAX30001G.html#a67c1e29e58abd5dc25655087bf025149">MAX30001G::setInterrupt2</a></div><div class="ttdeci">bool setInterrupt2(bool ecg, bool bioz, bool rtor, bool leadon, bool leadoff, bool bioz_fourwire=false)</div><div class="ttdoc">Configure interrupt line INT2 event enables.</div><div class="ttdef"><b>Definition:</b> max30001g.h:539</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a69877a8d994c0477aeb5de8823038195"><div class="ttname"><a href="classMAX30001G.html#a69877a8d994c0477aeb5de8823038195">MAX30001G::setBIOZModulationFrequencybyIndex</a></div><div class="ttdeci">void setBIOZModulationFrequencybyIndex(uint8_t frequency_selector)</div><div class="ttdoc">Set BIOZ modulation frequency by FCGEN index.</div><div class="ttdef"><b>Definition:</b> max30001g_configure_bioz.cpp:278</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a6c03163386678b7dfdb27b8ef8d1f6df"><div class="ttname"><a href="classMAX30001G.html#a6c03163386678b7dfdb27b8ef8d1f6df">MAX30001G::setBIOZgain</a></div><div class="ttdeci">void setBIOZgain(uint8_t gain, bool lowNoise)</div><div class="ttdoc">Set BIOZ gain and front-end power/noise mode.</div><div class="ttdef"><b>Definition:</b> max30001g_configure_bioz.cpp:212</div></div>
 <div class="ttc" id="aclassMAX30001G_html_a72114313a301baf6d742efba99169bfb"><div class="ttname"><a href="classMAX30001G.html#a72114313a301baf6d742efba99169bfb">MAX30001G::setTestSignal</a></div><div class="ttdeci">void setTestSignal(bool enableECGCalSignal, bool enableBIOZCalSignal, bool unipolar, bool cal_vmag, uint8_t freq, uint8_t dutycycle)</div><div class="ttdoc">Configure calibration voltage source and waveform settings.</div><div class="ttdef"><b>Definition:</b> max30001g_calibration.cpp:96</div></div>
@@ -731,7 +731,7 @@ $(document).ready(function(){initNavTree('max30001g_8h_source.html',''); initRes
 <div class="ttc" id="aclassMAX30001G_html_ac9abc6858b9f6cc5d155d2088ec0853b"><div class="ttname"><a href="classMAX30001G.html#ac9abc6858b9f6cc5d155d2088ec0853b">MAX30001G::setFMSTR</a></div><div class="ttdeci">void setFMSTR(uint8_t fmstr)</div><div class="ttdoc">Set master clock selector and recompute timing globals.</div><div class="ttdef"><b>Definition:</b> max30001g_system.cpp:47</div></div>
 <div class="ttc" id="aclassMAX30001G_html_ace06fa8aad93b5b371bb6a5d47e8d96c"><div class="ttname"><a href="classMAX30001G.html#ace06fa8aad93b5b371bb6a5d47e8d96c">MAX30001G::readBIOZ_FIFO</a></div><div class="ttdeci">void readBIOZ_FIFO(bool reportRaw)</div><div class="ttdoc">Burst-read BIOZ FIFO samples.</div><div class="ttdef"><b>Definition:</b> max30001g_readdata.cpp:246</div></div>
 <div class="ttc" id="aclassMAX30001G_html_ace811866809e13c75cffeeb76b7c69aa"><div class="ttname"><a href="classMAX30001G.html#ace811866809e13c75cffeeb76b7c69aa">MAX30001G::setDefaultNoRtoR</a></div><div class="ttdeci">void setDefaultNoRtoR(void)</div><div class="ttdoc">Apply default RTOR settings with RTOR disabled.</div><div class="ttdef"><b>Definition:</b> max30001g_configure_rtor.cpp:36</div></div>
-<div class="ttc" id="aclassMAX30001G_html_ad68a63e2e6577cdc48690a9ee42646c3"><div class="ttname"><a href="classMAX30001G.html#ad68a63e2e6577cdc48690a9ee42646c3">MAX30001G::startBIOZScan</a></div><div class="ttdeci">void startBIOZScan(void)</div><div class="ttdoc">Start state-machine style BIOZ scan flow.</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:1608</div></div>
+<div class="ttc" id="aclassMAX30001G_html_ad68a63e2e6577cdc48690a9ee42646c3"><div class="ttname"><a href="classMAX30001G.html#ad68a63e2e6577cdc48690a9ee42646c3">MAX30001G::startBIOZScan</a></div><div class="ttdeci">void startBIOZScan(void)</div><div class="ttdoc">Start state-machine style BIOZ scan flow.</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:1613</div></div>
 <div class="ttc" id="aclassMAX30001G_html_ad79ecfb5f6393f12ce1e51d2bbbfe636"><div class="ttname"><a href="classMAX30001G.html#ad79ecfb5f6393f12ce1e51d2bbbfe636">MAX30001G::stop</a></div><div class="ttdeci">void stop(void)</div><div class="ttdoc">Stop active measurement engines.</div><div class="ttdef"><b>Definition:</b> max30001g.cpp:268</div></div>
 <div class="ttc" id="aclassMAX30001G_html_ad998a44c2584fb26d9a55b731ec25e3f"><div class="ttname"><a href="classMAX30001G.html#ad998a44c2584fb26d9a55b731ec25e3f">MAX30001G::InterruptCallback</a></div><div class="ttdeci">void(* InterruptCallback)(MAX30001G *device, uint32_t status, void *context)</div><div class="ttdef"><b>Definition:</b> max30001g.h:66</div></div>
 <div class="ttc" id="aclassMAX30001G_html_ada9bb98ec2675acf377a17fc608b69f9"><div class="ttname"><a href="classMAX30001G.html#ada9bb98ec2675acf377a17fc608b69f9">MAX30001G::FIFOReset</a></div><div class="ttdeci">void FIFOReset(void)</div><div class="ttdoc">Reset ECG and BIOZ FIFOs. Does not affect data already transferred to RingBuffer.</div><div class="ttdef"><b>Definition:</b> max30001g_readdata.cpp:66</div></div>
@@ -774,7 +774,7 @@ $(document).ready(function(){initNavTree('max30001g_8h_source.html',''); initRes
 <div class="ttc" id="amax30001g__regs__typedefs_8h_html"><div class="ttname"><a href="max30001g__regs__typedefs_8h.html">max30001g_regs_typedefs.h</a></div></div>
 <div class="ttc" id="amax30001g__typedefs_8h_html"><div class="ttname"><a href="max30001g__typedefs_8h.html">max30001g_typedefs.h</a></div></div>
 <div class="ttc" id="astructBIOZScanConfig_html"><div class="ttname"><a href="structBIOZScanConfig.html">BIOZScanConfig</a></div><div class="ttdoc">BIOZScanConfig configuration structure fields:</div><div class="ttdef"><b>Definition:</b> max30001g_typedefs.h:63</div></div>
-<div class="ttc" id="astructConfigSnapshot_html"><div class="ttname"><a href="structConfigSnapshot.html">ConfigSnapshot</a></div><div class="ttdoc">ConfigSnapshot structure for storing/restoring MAX30001G register configurations.</div><div class="ttdef"><b>Definition:</b> max30001g_typedefs.h:99</div></div>
+<div class="ttc" id="astructConfigSnapshot_html"><div class="ttname"><a href="structConfigSnapshot.html">ConfigSnapshot</a></div><div class="ttdoc">ConfigSnapshot structure for storing/restoring MAX30001G register configurations.</div><div class="ttdef"><b>Definition:</b> max30001g_typedefs.h:103</div></div>
 <div class="ttc" id="astructHealthCheckResult_html"><div class="ttname"><a href="structHealthCheckResult.html">HealthCheckResult</a></div><div class="ttdoc">HealthCheckResult structure for storing health check results.</div><div class="ttdef"><b>Definition:</b> max30001g_typedefs.h:39</div></div>
 <div class="ttc" id="astructImpedanceModel_html"><div class="ttname"><a href="structImpedanceModel.html">ImpedanceModel</a></div><div class="ttdoc">ImpedanceModel structure for storing impedance measurement results.</div><div class="ttdef"><b>Definition:</b> max30001g_typedefs.h:16</div></div>
 <div class="ttc" id="aunionmax30001__en__int__reg__t_html"><div class="ttname"><a href="unionmax30001__en__int__reg__t.html">max30001_en_int_reg_t</a></div><div class="ttdoc">EN_INT (0x02) and (0x03) page 43 we can attach two interrupt lines to functions of the MAX30001 multi...</div><div class="ttdef"><b>Definition:</b> max30001g_regs_typedefs.h:59</div></div>

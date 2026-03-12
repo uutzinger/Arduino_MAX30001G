@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">MAX30001G
-   &#160;<span id="projectnumber">main</span>
+   &#160;<span id="projectnumber">1.0.1</span>
    </div>
    <div id="projectbrief">Arduino library for MAX30001G ECG and BIOZ AFE</div>
   </td>
@@ -118,6 +118,8 @@ Public Attributes</h2></td></tr>
 <tr class="separator:a50341021c965a5c5ff7ed41fb50bf204"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a42634ee99e768e219295494e9031f67b"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBIOZScanConfig.html#a42634ee99e768e219295494e9031f67b">initial_current_nA</a></td></tr>
 <tr class="separator:a42634ee99e768e219295494e9031f67b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab801be3a2b996825625eb2f66451f243"><td class="memItemLeft" align="right" valign="top">uint16_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBIOZScanConfig.html#ab801be3a2b996825625eb2f66451f243">internal_resistor_ohm</a></td></tr>
+<tr class="separator:ab801be3a2b996825625eb2f66451f243"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a87ff5ee2e3de50a87eff2563e7b66a0d"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBIOZScanConfig.html#a87ff5ee2e3de50a87eff2563e7b66a0d">low_target_fraction</a></td></tr>
 <tr class="separator:a87ff5ee2e3de50a87eff2563e7b66a0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acc651e3648e56163c3ee2e7ffff39c94"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBIOZScanConfig.html#acc651e3648e56163c3ee2e7ffff39c94">max_retries</a></td></tr>
@@ -130,6 +132,8 @@ Public Attributes</h2></td></tr>
 <tr class="separator:a664475d516c4dd5c8e4d9e8915c15287"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab98f968b4bb1f7397ca8a3f7446f0361"><td class="memItemLeft" align="right" valign="top">uint16_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBIOZScanConfig.html#ab98f968b4bb1f7397ca8a3f7446f0361">timeout_margin_ms</a></td></tr>
 <tr class="separator:ab98f968b4bb1f7397ca8a3f7446f0361"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a044eb575fcf82d51bc1e143072c30186"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBIOZScanConfig.html#a044eb575fcf82d51bc1e143072c30186">use_internal_resistor</a></td></tr>
+<tr class="separator:a044eb575fcf82d51bc1e143072c30186"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="structBIOZScanConfig.html" title="BIOZScanConfig configuration structure fields:">BIOZScanConfig</a> configuration structure fields: </p>
@@ -271,6 +275,20 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="ab801be3a2b996825625eb2f66451f243"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab801be3a2b996825625eb2f66451f243">&#9670;&nbsp;</a></span>internal_resistor_ohm</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint16_t BIOZScanConfig::internal_resistor_ohm</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a87ff5ee2e3de50a87eff2563e7b66a0d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a87ff5ee2e3de50a87eff2563e7b66a0d">&#9670;&nbsp;</a></span>low_target_fraction</h2>
 
@@ -349,6 +367,20 @@ Public Attributes</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">uint16_t BIOZScanConfig::timeout_margin_ms</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a044eb575fcf82d51bc1e143072c30186"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a044eb575fcf82d51bc1e143072c30186">&#9670;&nbsp;</a></span>use_internal_resistor</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool BIOZScanConfig::use_internal_resistor</td>
         </tr>
       </table>
 </div><div class="memdoc">

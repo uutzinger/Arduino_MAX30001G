@@ -3,7 +3,7 @@
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = "MAX30001G"
 PROJECT_BRIEF          = "Arduino library for MAX30001G ECG and BIOZ AFE"
-PROJECT_NUMBER         = "main"
+PROJECT_NUMBER         = "1.0.1"
 OUTPUT_DIRECTORY       =
 CREATE_SUBDIRS         = NO
 ALLOW_UNICODE_NAMES    = YES

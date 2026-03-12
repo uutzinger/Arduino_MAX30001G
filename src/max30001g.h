@@ -295,6 +295,8 @@ public:
    * @details config.avg = 2                       number of samples to average at each frequency/phase point (1-8)
    * @details config.fast = false                  if true, use 60sps BIOZ sampling rate; otherwise use 30sps
    * @details config.fourleads = false             if true, use 4-wire BIOZ configuration; otherwise use 2-wire
+   * @details config.use_internal_resistor = false if true, scan the internal calibration resistor instead of external electrodes
+   * @details config.internal_resistor_ohm = 1000  nominal internal resistor selection, nearest supported value is used
    * @details config.max_retries = 4               number of retries per frequency/phase point if measurement is unsuccessful (0-3)
    * @details config.low_target_fraction = 0.10f   signal is low if below 10% of ADC range for current adjustment
    * @details config.high_target_fraction = 0.90f  signal is high if above 90% of ADC range for current adjustment

@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">MAX30001G
-   &#160;<span id="projectnumber">main</span>
+   &#160;<span id="projectnumber">1.0.1</span>
    </div>
    <div id="projectbrief">Arduino library for MAX30001G ECG and BIOZ AFE</div>
   </td>
@@ -1091,6 +1091,8 @@ Public Member Functions</h2></td></tr>
 <p>config.avg = 2 number of samples to average at each frequency/phase point (1-8)</p>
 <p>config.fast = false if true, use 60sps BIOZ sampling rate; otherwise use 30sps</p>
 <p>config.fourleads = false if true, use 4-wire BIOZ configuration; otherwise use 2-wire</p>
+<p>config.use_internal_resistor = false if true, scan the internal calibration resistor instead of external electrodes</p>
+<p>config.internal_resistor_ohm = 1000 nominal internal resistor selection, nearest supported value is used</p>
 <p>config.max_retries = 4 number of retries per frequency/phase point if measurement is unsuccessful (0-3)</p>
 <p>config.low_target_fraction = 0.10f signal is low if below 10% of ADC range for current adjustment</p>
 <p>config.high_target_fraction = 0.90f signal is high if above 90% of ADC range for current adjustment</p>

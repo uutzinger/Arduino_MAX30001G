@@ -66,8 +66,8 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "RingBuffer_8h.html",
-"max30001g__defs_8h.html#a68d1d3da23372906f69665b21cec2b1b",
-"unionmax30001__cnfg__bioz__lc__reg__t.html#a18d51f0dfe1caf56d0e88b6c5cd1e619"
+"max30001g__defs_8h.html#a688243863e89e54b954e6269e4787a8d",
+"unionmax30001__bioz__burst__reg__t.html#adf420efc6cc6cd22b3d6eedc3bcc8e7f"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

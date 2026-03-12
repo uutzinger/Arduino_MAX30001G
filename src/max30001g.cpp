@@ -1514,6 +1514,8 @@ void MAX30001G::setupBIOZScan(const BIOZScanConfig& config, bool reuseCurrents) 
  * avg:       number of samples to average at each frequency/phase point (1-8)
  * fast:      if true, use 60sps BIOZ sampling rate; otherwise use 30sps
  * fourleads: if true, use 4-wire BIOZ configuration; otherwise use 2-wire
+ * use_internal_resistor: if true, scan the internal calibration resistor instead of external electrodes
+ * internal_resistor_ohm: nominal internal resistor, nearest supported value is selected
  * max_retries: number of retries per frequency/phase point if measurement is unsuccessful (0-3)
  * low_target_fraction: signal is low if below 10% of ADC range for current adjustment
  * high_target_fraction: signal is high if above 90% of ADC range for current adjustment
@@ -1572,6 +1574,9 @@ void MAX30001G::setupBIOZScan(const BIOZScanConfig& config, bool reuseCurrents) 
   if (sanitized_config.initial_current_nA < 55) { sanitized_config.initial_current_nA = 55; }
   if (sanitized_config.initial_current_nA > 96000) { sanitized_config.initial_current_nA = 96000; }
   sanitized_config.initial_current_nA = closestCurrent(sanitized_config.initial_current_nA);
+
+  if (sanitized_config.internal_resistor_ohm < 625U) { sanitized_config.internal_resistor_ohm = 625U; }
+  if (sanitized_config.internal_resistor_ohm > 5000U) { sanitized_config.internal_resistor_ohm = 5000U; }
 
   _profile = PROFILE_BIOZ_SCAN;
   _configured = true;
@@ -1721,7 +1726,7 @@ float MAX30001G::biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, float
  *  - finalize and push spectrum to RingBuffer when all frequencies are completed or stop if error or user stopped the scan.
  */
 
- void MAX30001G::stepBIOZScan() {
+void MAX30001G::stepBIOZScan() {
   if (!_scanInProgress) {
     return;
   }
@@ -1736,6 +1741,7 @@ float MAX30001G::biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, float
   const uint8_t avg = _scanRuntimeConfig.avg;
   const bool fast = _scanRuntimeConfig.fast;
   const bool fourleads = _scanRuntimeConfig.fourleads;
+  const bool use_internal_resistor = _scanRuntimeConfig.use_internal_resistor;
 
   switch (_BIOZScanState) {
     case BIOZ_SCAN_INIT: {
@@ -1782,7 +1788,21 @@ float MAX30001G::biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, float
       }
 
       setDefaultNoTestSignal();
-      setDefaultNoBIOZTestImpedance();
+      if (use_internal_resistor) {
+        const uint16_t resistor = _scanRuntimeConfig.internal_resistor_ohm;
+        uint8_t rnom_value = 0U;
+        if      (resistor > 2500U) { rnom_value = 0U; }
+        else if (resistor > 1667U) { rnom_value = 1U; }
+        else if (resistor > 1250U) { rnom_value = 2U; }
+        else if (resistor > 1000U) { rnom_value = 3U; }
+        else if (resistor >  833U) { rnom_value = 4U; }
+        else if (resistor >  714U) { rnom_value = 5U; }
+        else if (resistor >  625U) { rnom_value = 6U; }
+        else                       { rnom_value = 7U; }
+        setBIOZTestImpedance(true, false, false, rnom_value, 0U, 0U);
+      } else {
+        setDefaultNoBIOZTestImpedance();
+      }
       setDefaultNoRtoR();
       setDefaultInterruptClearing();
 
@@ -2053,6 +2073,8 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
   uint8_t freq_start_index = config.freq_start_index;
   uint8_t freq_end_index = config.freq_end_index;
   int32_t initial_current_nA = config.initial_current_nA;
+  bool use_internal_resistor = config.use_internal_resistor;
+  uint16_t internal_resistor_ohm = config.internal_resistor_ohm;
 
   if (avg < 1U) { avg = 1U; }
   if (avg > 8U) { avg = 8U; }
@@ -2087,6 +2109,8 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
   if (initial_current_nA < 55) { initial_current_nA = 55; }
   if (initial_current_nA > 96000) { initial_current_nA = 96000; }
   initial_current_nA = closestCurrent(initial_current_nA);
+  if (internal_resistor_ohm < 625U) { internal_resistor_ohm = 625U; }
+  if (internal_resistor_ohm > 5000U) { internal_resistor_ohm = 5000U; }
 
   // Raw ADC target window for current adaptation.
   const float threshold_min = 524288.0f * low_target_fraction;
@@ -2154,7 +2178,20 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
   }
 
   setDefaultNoTestSignal();            // Disable ECG/BIOZ calibration (VCAL must be disabled for BIOZ impedance test).
-  setDefaultNoBIOZTestImpedance();      // Disable BIOZ impedance test mode.
+  if (use_internal_resistor) {
+    uint8_t rnom_value = 0U;
+    if      (internal_resistor_ohm > 2500U) { rnom_value = 0U; }
+    else if (internal_resistor_ohm > 1667U) { rnom_value = 1U; }
+    else if (internal_resistor_ohm > 1250U) { rnom_value = 2U; }
+    else if (internal_resistor_ohm > 1000U) { rnom_value = 3U; }
+    else if (internal_resistor_ohm >  833U) { rnom_value = 4U; }
+    else if (internal_resistor_ohm >  714U) { rnom_value = 5U; }
+    else if (internal_resistor_ohm >  625U) { rnom_value = 6U; }
+    else                                    { rnom_value = 7U; }
+    setBIOZTestImpedance(true, false, false, rnom_value, 0U, 0U);
+  } else {
+    setDefaultNoBIOZTestImpedance();      // Disable BIOZ impedance test mode.
+  }
   setDefaultNoRtoR();                   // Disable R-to-R (not needed for BIOZ scan, and may cause unwanted interrupts if enabled).
   setDefaultInterruptClearing();        // Clear on read for all interrupts, no FIFO count-based clearing.
 

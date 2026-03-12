@@ -1,7 +1,7 @@
 /******************************************************************************************************/
-// AFE44XX Test Program
+// MAX3001G Test Program
 // 
-// Allows User to Experiment with Settings for Pulse Oximeter AFE during runtime through terminal.
+// Allows User to Experiment with Settings for ECG and BIOZ MAX3001G AFE during runtime through terminal.
 //
 // In additions this program shows how to
 //   - Startup and Configure AFE
@@ -10,19 +10,14 @@
 //   - Read background subtracted IR and RED readings continously
 //
 // The AFE functions are organized into the following groups:
-//   - Photodiode receiver settings
-//     - Transimpedance amplifier feedback resistor and capacitor
-//     - Second amplifier stage gain
-//   - LED transmitter settings
-//     - Infrared and red LED power settings
-//   - Timing
-//     - Program timing settings from the AFE4490 datasheet
-//       Modify default settings by a linear factor but maintaining ADC reset pulse, sampling offset and conversion offset
-//     - Averaging of readings
-//   - All other hardware options
+//  - ECG: ECG related settings and functions
+//  - BIOZ: BIOZ related settings and functions
 //
-// Urs Utzinger 2024
+//
+// Urs Utzinger 2026
 /******************************************************************************************************/
+
+THIS IS NOT COMPLETED YET, PLEASE CHECK BACK LATER.
 
 // Includes
 // ---------

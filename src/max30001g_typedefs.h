@@ -64,6 +64,8 @@ struct BIOZScanConfig {
   uint8_t avg;
   bool fast;
   bool fourleads;
+  bool use_internal_resistor;
+  uint16_t internal_resistor_ohm;
   uint8_t max_retries;
   float low_target_fraction;
   float high_target_fraction;
@@ -79,6 +81,8 @@ struct BIOZScanConfig {
       : avg(2),
         fast(false),
         fourleads(false),
+        use_internal_resistor(false),
+        internal_resistor_ohm(1000),
         max_retries(4),
         low_target_fraction(0.10f),
         high_target_fraction(0.90f),

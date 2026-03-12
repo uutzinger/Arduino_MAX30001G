@@ -1,5 +1,8 @@
 var NAVTREEINDEX2 =
 {
+"unionmax30001__bioz__burst__reg__t.html#adf420efc6cc6cd22b3d6eedc3bcc8e7f":[2,0,5,1],
+"unionmax30001__bioz__burst__reg__t.html#ae92f1596a32e54532a0ba1c171e2fd4d":[2,0,5,0],
+"unionmax30001__cnfg__bioz__lc__reg__t.html":[2,0,6],
 "unionmax30001__cnfg__bioz__lc__reg__t.html#a18d51f0dfe1caf56d0e88b6c5cd1e619":[2,0,6,5],
 "unionmax30001__cnfg__bioz__lc__reg__t.html#a2006514be3086a46641388b9a482358d":[2,0,6,0],
 "unionmax30001__cnfg__bioz__lc__reg__t.html#a41c9a79d58952185f70e417d97ea4fda":[2,0,6,4],
