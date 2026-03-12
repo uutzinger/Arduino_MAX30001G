@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['maxim_2030001_20arduino_20library_887',['Maxim 30001 Arduino Library',['../index.html',1,'']]]
+  ['changelog_896',['Changelog',['../md_CHANGELOG.html',1,'index']]]
 ];

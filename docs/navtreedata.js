@@ -25,18 +25,7 @@
 var NAVTREE =
 [
   [ "MAX30001G", "index.html", [
-    [ "Maxim 30001 Arduino Library", "index.html", [
-      [ "Installation", "index.html#autotoc_md1", null ],
-      [ "Dependencies", "index.html#autotoc_md2", null ],
-      [ "Quick Start", "index.html#autotoc_md3", null ],
-      [ "Documentation", "index.html#autotoc_md4", null ],
-      [ "Hardware with MAX30001G", "index.html#autotoc_md5", null ],
-      [ "Contributing", "index.html#autotoc_md6", null ],
-      [ "License", "index.html#autotoc_md7", null ],
-      [ "Block Diagram of MAX 30001G", "index.html#autotoc_md8", null ],
-      [ "Input MUX ECG", "index.html#autotoc_md9", null ],
-      [ "Input MUX BIOZ", "index.html#autotoc_md10", null ]
-    ] ],
+    [ "Maxim 30001 Arduino Library", "index.html", "index" ],
     [ "Modules", "modules.html", "modules" ],
     [ "Classes", "annotated.html", [
       [ "Class List", "annotated.html", "annotated_dup" ],
@@ -67,7 +56,7 @@ var NAVTREEINDEX =
 [
 "RingBuffer_8h.html",
 "max30001g__defs_8h.html#a688243863e89e54b954e6269e4787a8d",
-"unionmax30001__bioz__burst__reg__t.html#adf420efc6cc6cd22b3d6eedc3bcc8e7f"
+"structHealthCheckResult.html#a2ba8467821edb0b61b23372d315cefc2"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['impedancemodel_445',['ImpedanceModel',['../structImpedanceModel.html',1,'']]],
-  ['impedancespectrum_446',['ImpedanceSpectrum',['../structImpedanceSpectrum.html',1,'']]]
+  ['impedancemodel_451',['ImpedanceModel',['../structImpedanceModel.html',1,'']]],
+  ['impedancespectrum_452',['ImpedanceSpectrum',['../structImpedanceSpectrum.html',1,'']]]
 ];

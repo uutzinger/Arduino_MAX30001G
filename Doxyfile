@@ -3,7 +3,7 @@
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = "MAX30001G"
 PROJECT_BRIEF          = "Arduino library for MAX30001G ECG and BIOZ AFE"
-PROJECT_NUMBER         = "1.0.1"
+PROJECT_NUMBER         = "1.0.2"
 OUTPUT_DIRECTORY       =
 CREATE_SUBDIRS         = NO
 ALLOW_UNICODE_NAMES    = YES
@@ -47,7 +47,7 @@ WARN_IF_UNDOCUMENTED   = NO
 WARN_IF_DOC_ERROR      = YES
 WARN_NO_PARAMDOC       = NO
 WARN_AS_ERROR          = NO
-INPUT                  = src README.md
+INPUT                  = src README.md CHANGELOG.md Interrupts.md "Global Variables.md"
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.h *.cpp *.md
 RECURSIVE              = YES
