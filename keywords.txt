@@ -1,22 +1,100 @@
 #######################################
-# Syntax Coloring Map
+# Syntax Coloring Map for Arduino IDE
 #######################################
 
 #######################################
 # Datatypes (KEYWORD1)
 #######################################
 
-Max30001	KEYWORD1
+MAX30001G	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
-#######################################
-# Instances (KEYWORD2)
-#######################################
 
-max30001	KEYWORD2
+begin	KEYWORD2
+end	KEYWORD2
+start	KEYWORD2
+stop	KEYWORD2
+update	KEYWORD2
+updateRaw	KEYWORD2
+
+setupECG	KEYWORD2
+setupBIOZ	KEYWORD2
+setupECGandBIOZ	KEYWORD2
+setupECGSignalCalibration	KEYWORD2
+setupBIOZSignalCalibration	KEYWORD2
+setupBIOZImpedanceCalibration	KEYWORD2
+setupBIOZExternalImpedanceCalibration	KEYWORD2
+scanBIOZ	KEYWORD2
+
+servicePendingInterrupts	KEYWORD2
+serviceAllInterrupts	KEYWORD2
+setInterrupt1	KEYWORD2
+setInterrupt2	KEYWORD2
+setInterruptEventCallback	KEYWORD2
+setInterruptAggregateCallback	KEYWORD2
+clearInterruptEventCallback	KEYWORD2
+clearInterruptAggregateCallback	KEYWORD2
+clearAllInterruptCallbacks	KEYWORD2
+clearLatchedStatusFlags	KEYWORD2
+handleECGFifoInterrupt	KEYWORD2
+handleBIOZFifoInterrupt	KEYWORD2
+handleRtoRInterrupt	KEYWORD2
+
+readECG_FIFO	KEYWORD2
+readBIOZ_FIFO	KEYWORD2
+readECG	KEYWORD2
+readBIOZ	KEYWORD2
+readRTOR	KEYWORD2
+FIFOReset	KEYWORD2
+
+setECGSamplingRate	KEYWORD2
+setECGfilter	KEYWORD2
+setECGgain	KEYWORD2
+setECGLeadPolarity	KEYWORD2
+setECGAutoRecovery	KEYWORD2
+setECGNormalRecovery	KEYWORD2
+startECGManualRecovery	KEYWORD2
+stopECGManualRecovery	KEYWORD2
+
+setBIOZSamplingRate	KEYWORD2
+setBIOZgain	KEYWORD2
+setBIOZModulationFrequencyByFrequency	KEYWORD2
+setBIOZModulationFrequencybyIndex	KEYWORD2
+setBIOZmag	KEYWORD2
+setBIOZPhaseOffsetbyIndex	KEYWORD2
+setBIOZPhaseOffsetbyPhase	KEYWORD2
+setBIOZfilter	KEYWORD2
+setBIOZmodulation	KEYWORD2
+setBIOZCurrentMonitor	KEYWORD2
+
+setLeadsOnDetection	KEYWORD2
+setLeadsOffDetection	KEYWORD2
+setLeadsBias	KEYWORD2
+setRtoR	KEYWORD2
+setDefaultRtoR	KEYWORD2
+setDefaultNoRtoR	KEYWORD2
+
+readAllRegisters	KEYWORD2
+printAllRegisters	KEYWORD2
+printStatus	KEYWORD2
+healthCheck	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
 #######################################
+
+IRQ_ECG_FIFO	LITERAL1
+IRQ_ECG_OVF	LITERAL1
+IRQ_ECG_FAST	LITERAL1
+IRQ_ECG_LEADOFF	LITERAL1
+IRQ_BIOZ_FIFO	LITERAL1
+IRQ_BIOZ_OVF	LITERAL1
+IRQ_BIOZ_OVER	LITERAL1
+IRQ_BIOZ_UNDER	LITERAL1
+IRQ_BIOZ_CGMON	LITERAL1
+IRQ_LEADS_ON	LITERAL1
+IRQ_RTOR	LITERAL1
+IRQ_PLL_UNLOCK	LITERAL1
+IRQ_EVENT_COUNT	LITERAL1

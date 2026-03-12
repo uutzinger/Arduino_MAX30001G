@@ -1,0 +1,27 @@
+var annotated_dup =
+[
+    [ "BIOZScanConfig", "structBIOZScanConfig.html", "structBIOZScanConfig" ],
+    [ "ConfigSnapshot", "structConfigSnapshot.html", "structConfigSnapshot" ],
+    [ "HealthCheckResult", "structHealthCheckResult.html", "structHealthCheckResult" ],
+    [ "ImpedanceModel", "structImpedanceModel.html", "structImpedanceModel" ],
+    [ "ImpedanceSpectrum", "structImpedanceSpectrum.html", "structImpedanceSpectrum" ],
+    [ "max30001_bioz_burst_reg_t", "unionmax30001__bioz__burst__reg__t.html", "unionmax30001__bioz__burst__reg__t" ],
+    [ "max30001_cnfg_bioz_lc_reg_t", "unionmax30001__cnfg__bioz__lc__reg__t.html", "unionmax30001__cnfg__bioz__lc__reg__t" ],
+    [ "max30001_cnfg_bioz_reg_t", "unionmax30001__cnfg__bioz__reg__t.html", "unionmax30001__cnfg__bioz__reg__t" ],
+    [ "max30001_cnfg_bmux_reg_t", "unionmax30001__cnfg__bmux__reg__t.html", "unionmax30001__cnfg__bmux__reg__t" ],
+    [ "max30001_cnfg_cal_reg_t", "unionmax30001__cnfg__cal__reg__t.html", "unionmax30001__cnfg__cal__reg__t" ],
+    [ "max30001_cnfg_ecg_reg", "unionmax30001__cnfg__ecg__reg.html", "unionmax30001__cnfg__ecg__reg" ],
+    [ "max30001_cnfg_emux_reg", "unionmax30001__cnfg__emux__reg.html", "unionmax30001__cnfg__emux__reg" ],
+    [ "max30001_cnfg_gen_reg_t", "unionmax30001__cnfg__gen__reg__t.html", "unionmax30001__cnfg__gen__reg__t" ],
+    [ "max30001_cnfg_rtor1_reg_t", "unionmax30001__cnfg__rtor1__reg__t.html", "unionmax30001__cnfg__rtor1__reg__t" ],
+    [ "max30001_cnfg_rtor2_reg_t", "unionmax30001__cnfg__rtor2__reg__t.html", "unionmax30001__cnfg__rtor2__reg__t" ],
+    [ "max30001_ecg_burst_reg", "unionmax30001__ecg__burst__reg.html", "unionmax30001__ecg__burst__reg" ],
+    [ "max30001_en_int_reg_t", "unionmax30001__en__int__reg__t.html", "unionmax30001__en__int__reg__t" ],
+    [ "max30001_info_reg", "unionmax30001__info__reg.html", "unionmax30001__info__reg" ],
+    [ "max30001_mngr_dyn_reg_t", "unionmax30001__mngr__dyn__reg__t.html", "unionmax30001__mngr__dyn__reg__t" ],
+    [ "max30001_mngr_int_reg_t", "unionmax30001__mngr__int__reg__t.html", "unionmax30001__mngr__int__reg__t" ],
+    [ "max30001_rtor_reg", "unionmax30001__rtor__reg.html", "unionmax30001__rtor__reg" ],
+    [ "max30001_status_reg_t", "unionmax30001__status__reg__t.html", "unionmax30001__status__reg__t" ],
+    [ "MAX30001G", "classMAX30001G.html", "classMAX30001G" ],
+    [ "RingBuffer", "classRingBuffer.html", "classRingBuffer" ]
+];

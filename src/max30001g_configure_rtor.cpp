@@ -2,10 +2,7 @@
 // Configure RtoR
 /******************************************************************************************************/
 #include "logger.h"      // Logging 
-#include "max30001g_globals.h"
-#include "max30001g_defs.h" // MAX30001G
-#include "max30001g_comm.h" // SPI communication
-#include "max30001g_configure_rtor.h"
+#include "max30001g.h"
 
 /******************************************************************************************************/
 
@@ -13,13 +10,13 @@ void MAX30001G::setDefaultRtoR() {
   /*
     Sets default values for R-to-R detection.
     - enable: true
-    - ptsf: 0b0011   (4) (4/16) 
+    - ptsf: 0b0011   (4/16) 
       This is the fraction of the Peak Average value used in the Threshold computation.
-    - ptsf: 0b0110   (6) is also a common value for the threshold.
+    - ptsf: 0b0101   (6/16) is also a common value for the threshold.
     - pavg: 0b10     (8) default but 2 might also be used, how many past peak values are used to update peak thershold
       This is the weighting factor for the current R-to-R peak observation vs. past peak observations when determining peak thresholds.
     - gain: 0b1111   (Auto-Scale)
-    - wndw: 0b011    12 (96ms)
+    - wndw: 0b0011   12xRTOR_RES (~96ms)
     - hoff: 0b100000 (32)
     - ravg: 0b10     (8)
     - rhsf: 0b100    (4/8)
@@ -29,7 +26,7 @@ void MAX30001G::setDefaultRtoR() {
       0b0011,    // ptsf: Peak Threshold Scaling Factor (4/16)
       0b10,      // pavg: Peak Averaging Weight Factor (8)
       0b1111,    // gain: Auto-Scale
-      0b011,     // wndw: Window width (96ms)
+      0b0011,    // wndw: Window width (12 x RTOR_RES, ~96ms)
       0b100000,  // hoff: Minimum Hold Off
       0b10,      // ravg: Interval Averaging Weight Factor (8)
       0b100      // rhsf: Interval Hold Off Scaling Factor (4/8)
@@ -40,11 +37,11 @@ void MAX30001G::setDefaultNoRtoR() {
   /*
     Sets default values for R-to-R detection.
     - enable: false
-    - ptsf: 0b0011   (4) (4/16)
-    - ptsf: 0b0110   (6) is also a common value for the threshold.
+    - ptsf: 0b0011   (4/16)
+    - ptsf: 0b0101   (6/16) is also a common value for the threshold.
     - pavg: 0b10     (8) default but (2) might also be used.
     - gain: 0b1111   (Auto-Scale)
-    - wndw: 0b011    12 (96ms)
+    - wndw: 0b0011   12xRTOR_RES (~96ms)
     - hoff: 0b100000 (32)
     - ravg: 0b10     (8)
     - rhsf: 0b100    (4/8)
@@ -54,7 +51,7 @@ void MAX30001G::setDefaultNoRtoR() {
       0b0011,    // ptsf: Peak Threshold Scaling Factor (4/16)
       0b10,      // pavg: Peak Averaging Weight Factor (8)
       0b1111,    // gain: Auto-Scale
-      0b011,     // wndw: Window width (96ms)
+      0b0011,    // wndw: Window width (12 x RTOR_RES, ~96ms)
       0b100000,  // hoff: Minimum Hold Off
       0b10,      // ravg: Interval Averaging Weight Factor (8)
       0b100      // rhsf: Interval Hold Off Scaling Factor (4/8)
@@ -75,17 +72,17 @@ void MAX30001G::setRtoR(bool enable, uint8_t ptsf, uint8_t pavg, uint8_t gain, u
   - ptsf: Peak Threshold Scaling Factor    (0 to 15).
   - pavg: Peak Averaging Weight Factor     (0 to  3).
   - gain: Gain setting for RtoR            (0 to 15).
-  - wndw: Width of the averaging window    (0 to 15).
+  - wndw: Width of the averaging window    (0 to 11, 12..15 reserved).
   - hoff: Minimum Hold Off                 (0 to 63).
   - ravg: Interval Averaging Weight Factor (0 to  3).
   - rhsf: Interval Hold Off Scaling Factor (0 to  7).
   
   For example:
   - enable: true
-  - ptsf: A value of       4 (1/16) might be typical for the threshold.
+  - ptsf: A value of       3 (4/16) might be typical for the threshold.
   - pavg: A value of    0b10 (8) for some averaging.
   - gain: A value of  0b1111 for autoscale.
-  - wndw: A value of      12 (96ms) for the window width.
+  - wndw: A value of  0b0011 (12 x RTOR_RES, ~96ms) for the window width.
   - hoff: A value of      32 for the hold off.
   - ravg: A value of    0b10 (8) for scaling factor.
   - rhsf: A value of   0b100 (4/8) for hold off scaling factor.
@@ -93,7 +90,7 @@ void MAX30001G::setRtoR(bool enable, uint8_t ptsf, uint8_t pavg, uint8_t gain, u
   cnfg_rtor1.bit.wndw
     This is the width of the averaging window, which adjusts the algorithm sensitivity 
     to the width of the QRS complex.
-    R-to-R Window Averaging (Window Width = WNDW[3:0]*8ms) 
+    R-to-R Window Averaging (coded values map to the widths below):
       0000 =  6 x RTOR_RES
       0001 =  8 x RTOR_RES
       0010 = 10 x RTOR_RES
@@ -183,16 +180,24 @@ void MAX30001G::setRtoR(bool enable, uint8_t ptsf, uint8_t pavg, uint8_t gain, u
   if (ptsf > 15)  ptsf = 15; // Peak Threshold Scaling Factor    (0 to 15).
   if (pavg > 3)   pavg =  3; // Peak Averaging Weight Factor     (0 to  3).
   if (gain > 15)  gain = 15; // Gain setting for RtoR            (0 to 15).
-  if (wndw > 15)  wndw = 15; // Width of the averaging window    (0 to 15).
+  if (wndw > 11) {
+    LOGW("WNDW values 12..15 are reserved; clamping WNDW to 11.");
+    wndw = 11; // Width of the averaging window (0..11 valid)
+  }
   if (hoff > 63)  hoff = 63; // Minimum Hold Off                 (0 to 63).
   if (ravg > 3)   ravg =  3; // Interval Averaging Weight Factor (0 to  3).
   if (rhsf > 7)   rhsf =  7; // Interval Hold Off Scaling Factor (0 to  7).
+
+  cnfg_gen.all = readRegister24(MAX30001_CNFG_GEN);
+  if (enable && !cnfg_gen.bit.en_ecg) {
+    LOGW("EN_RTOR requires EN_ECG=1. RTOR stays disabled until ECG channel is enabled.");
+  }
 
   // Read the current rtor1 settings
   cnfg_rtor1.all = readRegister24(MAX30001_CNFG_RTOR1);
 
   // Apply RtoR detection
-  cnfg_rtor1.bit.en_rtor = enable; // Enable or disable RtoR detection
+  cnfg_rtor1.bit.en_rtor = enable ? 1U : 0U; // Enable or disable RtoR detection
 
   if (enable) {
    

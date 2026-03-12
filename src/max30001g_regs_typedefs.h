@@ -25,12 +25,12 @@ typedef union
 
     uint32_t pllint    : 1; //  8   PLL unlock interrupt
     uint32_t samp      : 1; //  9   sample synchronization pulse
-    uint32_t print     : 1; // 10   ECG R2R detection interrupt
+    uint32_t rrint     : 1; // 10   ECG R2R detection interrupt
     uint32_t lonint    : 1; // 11   Ultra low power leads on detection interrupt
 
-    uint32_t pedge     : 1; // 12 * not described in the datasheet
-    uint32_t povf      : 1; // 13 *
-    uint32_t print     : 1; // 14 *
+    uint32_t pedge     : 1; // 12   not discribed in datasheet
+    uint32_t povf      : 1; // 13   "
+    uint32_t print     : 1; // 14   "
     uint32_t bcgmon    : 1; // 15   BIOZ current monitor
 
     uint32_t bundr     : 1; // 16   BIOZ under range
@@ -43,9 +43,9 @@ typedef union
     uint32_t eovf      : 1; // 22   ECG FIFO overflow
     uint32_t eint      : 1; // 23   ECG FIFO interrupt
 
-    uint32_t reserved3 : 8; //24-31
+    uint32_t reserved6 : 8; //24-31
 
-  } bits;
+  } bit;
 
 } max30001_status_reg_t;
 
@@ -60,7 +60,7 @@ typedef union
   uint32_t all;
   struct
   {
-    uint32_t int_type     : 2; // 0,1   interrupt type, 00 disabled, CMOS, OpenDrain, OpenDrain with internal pull up
+    uint32_t intb_type    : 2; // 0,1   interrupt type, 00 disabled, CMOS, OpenDrain, OpenDrain with internal pull up
     uint32_t reserved1    : 6; // 2-7
     uint32_t en_pllint    : 1; // 8     PLL unlock interrupt enable
     uint32_t en_samp      : 1; // 9     sample synchronization pulse enable
@@ -76,7 +76,7 @@ typedef union
     uint32_t en_fstint    : 1; // 21    ECG fast recovery interrupt enable
     uint32_t en_eovf      : 1; // 22    ECG FIFO overflow interrupt enable
     uint32_t en_eint      : 1; // 23    ECG FIFO interrupt enable
-    uint32_t reserved3    : 8  // 24-31
+    uint32_t reserved3    : 8; // 24-31
   } bit;
 } max30001_en_int_reg_t;
 
@@ -92,14 +92,14 @@ typedef union
   {
     uint32_t samp_it   : 2; //  0,1  sample synchronization pulse frequency
     uint32_t clr_samp  : 1; //  2    sample synchronization pulse clear behavior
-    uint32_t clr_pedge : 1; //  3 *
+    uint32_t clr_pedge : 1; //  3    not described in datasheet
     uint32_t clr_rrint : 2; //  4,5  RTOR R peak detection clear behavior
     uint32_t clr_fast  : 1; //  6,   fast mode interrupt clear behavior
-    uint32_t reserved1 : 1; //  7
-    uint32_t reserved2 : 4; //  8-11
-    uint32_t reserved3 : 4; // 12-15
-    uint32_t b_fit     : 3; // 16-18 BIOZ interrupt treshold
-    uint32_t e_fit     : 5; // 19-23 ECG interrupt treshold
+    uint32_t reserved2 : 1; //  7
+    uint32_t reserved3 : 4; //  8-11
+    uint32_t reserved4 : 4; // 12-15
+    uint32_t b_fit     : 3; // 16-18 BIOZ interrupt threshold
+    uint32_t e_fit     : 5; // 19-23 ECG interrupt threshold
     uint32_t reserved  : 8; // 24-31
   } bit;
 
@@ -139,7 +139,7 @@ typedef union max30001_info_reg
     uint32_t n3        : 4; //  8-11 might randomly vary
     uint32_t c1        : 2; // 12-13 should be 0b01
     uint32_t n4        : 2; // 14-15 might vary randomly
-    uint32_t revision  : 4; // 16-19 should be b0101
+    uint32_t revision  : 4; // 16-19 should be 0x4
     uint32_t c2        : 4; // 20-23
     uint32_t reserved  : 8; // 24-31
 
@@ -166,12 +166,12 @@ typedef union
     uint32_t en_dcloff  : 2; // 12,13 lead off enable
     uint32_t en_bloff   : 2; // 14,15 BIOZ lead off enable
     uint32_t reserved1  : 1; // 16
-    uint32_t en_pace    : 1; // 17 *  not in the datasheet
+    uint32_t en_pace    : 1; // 17    not described in datasheet
     uint32_t en_bioz    : 1; // 18    enable BIOZ channel
     uint32_t en_ecg     : 1; // 19    enable ECG channel
     uint32_t fmstr      : 2; // 20,21 master clock frequency
     uint32_t en_ulp_lon : 2; // 22,23 ultra low power lead on detection
-    uint32_t reserved   : 8; // 24-31
+    uint32_t reserved3  : 8; // 24-31
   } bit;
 
 } max30001_cnfg_gen_reg_t;
@@ -310,7 +310,7 @@ typedef union
     uint32_t lc2x       : 1; // 19    Bioz low current 2x mode enable
     uint32_t reserved3  : 3; // 20-22
     uint32_t hi_lob     : 1; // 23    Bioz high or low current mode selection
-    uint32_t reserved3  : 8; // 24-31 
+    uint32_t reserved4  : 8; // 24-31 
   } bit;
 
 } max30001_cnfg_bioz_lc_reg_t;
@@ -406,4 +406,3 @@ typedef union max30001_rtor_reg
 } max30001_rtor_reg_t;
 
 #endif
-

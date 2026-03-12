@@ -1,11 +1,64 @@
 /******************************************************************************************************/
 // Reading Data
 /******************************************************************************************************/
-#include "logger.h"         // Logging 
-#include "max30001g_globals.h"
-#include "max30001g_defs.h" // MAX30001G
-#include "max30001g_comm.h" // SPI communication
-#include "max30001g_readdata.h"
+#include <Arduino.h>
+#include <math.h>
+#include <limits>
+#include "logger.h"
+#include "max30001g.h"
+
+namespace {
+
+constexpr uint8_t ECG_TAG_VALID      = 0b000;
+constexpr uint8_t ECG_TAG_FAST       = 0b001;
+constexpr uint8_t ECG_TAG_VALID_EOF  = 0b010;
+constexpr uint8_t ECG_TAG_FAST_EOF   = 0b011;
+constexpr uint8_t ECG_TAG_EMPTY      = 0b110;
+constexpr uint8_t ECG_TAG_OVERFLOW   = 0b111;
+
+constexpr uint8_t BIOZ_TAG_VALID      = 0b000;
+constexpr uint8_t BIOZ_TAG_RANGE      = 0b001;
+constexpr uint8_t BIOZ_TAG_VALID_EOF  = 0b010;
+constexpr uint8_t BIOZ_TAG_RANGE_EOF  = 0b011;
+constexpr uint8_t BIOZ_TAG_EMPTY      = 0b110;
+constexpr uint8_t BIOZ_TAG_OVERFLOW   = 0b111;
+
+inline int32_t signExtend(uint32_t value, uint8_t bitWidth) {
+  const uint32_t signBit = 1UL << (bitWidth - 1U);
+  const uint32_t mask    = (1UL << bitWidth) - 1UL;
+  value &= mask;
+  return static_cast<int32_t>((value ^ signBit) - signBit);
+}
+
+inline float ecgCodeToMilliVolt(int32_t code) {
+  //   V_ECG (mV) = ADC x VREF / (2^17 x ECG_GAIN): ECG_GAIN is 20V/V, 40V/V, 80V/V or 160V/V. 
+  const float denom = static_cast<float>(131072.0f * static_cast<float>(ECG_gain));
+  if (denom == 0.0f) {
+    return std::numeric_limits<float>::infinity();
+  }
+  return (static_cast<float>(code) * static_cast<float>(V_ref)) / denom;
+}
+
+inline float biozCodeToOhm(int32_t code) {  
+  // BioZ (Ω) = ADC x VREF / (2^19 x BIOZ_CGMAG x BIOZ_GAIN)
+  //   BIOZ_CGMAG is 55 to 96000 nano A, set by CNFG_BIOZ and CNFG_BIOZ_LC 
+  //   BIOZ_GAIN = 10V/V, 20V/V, 40V/V, or 80V/V. BIOZ_GAIN are set in CNFG_BIOZ (0x18).
+  const float denom = 524288.0f * static_cast<float>(BIOZ_cgmag) * static_cast<float>(BIOZ_gain) * 1e-9f;
+  if (denom == 0.0f) {
+    return std::numeric_limits<float>::infinity();
+  }
+  return (static_cast<float>(code) * static_cast<float>(V_ref)) / denom;
+}
+
+inline bool isEcgTagWithSample(uint8_t tag) {
+  return (tag == ECG_TAG_VALID || tag == ECG_TAG_FAST || tag == ECG_TAG_VALID_EOF || tag == ECG_TAG_FAST_EOF);
+}
+
+inline bool isBiozTagWithSample(uint8_t tag) {
+  return (tag == BIOZ_TAG_VALID || tag == BIOZ_TAG_RANGE || tag == BIOZ_TAG_VALID_EOF || tag == BIOZ_TAG_RANGE_EOF);
+}
+
+} // namespace
 
 /******************************************************************************************************/
 // FIFO Data Handling
@@ -13,285 +66,260 @@
 void MAX30001G::FIFOReset(void) {
   /*
    * Resets the ECG and BIOZ FIFOs by writing to the FIFO_RST register.
-   * Does not affect measurement process not affected
+   * Does not affect the ECG/BIOZ conversion engines.
    */
-
-  status.all = readRegister(MAX30001_STATUS);
-  if (this-status.bit.eovf == 1 || status.bit.bovf == 1) {
-    LOGE("MAX30001G: FIFO overflow reset failed, overflow flags are still set.");
-  } else {
-    LOGD("MAX30001G: FIFO overflow reset successful, overflow flags are cleared.");
-  }
-
-  // FIFO_RST register (0x0A) is used to reset both ECG and BIOZ FIFOs.
-  LOGD("MAX30001G: Resetting ECG and BIOZ FIFOs.");
-
-  // Write to the FIFO_RST register (0x0A) to reset the FIFO pointers
   writeRegister(MAX30001_FIFO_RST, 0x000000);
 
+  // Read/latch STATUS after reset so software flags are not lost by clear-on-read behavior.
+  readStatusAndLatchFlags();
+  if (status.bit.eovf || status.bit.bovf) {
+    LOGW("MAX30001G: FIFO reset issued, but overflow bits remain set (STATUS=0x%06lX).",
+         (unsigned long)(status.all & 0x00FFFFFFUL));
+  } else {
+    LOGD("MAX30001G: FIFO reset successful.");
+  }
 }
 
 /******************************************************************************************************/
 // R to R reading
 /******************************************************************************************************/
-
-void MAX30001G::readHRandRR(void) {
-/*
- * Read the RTOR register to calculate the heart rate and RR interval
- *   Call this routine when RTOR interrupt occured
- */
+void MAX30001G::readRTOR(void) {
+  /*
+   * Read the RTOR register to calculate RR interval.
+   * Call this when RRINT was asserted.
+   */
+  rtor_counter = 0;
+  max30001_rtor_reg_t rtor;
   rtor.all = readRegister24(MAX30001_RTOR);
-  rr_interval = float(rtor.data) * RtoR_resolution; // in [ms]
-  heart_rate = 60000./rr_interval; // in beats per minute 
+
+  const uint16_t intervalCounts = static_cast<uint16_t>(rtor.bit.data);
+  rr_interval = static_cast<float>(intervalCounts) * RtoR_resolution; // [ms]
+
+  if (intervalCounts == 0U || intervalCounts == 0x3FFFU || rr_interval <= 0.0f) {
+    // 0x3FFF indicates overflow condition in RTOR timing counter.
+    rr_interval = 0.0f;
+  }
+
+  if (RTOR_data.push(rr_interval) == 1U) {
+    rtor_counter = 1;
+  } else {
+    LOGE("RTOR ring buffer full; sample dropped.");
+  }
+
+  // Consume software-latched RTOR event state once data was read.
+  rtor_available = false;
 }
 
 /******************************************************************************************************/
-// ECG and BIOZ reading
+// Single-sample ECG and BIOZ reading
 /******************************************************************************************************/
-
 float MAX30001G::readECG(bool reportRaw) {
- /*
-  * Read the ECG data register
-  */
-  
-  max30001_ecg_burst_t ecg_data; // FIFO burst and regular read have same register structure
-  float fdata;
+  max30001_ecg_burst_reg_t ecg_data;
+  ecg_data.all = readRegister24(MAX30001_ECG_FIFO);
 
-  ecg_data = readRegister24(MAX30001_ECG_FIFO);
+  const uint8_t tag = static_cast<uint8_t>(ecg_data.bit.etag);
+  EOF_detected = (tag == ECG_TAG_VALID_EOF || tag == ECG_TAG_FAST_EOF || tag == ECG_TAG_EMPTY);
 
-  readStatusRegisters();
-
-  LOGD("ECG Tag: %3u", ecg_data.bit.etag);
-
-  if (ecg_data.bit.etag == 0 || ecg_data.bit.etag == 2) {     // 0,2 are valid samples
-    int32_t sdata = (int32_t)(ecg_data.bit.data << 14) >> 14; // Sign extend the data 20 bit
-    if (reportRaw) {
-      fdata = float(sdata);
-    } else {
-      //   V_ECG (mV) = ADC x VREF / (2^17 x ECG_GAIN): ECG_GAIN is 20V/V, 40V/V, 80V/V or 160V/V. 
-      fdata = float(sdata * V_ref) / float(131072 * ECG_gain);
-    }
-  } else {
-    fdata = INFINITY; //
-    sdata = INT32_MAX;   // 
+  if (tag == ECG_TAG_OVERFLOW) {
+    ecg_overflow_occurred = true;
+    valid_data_detected = false;
+    FIFOReset();
+    return std::numeric_limits<float>::infinity();
   }
-  LOGD("ECG Sample: %.2f [mV] %d", fdata, sdata)
 
-  // over_voltage_detected;
-  // under_voltage_detected;
-  // valid_data_detected;
-  // EOF_detected;
-
-  switch (ecg_data.bit.btag) {
-  
-    case 0b000: // valid
-      valid_data_detected = true;
-      break;
-    case 0b001: // transient
-      valid_data_detected = false;
-      break;
-    case 0b010: // valid and last sample in FIFO
-      valid_data_detected = true;
-      EOF_data_detected = true;
-      break;
-    case 0b011: // last and transient sample in FIFO
-      valid_data_detected = false;
-      EOF_data_detected = true;
-      break;
-    case 0b110: // attempt to read empty FIFO
-      valid_data_detected = false;
-      EOF_data_detected = true;
-      break;
-    case 0b111: // FIFO overflow occurred
-      valid_data_detected = false;
-      FIFOReset();
-    default:
-      valid_data_detected = false;
-      EOF_data_detected = false;
-      LOGE("Invalid btag value: %d", bioz_data.bit.btag);
-      break
+  if (!isEcgTagWithSample(tag)) {
+    valid_data_detected = false;
+    return std::numeric_limits<float>::infinity();
   }
-    
+
+  const int32_t sdata = signExtend(ecg_data.bit.data, 18);
+  const float fdata = reportRaw ? static_cast<float>(sdata) : ecgCodeToMilliVolt(sdata);
+  valid_data_detected = (tag == ECG_TAG_VALID || tag == ECG_TAG_VALID_EOF);
+
+  LOGD("ECG Tag: %u, Sample: %.3f", tag, fdata);
   return fdata;
 }
 
 float MAX30001G::readBIOZ(bool reportRaw) {
-/*
- * Read the BIOZ data register
- */
-  
-  max30001_bioz_burst_t bioz_data; // FIFO burst and regular read have same register structure
-  float fdata;
+  max30001_bioz_burst_reg_t bioz_data;
+  bioz_data.all = readRegister24(MAX30001_BIOZ_FIFO);
 
-  bioz_data = readRegister24(MAX30001_BIOZ_FIFO);
-  readStatusRegisters();
+  const uint8_t tag = static_cast<uint8_t>(bioz_data.bit.btag);
+  EOF_detected = (tag == BIOZ_TAG_VALID_EOF || tag == BIOZ_TAG_RANGE_EOF || tag == BIOZ_TAG_EMPTY);
 
-  LOGD("BIOZ Tag: %3u", bioz_data.bit.btag);
-
-  if (bioz_data.bit.btag == 0 || bioz_data.bit.btag == 2) {     // 0,2 are valid samples
-    int32_t sdata = (int32_t)(bioz_data.bit.data << 12) >> 12; // Sign extend the data 20 bit
-    if (reportRaw) {
-      fdata = float(sdata);
-    } else {
-      // Fill the buffer with calibrated values
-      // BioZ (Ω) = ADC x VREF / (2^19 x BIOZ_CGMAG x BIOZ_GAIN)
-      //   BIOZ_CGMAG is 55 to 96000 nano A, set by CNFG_BIOZ and CNFG_BIOZ_LC 
-      //   BIOZ_GAIN = 10V/V, 20V/V, 40V/V, or 80V/V. BIOZ_GAIN are set in CNFG_BIOZ (0x18).
-      fdata = float(sdata * V_ref) / (float(524288* BIOZ_cgmag * BIOZ_gain) * 1e-9); // in Ω
-    }
-  } else {
-    fdata = INFINITY; //
-    sdata = INT32_MAX;   // 
+  if (tag == BIOZ_TAG_OVERFLOW) {
+    bioz_overflow_occurred = true;
+    valid_data_detected = false;
+    FIFOReset();
+    return std::numeric_limits<float>::infinity();
   }
-  LOGD("BIOZ Sample: %.2f [Ohm] %d", fdata, sdata)
 
-  // over_voltage_detected;
-  // under_voltage_detected;
-  // valid_data_detected;
-  // EOF_detected;
-
-  switch (bioz_data.bit.btag) {
-  
-    case 0b000: // valid
-      valid_data_detected = true;
-      break;
-    case 0b001: // transient
-      valid_data_detected = false;
-      break;
-    case 0b010: // valid and last sample in FIFO
-      valid_data_detected = true;
-      EOF_data_detected = true;
-      break;
-    case 0b011: // last and transient sample in FIFO
-      valid_data_detected = false;
-      EOF_data_detected = true;
-      break;
-    case 0b110: // attempt to read empty FIFO
-      valid_data_detected = false;
-      EOF_data_detected = true;
-      break;
-    case 0b111: // FIFO overflow occurred
-      valid_data_detected = false;
-      FIFOReset();
-    default:
-      valid_data_detected = false;
-      EOF_data_detected = false;
-      LOGE("Invalid btag value: %d", bioz_data.bit.btag);
-      break
+  if (!isBiozTagWithSample(tag)) {
+    valid_data_detected = false;
+    return std::numeric_limits<float>::infinity();
   }
-    
+
+  const int32_t sdata = signExtend(bioz_data.bit.data, 20);
+  const float fdata = reportRaw ? static_cast<float>(sdata) : biozCodeToOhm(sdata);
+  valid_data_detected = (tag == BIOZ_TAG_VALID || tag == BIOZ_TAG_VALID_EOF);
+
+  // Update range flags from STATUS when range-indicating tags are present.
+  if (tag == BIOZ_TAG_RANGE || tag == BIOZ_TAG_RANGE_EOF) {
+    readStatusAndLatchFlags();
+  }
+
+  LOGD("BIOZ Tag: %u, Sample: %.3f", tag, fdata);
   return fdata;
 }
 
-/* BURST READ */ 
-/* -------------------------------------------------*/
+/******************************************************************************************************/
+// FIFO burst reads
+/******************************************************************************************************/
 
 void MAX30001G::readECG_FIFO(bool reportRaw) {
-/*
- * Burst read of the ECG FIFO:
- * Call this routine when ECG FIFO interrupt occurred
- */
-  
-  // Obtain number of samples in the FIFO buffer
+  /*
+   * Burst read ECG FIFO. Stops at EOF/EMPTY/OVERFLOW or after 32 words.
+   */
   mngr_int.all = readRegister24(MAX30001_MNGR_INT);
-  uint8_t  num_samples = (mngr_int.e_fit + 1);
-    
-  max30001_ecg_burst_reg_t ecg_data;
-  float fdata;
-  
-  // Burst read FIFO register
+  const uint8_t min_samples = static_cast<uint8_t>(mngr_int.bit.e_fit + 1U); // 1..32
+
+  ecg_counter = 0;
+  EOF_detected = false;
+  valid_data_detected = false;
+
   SPI.beginTransaction(SPI_SETTINGS);
   digitalWrite(_csPin, LOW);
-  SPI.transfer((ECG_FIFO_BURST << 1) | 0x01);
-  ecg_counter = 0;
-  bool overflow = false;
-  
-  for (int i = 0; i < num_samples; i++) {
-    ecg_data.all = ((uint32_t)SPI.transfer(0x00) << 16) | // top 8 bits
-                   ((uint32_t)SPI.transfer(0x00) << 8)  | // middle 8 bits
-                   (uint32_t)SPI.transfer(0x00);         // low 8 bits
-    LOGD("ECG Tag: %3u", ecg_data.bit.etag);
-    // check for valid sample, etag = 0 or 2 marks valid data
-    if (ecg_data.bit.etag == 0 || ecg_data.bit.etag == 2) {
-      int32_t sdata = (int32_t)(ecg_data.bit.data << 14) >> 14; // Sign extend the data 18 bit
-      if (reportRaw) {
-        fdata = float(sdata);
-      } else {
-        // Fill the ring buffer with calibrated values
-        //   V_ECG (mV) = ADC x VREF / (2^17 x ECG_GAIN): ECG_GAIN is 20V/V, 40V/V, 80V/V or 160V/V. 
-        fdata = float(sdata * V_ref) / float(131072 * ECG_gain);
-      }
-      if ( ECG_data.push(fdata, overflow=false) == 1) { // push one value to ring buffer
+  SPI.transfer((MAX30001_ECG_FIFO_BURST << 1) | MAX30001_READREG);
+
+  for (uint8_t i = 0; i < 32; i++) {
+    max30001_ecg_burst_reg_t ecg_data;
+    ecg_data.all = (static_cast<uint32_t>(SPI.transfer(0x00)) << 16) | // top 8 bits
+                   (static_cast<uint32_t>(SPI.transfer(0x00)) << 8)  | // middle 8 bits
+                   (static_cast<uint32_t>(SPI.transfer(0x00)));        // low 8 bits
+
+    const uint8_t tag = static_cast<uint8_t>(ecg_data.bit.etag);
+
+    if (tag == ECG_TAG_OVERFLOW) {
+      ecg_overflow_occurred = true;
+      digitalWrite(_csPin, HIGH);
+      SPI.endTransaction();
+      FIFOReset();
+      LOGW("ECG FIFO overflow detected during burst read.");
+      return;
+    }
+
+    if (tag == ECG_TAG_EMPTY) {
+      EOF_detected = true;
+      break;
+    }
+
+    if (isEcgTagWithSample(tag)) {
+      const int32_t sdata = signExtend(ecg_data.bit.data, 18);
+      const float sample = reportRaw ? static_cast<float>(sdata) : ecgCodeToMilliVolt(sdata);
+      if (ECG_data.push(sample) == 1U) {
         ecg_counter++;
       } else {
-        LOGE("ECG buffer write  overflow");
+        LOGE("ECG ring buffer full; sample dropped.");
       }
-      LOGD("ECG Sample: %.2f [mV] %d", fdata, sdata);
-    } else if (ecg_data.bit.etag == 0x07) { 
-      // Check for device FIFO Overflow
-      overflow = true;
+      valid_data_detected = (tag == ECG_TAG_VALID || tag == ECG_TAG_VALID_EOF);
+      if (tag == ECG_TAG_VALID_EOF || tag == ECG_TAG_FAST_EOF) {
+        EOF_detected = true;
+        if (i + 1U >= min_samples) {
+          break;
+        }
+      }
+    } else {
+      LOGW("Unexpected ECG tag value: %u", tag);
+    }
+
+    // Once minimum threshold has been satisfied, stop at first EOF.
+    if ((i + 1U) >= min_samples && EOF_detected) {
       break;
     }
   }
+
   digitalWrite(_csPin, HIGH);
   SPI.endTransaction();
-  if (overflow) { 
-    LOGW("ECG FIFO overflow detected, resetting FIFO");
-    FIFOReset(); 
-  }
-  LOGD("Read %3u samples from ECG FIFO ", ecg_counter);
+  LOGD("Read %d samples from ECG FIFO.", ecg_counter);
 }
 
 void MAX30001G::readBIOZ_FIFO(bool reportRaw) {
-/*
- * Burst read of the BIOZ FIFO
- *  Call this routine when BIOZ FIFO interrupt occurred
- */
-  
-  // Obtain number of samples in the FIFO buffer
+  /*
+   * Burst read BIOZ FIFO. Stops at EOF/EMPTY/OVERFLOW or after 32 words.
+   */
   mngr_int.all = readRegister24(MAX30001_MNGR_INT);
-  uint8_t  num_samples = (mngr_int.b_fit +1);
-  
-  max30001_bioz_burst_t bioz_data;
-  float fdata;
+  const uint8_t min_samples = static_cast<uint8_t>(mngr_int.bit.b_fit + 1U); // 1..8
 
-  // Burst read FIFO register
+  bioz_counter = 0;
+  EOF_detected = false;
+  valid_data_detected = false;
+  bool range_tag_seen = false;
+
   SPI.beginTransaction(SPI_SETTINGS);
   digitalWrite(_csPin, LOW);
-  SPI.transfer((BIOZ_FIFO_BURST << 1) | 0x01);
-  bioz_counter = 0;
-  bool overflow = false;
+  SPI.transfer((MAX30001_BIOZ_FIFO_BURST << 1) | MAX30001_READREG);
 
-  for (int i = 0; i < num_samples; i++) {
-    bioz_data.all = ((uint32_t)SPI.transfer(0x00) << 16) | // to 8 bits
-                    ((uint32_t)SPI.transfer(0x00) << 8)  | // middle 8 bits
-                      (uint32_t)SPI.transfer(0x00);         // low 8 bits
-    LOGD("BIOZ Tag: %3u", bioz_data.bit.btag);
-    if (bioz_data.bit.btag == 0 || bioz_data.bit.btag == 2) {     // 0,2 are valid samples
-      int32_t sdata = (int32_t)(bioz_data.bit.data << 12) >> 12; // Sign extend the data 20 bit
-      if (reportRaw) {
-        fdata = float(sdata);
-      } else {
-        // Fill the buffer with calibrated values
-        // BioZ (Ω) = ADC x VREF / (2^19 x BIOZ_CGMAG x BIOZ_GAIN)
-        //   BIOZ_CGMAG is 55 to 96000 nano A, set by CNFG_BIOZ and CNFG_BIOZ_LC 
-        //   BIOZ_GAIN is 10V/V, 20V/V, 40V/V, or 80V/V, set in CNFG_BIOZ (0x18)
-        fdata = float(sdata * V_ref * 1e9) / float(524288* BIOZ_cgmag * BIOZ_gain); // in Ω
-      }
-      if (BIOZ_data.push(fdata) == 1) { 
+  for (uint8_t i = 0; i < 32; i++) {
+    max30001_bioz_burst_reg_t bioz_data;
+    bioz_data.all = (static_cast<uint32_t>(SPI.transfer(0x00)) << 16) | // top 8 bits
+                    (static_cast<uint32_t>(SPI.transfer(0x00)) << 8)  | // middle 8 bits
+                    (static_cast<uint32_t>(SPI.transfer(0x00)));        // low 8 bits
+
+    const uint8_t tag = static_cast<uint8_t>(bioz_data.bit.btag);
+
+    if (tag == BIOZ_TAG_OVERFLOW) {
+      bioz_overflow_occurred = true;
+      digitalWrite(_csPin, HIGH);
+      SPI.endTransaction();
+      FIFOReset();
+      LOGW("BIOZ FIFO overflow detected during burst read.");
+      return;
+    }
+
+    if (tag == BIOZ_TAG_EMPTY) {
+      EOF_detected = true;
+      break;
+    }
+
+    if (isBiozTagWithSample(tag)) {
+      const int32_t sdata = signExtend(bioz_data.bit.data, 20);
+      const float sample = reportRaw ? static_cast<float>(sdata) : biozCodeToOhm(sdata);
+      if (BIOZ_data.push(sample) == 1U) {
         bioz_counter++;
       } else {
-        LOGE("BIOZ buffer write  overflow");
-      }        
-      LOGD("BIOZ Sample: %.2f [Ohm] %d", fdata, sdata)
-    } else if (bioz_data.bit.btag == 0x07) { 
-      // Check for device FIFO Overflow
-      overflow = true;
+        LOGE("BIOZ ring buffer full; sample dropped.");
+      }
+
+      if (tag == BIOZ_TAG_RANGE || tag == BIOZ_TAG_RANGE_EOF) {
+        // Indicates sample is outside programmed range (over or under).
+        range_tag_seen = true;
+        valid_data_detected = false;
+      } else {
+        valid_data_detected = true;
+      }
+
+      if (tag == BIOZ_TAG_VALID_EOF || tag == BIOZ_TAG_RANGE_EOF) {
+        EOF_detected = true;
+        if (i + 1U >= min_samples) {
+          break;
+        }
+      }
+    } else {
+      LOGW("Unexpected BIOZ tag value: %u", tag);
+    }
+
+    // Once minimum threshold has been satisfied, stop at first EOF.
+    if ((i + 1U) >= min_samples && EOF_detected) {
       break;
     }
   }
+
   digitalWrite(_csPin, HIGH);
   SPI.endTransaction();
-  if (overflow) { FIFOReset(); }
-  LOGD("Read %3u samples from BIOZ FIFO ", bioz_counter);
+
+  if (range_tag_seen) {
+    readStatusAndLatchFlags();
+  }
+
+  LOGD("Read %d samples from BIOZ FIFO.", bioz_counter);
 }

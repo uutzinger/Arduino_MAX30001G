@@ -3,15 +3,12 @@
 /******************************************************************************************************/
 
 #include "logger.h"                  // Logging 
-#include "max30001g_globals.h"       // Global variables
-#include "max30001g_defs.h"
-#include "max30001g_comm.h"          // SPI communication
-#include "max30001g_regs.h"          // Register handling
+#include "max30001g.h"
 
 /******************************************************************************************************/
 
 void MAX30001G::readAllRegisters() {
-  status.all       = readRegister24(MAX30001_STATUS);
+  readStatusAndLatchFlags();
   en_int1.all      = readRegister24(MAX30001_EN_INT1);
   en_int2.all      = readRegister24(MAX30001_EN_INT2);
   mngr_int.all     = readRegister24(MAX30001_MNGR_INT);
@@ -28,13 +25,60 @@ void MAX30001G::readAllRegisters() {
   cnfg_rtor2.all   = readRegister24(MAX30001_CNFG_RTOR2);
 }
 
-void MAX30001G::dumpRegisters() {
+void MAX30001G::saveConfig() {
+  _savedConfig.en_int1    = readRegister24(MAX30001_EN_INT1);
+  _savedConfig.en_int2    = readRegister24(MAX30001_EN_INT2);
+  _savedConfig.mngr_int   = readRegister24(MAX30001_MNGR_INT);
+  _savedConfig.mngr_dyn   = readRegister24(MAX30001_MNGR_DYN);
+  _savedConfig.cnfg_gen   = readRegister24(MAX30001_CNFG_GEN);
+  _savedConfig.cnfg_cal   = readRegister24(MAX30001_CNFG_CAL);
+  _savedConfig.cnfg_emux  = readRegister24(MAX30001_CNFG_EMUX);
+  _savedConfig.cnfg_ecg   = readRegister24(MAX30001_CNFG_ECG);
+  _savedConfig.cnfg_bmux  = readRegister24(MAX30001_CNFG_BMUX);
+  _savedConfig.cnfg_bioz  = readRegister24(MAX30001_CNFG_BIOZ);
+  _savedConfig.cnfg_bioz_lc = readRegister24(MAX30001_CNFG_BIOZ_LC);
+  _savedConfig.cnfg_rtor1 = readRegister24(MAX30001_CNFG_RTOR1);
+  _savedConfig.cnfg_rtor2 = readRegister24(MAX30001_CNFG_RTOR2);
+  _savedConfig.valid      = true;
+}
+
+void MAX30001G::restoreConfig() {
+  if (!_savedConfig.valid) {
+    LOGW("AFE: restoreConfig() called without a saved snapshot.");
+    return;
+  }
+
+  writeRegister(MAX30001_EN_INT1,   _savedConfig.en_int1);
+  writeRegister(MAX30001_EN_INT2,   _savedConfig.en_int2);
+  writeRegister(MAX30001_MNGR_INT,  _savedConfig.mngr_int);
+  writeRegister(MAX30001_MNGR_DYN,  _savedConfig.mngr_dyn);
+  writeRegister(MAX30001_CNFG_GEN,  _savedConfig.cnfg_gen);
+  writeRegister(MAX30001_CNFG_CAL,  _savedConfig.cnfg_cal);
+  writeRegister(MAX30001_CNFG_EMUX, _savedConfig.cnfg_emux);
+  writeRegister(MAX30001_CNFG_ECG,  _savedConfig.cnfg_ecg);
+  writeRegister(MAX30001_CNFG_BMUX, _savedConfig.cnfg_bmux);
+  writeRegister(MAX30001_CNFG_BIOZ, _savedConfig.cnfg_bioz);
+  writeRegister(MAX30001_CNFG_BIOZ_LC, _savedConfig.cnfg_bioz_lc);
+  writeRegister(MAX30001_CNFG_RTOR1, _savedConfig.cnfg_rtor1);
+  writeRegister(MAX30001_CNFG_RTOR2, _savedConfig.cnfg_rtor2);
+
+  refreshTimingGlobals();
+
+  readAllRegisters();
+}
+
+void MAX30001G::printConfig() {
+  readAllRegisters();
+  printAllRegisters();
+}
+
+void MAX30001G::printAllRegisters() {
   /*
   Read and report all known register
   */
   printStatus();
   printEN_INT1();
-  printEN_INT();
+  printEN_INT2();
   printMNGR_INT();
   printMNGR_DYN();
   printInfo();
@@ -49,7 +93,7 @@ void MAX30001G::dumpRegisters() {
   printCNFG_RTOR2();
 }
 
-void MAX30001::readInfo(void)
+void MAX30001G::readInfo(void)
 {
     /*
     Read content of information register.
@@ -61,17 +105,17 @@ void MAX30001::readInfo(void)
 
 void MAX30001G::readStatusRegisters() {
   // Read status registers to check for over/under-voltage conditions
-  status.all = readRegister24(MAX30001_STATUS);
+  readStatusAndLatchFlags();
 
   // Check over-voltage and under-voltage conditions
   over_voltage_detected = (status.bit.bover == 1);
-  under_voltage_detected = (status.bit.bunder == 1);
+  under_voltage_detected = (status.bit.bundr == 1);
   // = (status.bit.bovf == 1);
   // = (status.bit.eovf == 1);
 
 }
 
-void MAX30001::printStatus(void) {
+void MAX30001G::printStatus(void) {
     LOGln("MAX30001 Status Register:");
     LOGln("----------------------------");
   
@@ -96,7 +140,7 @@ void MAX30001::printStatus(void) {
     LOGln("ECG FIFO interrupt is %s", status.bit.eint ? "on" : "off");
     LOGln("ECG FIFO overflow is  %s", status.bit.eovf ? "on" : "off");
     LOGln("ECG Sample interrupt  %s", status.bit.samp ? "occurred" : "not present");
-    LOGln("ECG R to R interrupt  %s", status.bit.print ? "occurred" : "not present");
+    LOGln("ECG R to R interrupt  %s", status.bit.rrint ? "occurred" : "not present");
     LOGln("ECG Fast Recovery interrupt is %s", status.bit.fstint ? "on" : "off");
   
     LOGln("BIOZ -----------------------");
@@ -115,16 +159,16 @@ void MAX30001::printStatus(void) {
     LOGln("PLL %s", status.bit.pllint ? "has lost signal" : "is working");
   }
   
-  void MAX30001::printEN_INT(max30001_en_int_reg_t en_int) {
+  void MAX30001G::printEN_INT(max30001_en_int_reg_t en_int) {
     LOGln("MAX30001 Interrupts:");
     LOGln("----------------------------");
-    if (en_int.bit.int_type == 0) {
+    if (en_int.bit.intb_type == 0) {
       LOGln("Interrupts are disabled");
-    } else if (en_int.bit.int_type == 1) {
+    } else if (en_int.bit.intb_type == 1) {
       LOGln("Interrupt is CMOS driver");
-    } else if (en_int.bit.int_type == 2) {
+    } else if (en_int.bit.intb_type == 2) {
       LOGln("Interrupt is Open Drain driver");
-    } else if (en_int.bit.int_type == 3) {
+    } else if (en_int.bit.intb_type == 3) {
       LOGln("Interrupt is Open Drain with 125k pullup driver");
     }
     LOGln("PLL interrupt is                                %s", en_int.bit.en_pllint    ? "enabled" : "disabled");
@@ -142,7 +186,7 @@ void MAX30001::printStatus(void) {
     LOGln("ECG FIFO interrupt is                           %s", en_int.bit.en_eint      ? "enabled" : "disabled");
   }
   
-  void MAX30001::printMNGR_INT(void) {
+  void MAX30001G::printMNGR_INT(void) {
     LOGln("MAX30001 Interrupt Management:");
     LOGln("----------------------------");
   
@@ -173,7 +217,7 @@ void MAX30001::printStatus(void) {
     LOGln("ECG FIFO interrupt after %u samples", mngr_int.bit.e_fit + 1);
   }
   
-  void MAX30001::printMNGR_DYN(void) {
+  void MAX30001G::printMNGR_DYN(void) {
     LOGln("MAX30001 Dynamic Modes:");
     LOGln("----------------------------");
   
@@ -196,7 +240,7 @@ void MAX30001::printStatus(void) {
     }
   }
   
-  void MAX30001::printInfo(void)
+  void MAX30001G::printInfo(void)
   {
     /*
     Print the information register
@@ -212,7 +256,7 @@ void MAX30001::printStatus(void) {
     LOGln("Constant 2: (should be 5) %u", info.bit.c2);
   }
   
-  void MAX30001::printCNFG_GEN()
+  void MAX30001G::printCNFG_GEN()
   {
     LOGln("MAX30001 General Config:");
     LOGln("----------------------------");
@@ -315,7 +359,7 @@ void MAX30001::printStatus(void) {
     }
   }
   
-  void MAX30001::printCNFG_CAL() {
+  void MAX30001G::printCNFG_CAL() {
       LOGln("MAX30001 Internal Voltage Calibration Source:");
       LOGln("---------------------------------------------");
   
@@ -345,7 +389,7 @@ void MAX30001::printStatus(void) {
     }
   }
   
-  void MAX30001::printCNFG_EMUX() {
+  void MAX30001G::printCNFG_EMUX() {
     LOGln("MAX30001 ECG multiplexer:");
     LOGln("-------------------------");
   
@@ -374,7 +418,7 @@ void MAX30001::printStatus(void) {
     LOGln("ECG input polarity is %s", cnfg_emux.bit.pol ? "inverted" : "not inverted");
   }
   
-  void MAX30001::printCNFG_ECG() {
+  void MAX30001G::printCNFG_ECG() {
     LOGln("MAX30001 ECG settings:");
     LOGln("----------------------");
   
@@ -503,7 +547,7 @@ void MAX30001::printStatus(void) {
     }
   }
   
-  void MAX30001::printCNFG_BMUX() {
+  void MAX30001G::printCNFG_BMUX() {
     LOGln("BIOZ MUX Configuration");
     LOGln("----------------------");
   
@@ -699,7 +743,7 @@ void MAX30001::printStatus(void) {
     LOGln("BIOZ P is %s from AFE", cnfg_bmux.bit.openp ? "disconnected" : "connected");
   }
   
-  void MAX30001::printCNFG_BIOZ() {
+  void MAX30001G::printCNFG_BIOZ() {
     LOGln("BIOZ Configuration");
     LOGln("----------------------");
   
@@ -885,7 +929,7 @@ void MAX30001::printStatus(void) {
     }
   }
   
-  void MAX30001::printCNFG_BIOZ_LC() {
+  void MAX30001G::printCNFG_BIOZ_LC() {
     LOGln("BIOZ Low Current Configuration");
     LOGln("------------------------------");
   
@@ -971,7 +1015,7 @@ void MAX30001::printStatus(void) {
     LOGln("BIOZ drive current range is %s", cnfg_bioz_lc.bit.hi_lob ? "high [uA]" : "low [nA]");
   }
   
-  void MAX30001::printCNFG_RTOR1() {
+  void MAX30001G::printCNFG_RTOR1() {
     LOGln("R to R configuration");
     LOGln("--------------------");
   
@@ -1039,7 +1083,7 @@ void MAX30001::printStatus(void) {
     }
   }
   
-  void MAX30001::printCNFG_RTOR2(){
+  void MAX30001G::printCNFG_RTOR2(){
     LOGln("R to R Configuration");
     LOGln("--------------------");
   

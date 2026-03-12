@@ -1,34 +1,46 @@
 /******************************************************************************************************/
 // Configure ECG
 /******************************************************************************************************/
+#include <Arduino.h>
 #include "logger.h"      // Logging 
-#include "max30001g_globals.h"
-#include "max30001g_defs.h"
-#include "max30001g_comm.h" // SPI communication
-#include "max30001g_configure_ecg.h"
+#include "max30001g.h"
 
-void MAX30001G::setECGSamplingRate(uint8_t  ECG) {
+void MAX30001G::setECGSamplingRate(uint8_t speed_select) {
     /*
-    Set the ECG  sampling rate for the AFE, 0=low, 1=medium, 2=high
-    approx [0] 125 **, [1] 256, [2] 512 sps
+    Set ECG sampling rate selector for the AFE:
+      0 = low, 1 = medium, 2 = high
+
+    Actual sample rate depends on FMSTR (Table 34):
+      FMSTR 00/01: rate bits 00/01/10 = high/medium/low
+      FMSTR 10/11: only rate bits 10 are supported
+
     Based on FMSTR, adjusts global variable ECG_samplingRate
     */
   
+    cnfg_gen.all  = readRegister24(MAX30001_CNFG_GEN);
     cnfg_ecg.all  = readRegister24(MAX30001_CNFG_ECG);
-  
-    switch (ECG) {
-      case 0:
-        cnfg_ecg.bit.rate = 0b10; // low **
-        break;
-      case 1:
-        cnfg_ecg.bit.rate = 0b01; // medium
-        break;
-      case 2:
-        cnfg_ecg.bit.rate = 0b00; // high
-        break;
-      default:
-        cnfg_ecg.bit.rate = 0b10; // low
-        break;
+
+    if ((cnfg_gen.bit.fmstr == 0b10) || (cnfg_gen.bit.fmstr == 0b11)) {
+      cnfg_ecg.bit.rate = 0b10; // only supported ECG_RATE at these FMSTR settings
+      if (speed_select != 0) {
+        LOGW("FMSTR=%u only supports ECG_RATE=10; forcing low selector.", cnfg_gen.bit.fmstr);
+      }
+    } else {
+      switch (speed_select) {
+        case 0:
+          cnfg_ecg.bit.rate = 0b10; // low
+          break;
+        case 1:
+          cnfg_ecg.bit.rate = 0b01; // medium
+          break;
+        case 2:
+          cnfg_ecg.bit.rate = 0b00; // high
+          break;
+        default:
+          cnfg_ecg.bit.rate = 0b10; // low default
+          LOGE("Invalid ECG speed selector: %u. Using low.", speed_select);
+          break;
+      }
     }
   
     writeRegister(MAX30001_CNFG_ECG, cnfg_ecg.all);
@@ -59,15 +71,18 @@ void MAX30001G::setECGSamplingRate(uint8_t  ECG) {
   */
   
     cnfg_ecg.all = readRegister24(MAX30001_CNFG_ECG);
-    cnfg_gen.all = readRegister24(MAX30001_CNFG_GEN);
   
     // Digital High Pass
-    if hpf == 0:
-      ECG_hpf = 0.;
-      cnfg_ecg.dhpf = 0; // bypass
-    else:
-      ECG_hpf = 0.5;
-      cnfg_ecg.dhpf = 1; // 0.5Hz
+    if (hpf == 0) {
+      ECG_hpf = 0.0f;
+      cnfg_ecg.bit.dhpf = 0; // bypass
+    } else {
+      ECG_hpf = 0.5f;
+      cnfg_ecg.bit.dhpf = 1; // 0.5Hz
+      if (hpf > 1) {
+        LOGE("Invalid ECG HPF selector: %u. Using 0.5Hz.", hpf);
+      }
+    }
   
     // Digital Low Pass
     switch (lpf) {
@@ -85,6 +100,7 @@ void MAX30001G::setECGSamplingRate(uint8_t  ECG) {
         break;
       default:
         cnfg_ecg.bit.dlpf = 0b01; // low
+        LOGE("Invalid ECG LPF selector: %u. Using 40Hz class.", lpf);
         break;
     }
     writeRegister(MAX30001_CNFG_ECG, cnfg_ecg.all);
@@ -111,23 +127,31 @@ void MAX30001G::setECGSamplingRate(uint8_t  ECG) {
   
   */
   
-    if (gain <=3) {
-      cnfg_ecg.all = readRegister24(MAX30001_CNFG_ECG);
-      cnfg_ecg.bit.gain = gain;
-      writeRegister(MAX30001_CNFG_ECG, cnfg_ecg.all);
+    if (gain > 3) {
+      LOGE("Invalid ECG gain selector: %u. Valid range is 0..3.", gain);
+      return;
     }
-  
+
+    cnfg_ecg.all = readRegister24(MAX30001_CNFG_ECG);
+    cnfg_ecg.bit.gain = gain;
+    writeRegister(MAX30001_CNFG_ECG, cnfg_ecg.all);
+
     switch (gain){
       case 0:
         ECG_gain = 20;
+        break;
       case 1:
         ECG_gain = 40;
+        break;
       case 2:
         ECG_gain = 80;
+        break;
       case 3:
         ECG_gain = 160;
+        break;
       default:
-        ECG_gain = 0;
+        ECG_gain = 20;
+        break;
     }
   }
   
@@ -142,9 +166,9 @@ void MAX30001G::setECGSamplingRate(uint8_t  ECG) {
   
     cnfg_emux.all  = readRegister24(MAX30001_CNFG_EMUX);
     
-    cnfg_emux.bit.ecg_pol = inverted;
-    cnfg_emux.bit.ecg_openp = open;
-    cnfg_emux.bit.ecg_openn = open;
+    cnfg_emux.bit.pol = inverted ? 1U : 0U;
+    cnfg_emux.bit.openp = open ? 1U : 0U;
+    cnfg_emux.bit.openn = open ? 1U : 0U;
   
     writeRegister(MAX30001_CNFG_EMUX, cnfg_emux.all);
    
@@ -173,22 +197,41 @@ void MAX30001G::setECGSamplingRate(uint8_t  ECG) {
     ADC_FULLSCALE = 2^17 = 131072
     ​V_ref = 1000mV
     ECG_GAIN = 20V/V
-    FAST_TH = 0x3F (default, 63 decimal) results in trigger when ADC value >0x1F80 0or <0x20800 in 2's complement
+    FAST_TH = 0x3F (default, 63 decimal) results in trigger when ADC value >0x1F800 or <0x20800 in 2's complement
 
     Threshold Voltage: 63*1000[mV]*2048/131072/20[V/V] = +/-49.22mV 
 
   ****************************************************************/
 
   void MAX30001G::setECGAutoRecovery(int threshold_voltage) {
+    /*
+      threshold_voltage is ECG input threshold in mV.
+      FAST_TH mapping from datasheet Table 20:
+      2048*FAST_TH ADC counts correspond to:
+      threshold_voltage * ECG_gain / V_ref = (2048*FAST_TH) / 2^17
+    */
 
-    // Ensure boundary
-    if ((threshold_voltage * ECG_gain) > V_ref) { threshold_voltage = V_ref / ECG_gain; }
+    if (ECG_gain <= 0 || V_ref <= 0) {
+      LOGE("ECG auto recovery requires ECG_gain and V_ref to be initialized.");
+      return;
+    }
+
+    if (threshold_voltage < 0) {
+      threshold_voltage = 0;
+    }
+
+    // Ensure boundary at full-scale input.
+    if ((threshold_voltage * ECG_gain) > V_ref) {
+      threshold_voltage = V_ref / ECG_gain;
+    }
   
-    // Calculate FAST_TH value
-    uint8_t fast_th = static_cast<uint8_t>((threshold_voltage * ECG_gain * 131072) / (2048 * V_ref));
+    // Calculate FAST_TH value.
+    uint8_t fast_th = static_cast<uint8_t>((threshold_voltage * ECG_gain * 131072L) / (2048L * V_ref));
   
-    // Ensure not to set threshold higher than 98% of signal.
-    if (fast_th > 0x3F) {fast_th = 0x3F;}
+    // FAST_TH is 6-bit.
+    if (fast_th > 0x3F) {
+      fast_th = 0x3F;
+    }
   
     mngr_dyn.all  = readRegister24(MAX30001_MNGR_DYN);
     mngr_dyn.bit.fast = 0b10;       // auto

@@ -7,6 +7,10 @@
 // Define SPI speed
 #define MAX30001_SPI_SPEED 1000000
 
+// Number of available BIOZ modulation frequencies and phase offsets
+#define MAX30001_BIOZ_NUM_FREQUENCIES 11
+#define MAX30001_BIOZ_NUM_PHASES 16
+
 // MAX30001 Register definitions
 // Table 12
 ////////////////////////////////////////////////////////////////////////////////
@@ -44,37 +48,55 @@
 #define MAX30001_BIOZ_FIFO_BURST 0x22 // FIFO
 #define MAX30001_BIOZ_FIFO       0x23 // FIFO
 #define MAX30001_RTOR            0x25 // Result of internal R to R detection
+#define MAX30001_NO_OP2          0x7F // No operation (alternate no-op address) R/W
 
 // MAX30001 Commands
 #define MAX30001_WRITEREG        0x00
 #define MAX30001_READREG         0x01
 
 //
-#define MAX30001_RTOR_INTR_MASK  0x04
+#define MAX30001_RTOR_INTR_MASK          (1UL << 10) // RRINT bit in STATUS / EN_INT
 
 // MAX30001 Registers
 ///////////////////////////////////////////////////
-// MAX30001 EN_INT Register Bit Masks
-#define MAX30001_EN_INT_EINT             (1 << 23)
-#define MAX30001_EN_INT_EOVF             (1 << 22)
-#define MAX30001_EN_INT_FSTINT           (1 << 21)
-#define MAX30001_EN_INT_DCLOFFINT        (1 << 20)
-#define MAX30001_EN_INT_BINT             (1 << 19)
-#define MAX30001_EN_INT_BOVF             (1 << 18)
-#define MAX30001_EN_INT_BOVER            (1 << 17)
-#define MAX30001_EN_INT_BUNDER           (1 << 16)
-#define MAX30001_EN_INT_BCGMON           (1 << 15)
+// MAX30001 STATUS (0x01) Register Bit Masks
+#define MAX30001_STATUS_EINT             (1UL << 23)
+#define MAX30001_STATUS_EOVF             (1UL << 22)
+#define MAX30001_STATUS_FSTINT           (1UL << 21)
+#define MAX30001_STATUS_DCLOFFINT        (1UL << 20)
+#define MAX30001_STATUS_BINT             (1UL << 19)
+#define MAX30001_STATUS_BOVF             (1UL << 18)
+#define MAX30001_STATUS_BOVER            (1UL << 17)
+#define MAX30001_STATUS_BUNDR            (1UL << 16)
+#define MAX30001_STATUS_BCGMON           (1UL << 15)
+#define MAX30001_STATUS_LONINT           (1UL << 11)
+#define MAX30001_STATUS_RRINT            (1UL << 10)
+#define MAX30001_STATUS_SAMP             (1UL << 9)
+#define MAX30001_STATUS_PLLINT           (1UL << 8)
+#define MAX30001_STATUS_BCGMP            (1UL << 5)
+#define MAX30001_STATUS_BCGMN            (1UL << 4)
+#define MAX30001_STATUS_LDOFF_PH         (1UL << 3)
+#define MAX30001_STATUS_LDOFF_PL         (1UL << 2)
+#define MAX30001_STATUS_LDOFF_NH         (1UL << 1)
+#define MAX30001_STATUS_LDOFF_NL         (1UL << 0)
 
-#define MAX30001_EN_INT_LONINT           (1 << 11)
-#define MAX30001_EN_INT_RRINT            (1 << 10)
-#define MAX30001_EN_INT_SAMP             (1 << 9)
-#define MAX30001_EN_INT_PLLINT           (1 << 8)
+// MAX30001 EN_INT (0x02) and EN_INT2 (0x03) Register Bit Masks
+#define MAX30001_EN_INT_EINT             (1UL << 23)
+#define MAX30001_EN_INT_EOVF             (1UL << 22)
+#define MAX30001_EN_INT_FSTINT           (1UL << 21)
+#define MAX30001_EN_INT_DCLOFFINT        (1UL << 20)
+#define MAX30001_EN_INT_BINT             (1UL << 19)
+#define MAX30001_EN_INT_BOVF             (1UL << 18)
+#define MAX30001_EN_INT_BOVER            (1UL << 17)
+#define MAX30001_EN_INT_BUNDR            (1UL << 16)
+#define MAX30001_EN_INT_BCGMON           (1UL << 15)
+#define MAX30001_EN_INT_LONINT           (1UL << 11)
+#define MAX30001_EN_INT_RRINT            (1UL << 10)
+#define MAX30001_EN_INT_SAMP             (1UL <<  9)
+#define MAX30001_EN_INT_PLLINT           (1UL <<  8)
+#define MAX30001_EN_INT_INTB_TYPE_MASK (0x3UL <<  0)
 
-#define MAX30001_EN_INT_BCGMP            (1 << 5)
-#define MAX30001_EN_INT_BCGMN            (1 << 4)
-#define MAX30001_EN_INT_LDOFF_PH         (1 << 3)
-#define MAX30001_EN_INT_LDOFF_PL         (1 << 2)
-#define MAX30001_EN_INT_LDOFF_NH         (1 << 1)
-#define MAX30001_EN_INT_LDOFF_NL         (1 << 0)
+// Backward-compatible alias kept for existing code.
+#define MAX30001_EN_INT_BUNDER           MAX30001_EN_INT_BUNDR
 
 #endif

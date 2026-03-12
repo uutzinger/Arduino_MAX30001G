@@ -2,10 +2,7 @@
 // Configure Leads
 /******************************************************************************************************/
 #include "logger.h"      // Logging 
-#include "max30001g_globals.h"
-#include "max30001g_defs.h"
-#include "max30001g_comm.h" // SPI communication
-#include "max30001g_configure_leads.h"
+#include "max30001g.h"
 
 void MAX30001G::setLeadsOnDetection(bool enable) {
 /*
@@ -14,10 +11,11 @@ void MAX30001G::setLeadsOnDetection(bool enable) {
   Parameters:
     - enable/disable 
 
-  Useful when system is powered down and we want to check if lead is attached
-  ECGP is pulled high with 15MOhm resistor
-  ECGN is pulled low with 5MOhm resistor
-  If impedance between ECGP and ECGN is less than 40MOhm, lead is on and LONINT is asserted
+  Useful when system is powered down and we want to detect when lead is attached.
+  In MAX30001G, ULP lead-on detect is applied on BIP/BIN:
+    BIN is pulled low with >5MOhm pulldown
+    BIP is pulled high with >15MOhm pullup
+  If impedance between BIP and BIN is less than ~40MOhm, LONINT is asserted.
   
   cnfg_gen.bit.en_ulp_lon
     Ultra-Low Power Lead-On Detection Enable
@@ -32,12 +30,12 @@ void MAX30001G::setLeadsOnDetection(bool enable) {
   // Read the necessary registers
   cnfg_gen.all  = readRegister24(MAX30001_CNFG_GEN);
 
-  // Determine if ECG or BIOZ
-  bool ecg_active  = cnfg_gen.bit.en_ecg;
-  bool bioz_active = cnfg_gen.bit.en_bioz;
-
   // Lead-On Detection Configuration
-  cnfg_gen.bit.en_ulp_lon = enable && ecg_active ? 0b01 : 0b00;  // Enable ULP lead-on if ECG is active
+  cnfg_gen.bit.en_ulp_lon = enable ? 0b01 : 0b00;
+
+  if (enable && cnfg_gen.bit.en_ecg) {
+    LOGW("ULP lead-on mode is enabled but only becomes active when ECG channel is disabled.");
+  }
 
   // Write the updated configuration back to the registers
   writeRegister(MAX30001_CNFG_GEN, cnfg_gen.all);
@@ -57,8 +55,8 @@ void MAX30001G::setLeadsOffDetection(bool enable, bool bioz_4, uint8_t electrode
   Parameters:
   - enable: enable/disable leads-off detection.
   - bioz_4: true = 4 wire BIOZ, false = 2 wire BIOZ 
-  - electrode_impedance: impedance of the electrode in MOhm: >0 - 2. 2- 4, 4-10, 10-20, >20
-    used to determine current magnitude, wet electrode needs higher current to detect leads on
+  - electrode_impedance: impedance of the electrode in MOhm: 0-2, 2-4, 4-10, 10-20, >20
+    used to determine current magnitude, wet electrode needs higher current to detect lead-off
 
   Lead off detection mechanisms:
   ================================================================================
@@ -68,7 +66,7 @@ void MAX30001G::setLeadsOffDetection(bool enable, bool bioz_4, uint8_t electrode
 
   For BioZ there are three lead off mechanisms:
     - DC lead off detection with constant current source, same as ECG
-    - BIOZ Diver Current Monitor (4 lead only)
+    - BIOZ Driver Current Monitor (4 lead only)
     - Out of range detection on digital read out (AC lead off)
 
   DC lead off detection
@@ -84,17 +82,15 @@ void MAX30001G::setLeadsOffDetection(bool enable, bool bioz_4, uint8_t electrode
         VMID +/- 400 mV_if AVDD > 1.45, 
         VMID +/- 450 mV_if AVDD > 1.55, 
         VMID +/- 500 mV if AVDD > 1.65
-    -AVDD MediBrick is 1.8V
-    -VMID is lead bias voltage 
-       >20 MOhm   5nA
-
-  cnfg_gen.bit.en_dcloff
-    DC Lead-Off Detection Enable
-    00 = DC Lead-Off = AVDD/2.15
+    - AVDD MediBrick is 1.8V
+    - VMID is lead bias voltage
 
     It takes 115-140ms to trigger LDOFF_XX interrupt.
-
-    Rb is external bias resistor, MediBrick has 330kOhm
+    Table 1 gives recommended IMAG/VTH combinations versus electrode impedance
+    and lead-bias resistance (Rb).
+    Current board design:
+      - 200k from VCM to GND
+      - 330k from RBIAS to GND
 
     Impedance  in MOhm 
               Electrode I_DC for on/off detect
@@ -181,25 +177,25 @@ void MAX30001G::setLeadsOffDetection(bool enable, bool bioz_4, uint8_t electrode
     10 = Lead Off Over Range Detection, 2 and 4 electrode BioZ applications
     11 = Lead Off Over & Under Range Detection, 4 electrode BioZ applications
     AC Method, requires active BioZ Channel , enables BOVER & BUNDR interrupt behavior.
-    Uses BioZ excitation current set in CNFG_BIOZ with digital thresholds set in NGR_DYN.
+    Uses BioZ excitation current set in CNFG_BIOZ with digital thresholds set in MNGR_DYN.
 
-  mngr_dyn.bit.bloff_lo_it
-    BioZ AC Lead Off Low Threshold
-    If EN_BLOFF[1:0] = 1x and the ADC output of a BioZ measurement exceeds the
-    symmetric thresholds defined by ±2048*BLOFF_HI_IT for over 128ms, the BOVER
+	  mngr_dyn.bit.bloff_hi_it
+	    BioZ AC Lead Off Over-Range Threshold
+	    If EN_BLOFF[1:0] = 1x and the ADC output of a BioZ measurement exceeds the
+	    symmetric thresholds defined by ±2048*BLOFF_HI_IT for over 128ms, the BOVER
     interrupt bit will be asserted.
     For example, the default value (BLOFF_IT= 0xFF) corresponds to a BioZ output upper
     threshold of 0x7F800 or about 99.6% of the full scale range, and a BioZ output lower
     threshold of 0x80800 or about 0.4% of the full scale range with the LSB weight ≈ 0.4%.
 
-  mngr_dyn.bit.bloff_hi_it
-    BioZ AC Lead Off High Threshold
-    If EN_BLOFF[1:0] = 1x and the output of a BioZ measurement is bounded by the
-    symmetric thresholds defined by ±32*BLOFF_LO_IT for over 128ms, the BUNDR
+	  mngr_dyn.bit.bloff_lo_it
+	    BioZ AC Lead Off Under-Range Threshold
+	    If EN_BLOFF[1:0] = 1x and the output of a BioZ measurement is bounded by the
+	    symmetric thresholds defined by ±32*BLOFF_LO_IT for over 128ms, the BUNDR
     interrupt bit will be asserted.
 
 
-  Table 7 BIOZ Lead Off Detection Schemes for AC Leadoff and Current Monitoring
+  Table 7 BIOZ Lead Off Detection Schemes for AC Lead-Off and Current Monitoring
   -----------------------------------------------------------------------------
 
   Two Electrodes:
@@ -220,7 +216,7 @@ void MAX30001G::setLeadsOffDetection(bool enable, bool bioz_4, uint8_t electrode
           measures half input
     d) both sense electrodes off
           cnfg_gen.bit.en_bloff = 0b01 or 0b11
-          mngr_dyn.bit.bloff_lo_it = over range threshold   
+          mngr_dyn.bit.bloff_lo_it = under range threshold   
           measures no signal
     e) 1 sense and 1 drive electrode off
           cnfg_gen.bit.en_bloff = 0b10 or 0b11
@@ -286,8 +282,7 @@ void MAX30001G::setLeadsOffDetection(bool enable, bool bioz_4, uint8_t electrode
       // Enable DC Leads OFF detection0
       cnfg_gen.bit.en_dcloff = 0b01;
 
-      // Set leads-off detection current polarity based on ECG polarity
-      // Not sure if this is proper approach as polarity is set at later stage in EMUX and might not be relevant
+      // Set leads-off detection current polarity based on EMUX polarity setting.
       cnfg_gen.bit.ipol = ecg_input_polarity_inverted ? 1 : 0;
 
       // Adjust current and threshold based on electrode impedance
@@ -345,12 +340,15 @@ void MAX30001G::setLeadsOffDetection(bool enable, bool bioz_4, uint8_t electrode
       //   4 wire: under and over range detection,
       cnfg_gen.bit.en_bloff = bioz_4 ? 0b11 : 0b10; 
 
-      // High Threshold: ±2048*BLOFF_HI_IT  (max 522,240)
-      // Low  Threshold:   ±32*BLOFF_LO_IT  (max   8,160)
-      mngr_dyn.bit.bloff_lo_it = 0xFF;  // 99.6%
-      mngr_dyn.bit.bloff_hi_it = 0xFF;  //  0.4%
+      // Threshold equations:
+      //   BOVER: ±2048*BLOFF_HI_IT
+      //   BUNDR:  ±32*BLOFF_LO_IT
+      // Datasheet defaults are both 0xFF.
+      mngr_dyn.bit.bloff_lo_it = 0xFF;
+      mngr_dyn.bit.bloff_hi_it = 0xFF;
 
-  } // enable
+    } // end BIOZ AC lead-off
+  } // end enable
 
   // Write the updated configuration back to the registers
   writeRegister(MAX30001_CNFG_GEN, cnfg_gen.all);
@@ -368,17 +366,20 @@ void MAX30001G::setLeadsBias(bool enable, uint8_t resistance) {
      0 = disable, 1 = enable
 
     resistance: 
-      0 = use external lead bias, (in BIOZ mode only available for high current mode)
-      >=150 interal lead bias 200M Ohm 
-      >  75 interal lead bias 100M Ohm
-      else  interal lead bias 50M Ohm
+      0 = use external lead bias (in BIOZ mode only available for high current mode)
+      >=150 internal lead bias 200M Ohm 
+      >  75 internal lead bias 100M Ohm
+      else  internal lead bias 50M Ohm
     
     Common voltage on subject can be maintained by an internal or external pull up or down resistor.
-    We wil check if ECG or BIOZ or both systems are running. 
+    We will check if ECG or BIOZ or both systems are running. 
     If both are running settings are applied to ECG channel only.
-    If resitance is > 0 we will use internal resistors.
-    If resitance is = 0 and ECG is in use we will use 3rd ECG electrode with 220k resistor on VCM
-    If resitance is = 0 and BIOZ is in use with high current mode we will use external 330K resistor on R_Bias.
+    If resistance is > 0 we will use internal resistors.
+    If resistance is = 0 and ECG is in use, use 3rd ECG electrode with external resistor on VCM.
+      Current board design: 200k from VCM to GND.
+    If resistance is = 0 and BIOZ is in use with high current mode, use external resistor on RBIAS.
+      Current board design: 330k from RBIAS to GND
+      Datasheet reference uses 324k precision resistor for best current accuracy.
  
     Restrictions:
      - This routine needs to be run after ECG or BIOZ was enabled.
@@ -392,7 +393,7 @@ void MAX30001G::setLeadsBias(bool enable, uint8_t resistance) {
   
     cnfg_gen.bit.en_rbias
       00 disabled
-      01 ECG bias enabled if ecg is actibe
+      01 ECG bias enabled if ECG is active
       10 BIOZ bias enabled if bioz is active
       11 not valid
     cnfg_gen.bit.rbiasv
@@ -401,14 +402,14 @@ void MAX30001G::setLeadsBias(bool enable, uint8_t resistance) {
       10 200 MOhm
       11 not valid
     cnfg_gen.bit.rbiasp
-      0 not resistivly connected to VMID
-      1 resistivly connected to VMID
+      0 not resistively connected to VMID
+      1 resistively connected to VMID
     cnfg_gen.bit.rbiasn
-      0 not resistivly connected to VMID
-      1 resistivly connected to VMID
-    cnfg_bioz.ext_rbias
-      0 internal bias generator used for BIOZ
-      1 external bias generator used for BIOZ
+      0 not resistively connected to VMID
+      1 resistively connected to VMID
+    cnfg_bioz.bit.ext_rbias
+      0 internal bias generator used
+      1 external bias generator used
   
     Internal Lead Bias ECG 
     -----------------------
@@ -417,7 +418,7 @@ void MAX30001G::setLeadsBias(bool enable, uint8_t resistance) {
     cnfg_gen.bit.en_rbias = 0b01 
     cnfg_gen.bit.rbiasv   = resistance selector
 
-    Inernal Lead Bias BIOZ
+    Internal Lead Bias BIOZ
     ----------------------
     cnfg_gen.bit.rbiasn   =  1
     cnfg_gen.bit.rbiasp   =  1
@@ -426,20 +427,19 @@ void MAX30001G::setLeadsBias(bool enable, uint8_t resistance) {
   
     External ECG Lead Bias
     ----------------------
-    External lead bias resistior is attached to VCM and can be used as body bias through a third electrode.
-    The third electrode is conencted through external resistor typically 200kOhm to body and VCM.
-    With 200kOhm, bias current stays within the EC60601 standard.
+    External lead bias resistor is attached at the VCM node.
+    Current board design uses 200kOhm from VCM to GND.
     enable external: 
       cnfg_gen.bit.rbiasn     = 0  // disconnect
       cnfg_gen.bit.rbiasp     = 0  // disconnect
       cnfg_gen.bit.en_rbias   = 00 // disabled
       cnfg_gen.bit.rbiasv     = 01 // not relevant
       cnfg_bioz.bit.ext_rbias = 0  // disabled external current generator
-      connect third electrode to VCM
+      ensure external VCM bias network is populated
   
     External BIOZ Lead Bias
     -----------------------
-    330kOhm external resistor needs to be attached to R_Bias and GND
+    330kOhm external resistor needs to be attached from RBIAS to GND
     Can be used in high current mode only
     enable external:
       cnfg_gen.bit.rbiasn     = 0
@@ -468,23 +468,23 @@ void MAX30001G::setLeadsBias(bool enable, uint8_t resistance) {
     cnfg_gen.bit.en_rbias = 0b00; // disable
     cnfg_bioz.bit.ext_rbias = 0;  // disable external current generator
 
-    extern int RBIASV_res = 0;
-    extern int BIOZ_cmres = 0;
+    RBIASV_res = 0;
+    BIOZ_cmres = 0;
   
     // Ensure that the AFE is active before applying lead bias
     if (!ecg_active && !bioz_active) {
-        LOGE("ECG nor BIOZ AFEa are active. Please enable ECG or BIOZ before applying lead bias.");
+	      LOGE("ECG nor BIOZ AFE are active. Please enable ECG or BIOZ before applying lead bias.");
         enableECG = false; // Prevent lead bias from being applied
         enableBIOZ = false; // Prevent lead bias from being applied
       }
   
     if (bioz_active && enable) {
-      LOGE("BIOZ is active.");
+      LOGI("BIOZ is active.");
       enableBIOZ = true;
     }
 
     if (ecg_active && enable) {
-      LOGE("ECG is active.");
+      LOGI("ECG is active.");
       enableECG = true;
     }
 
@@ -500,7 +500,7 @@ void MAX30001G::setLeadsBias(bool enable, uint8_t resistance) {
         cnfg_gen.bit.rbiasn   = 1;
         cnfg_gen.bit.rbiasp   = 1;
         cnfg_gen.bit.en_rbias = 0b01; // ECG 
-        cnfg_bioz.bit.ext_rbias = 0;  // disbale external BIOZ
+        cnfg_bioz.bit.ext_rbias = 0;  // disable external BIOZ
         if (resistance >= 150) {
           cnfg_gen.bit.rbiasv = 0b10; // 200MOhm
           RBIASV_res = 200;
@@ -517,7 +517,7 @@ void MAX30001G::setLeadsBias(bool enable, uint8_t resistance) {
         cnfg_gen.bit.rbiasn   = 0;
         cnfg_gen.bit.rbiasp   = 0;
         cnfg_gen.bit.en_rbias = 0b00; // disable internal resistors
-        cnfg_bioz.bit.ext_rbias = 0;  // disbale external BIOZ
+        cnfg_bioz.bit.ext_rbias = 0;  // disable external BIOZ
         LOGI("Connect 3rd electrode on ECG channel to electrically bias subject!");
       }
     } // enable ECG bias
@@ -528,7 +528,7 @@ void MAX30001G::setLeadsBias(bool enable, uint8_t resistance) {
         cnfg_gen.bit.rbiasn   = 1;
         cnfg_gen.bit.rbiasp   = 1;
         cnfg_gen.bit.en_rbias = 0b10; // BIOZ
-        cnfg_bioz.bit.ext_rbias = 0;  // disbale external BIOZ
+        cnfg_bioz.bit.ext_rbias = 0;  // disable external BIOZ
         if (resistance >= 150) {
           cnfg_gen.bit.rbiasv = 0b10; // 200MOhm
           RBIASV_res = 200;
@@ -541,20 +541,21 @@ void MAX30001G::setLeadsBias(bool enable, uint8_t resistance) {
         }   
         LOGI("Internal BioZ common mode current feedback resistor %3u[MΩ] enabled.", RBIASV_res);
       } else {
-        if (cnfg_bioz_lc.bit.hi_lob == 1){ // check for high curent
+        if (cnfg_bioz_lc.bit.hi_lob == 1){ // check for high current
           cnfg_gen.bit.rbiasn     = 0;    // disconnect
           cnfg_gen.bit.rbiasp     = 0;    // disconnect
           cnfg_gen.bit.en_rbias   = 0b00; // disabled
           cnfg_bioz.bit.ext_rbias = 1;    // enable external current generator
           BIOZ_cmres = 330; // external resistor
-          LOGI("Using external BioZ common mode current feedback resistor %5u[kΩ] for high current mode.", BIOZ_cmres);
+          LOGI("Using external BioZ common mode current feedback resistor %5lu[kΩ] for high current mode.",
+               (unsigned long)BIOZ_cmres);
         } else { // not in high current, use internal 200M Ohm resistor
           cnfg_gen.bit.rbiasn   = 1;
           cnfg_gen.bit.rbiasp   = 1;
           cnfg_gen.bit.en_rbias = 0b10; // bioz
           cnfg_gen.bit.rbiasv   = 0b10; // 200 MOhm
           RBIASV_res = 200;
-          cnfg_bioz.bit.ext_rbias = 0;  // disbale external BIOZ
+          cnfg_bioz.bit.ext_rbias = 0;  // disable external BIOZ
           LOGI("Not in high current mode, using internal BioZ common mode current feedback resistor %3u[MΩ] instead.", RBIASV_res);
         }
       }

@@ -1,0 +1,25 @@
+var max30001g__regs__typedefs_8h =
+[
+    [ "max30001_bioz_burst_reg_t", "unionmax30001__bioz__burst__reg__t.html", "unionmax30001__bioz__burst__reg__t" ],
+    [ "max30001_cnfg_bioz_lc_reg_t", "unionmax30001__cnfg__bioz__lc__reg__t.html", "unionmax30001__cnfg__bioz__lc__reg__t" ],
+    [ "max30001_cnfg_bioz_reg_t", "unionmax30001__cnfg__bioz__reg__t.html", "unionmax30001__cnfg__bioz__reg__t" ],
+    [ "max30001_cnfg_bmux_reg_t", "unionmax30001__cnfg__bmux__reg__t.html", "unionmax30001__cnfg__bmux__reg__t" ],
+    [ "max30001_cnfg_cal_reg_t", "unionmax30001__cnfg__cal__reg__t.html", "unionmax30001__cnfg__cal__reg__t" ],
+    [ "max30001_cnfg_ecg_reg", "unionmax30001__cnfg__ecg__reg.html", "unionmax30001__cnfg__ecg__reg" ],
+    [ "max30001_cnfg_emux_reg", "unionmax30001__cnfg__emux__reg.html", "unionmax30001__cnfg__emux__reg" ],
+    [ "max30001_cnfg_gen_reg_t", "unionmax30001__cnfg__gen__reg__t.html", "unionmax30001__cnfg__gen__reg__t" ],
+    [ "max30001_cnfg_rtor1_reg_t", "unionmax30001__cnfg__rtor1__reg__t.html", "unionmax30001__cnfg__rtor1__reg__t" ],
+    [ "max30001_cnfg_rtor2_reg_t", "unionmax30001__cnfg__rtor2__reg__t.html", "unionmax30001__cnfg__rtor2__reg__t" ],
+    [ "max30001_ecg_burst_reg", "unionmax30001__ecg__burst__reg.html", "unionmax30001__ecg__burst__reg" ],
+    [ "max30001_en_int_reg_t", "unionmax30001__en__int__reg__t.html", "unionmax30001__en__int__reg__t" ],
+    [ "max30001_info_reg", "unionmax30001__info__reg.html", "unionmax30001__info__reg" ],
+    [ "max30001_mngr_dyn_reg_t", "unionmax30001__mngr__dyn__reg__t.html", "unionmax30001__mngr__dyn__reg__t" ],
+    [ "max30001_mngr_int_reg_t", "unionmax30001__mngr__int__reg__t.html", "unionmax30001__mngr__int__reg__t" ],
+    [ "max30001_rtor_reg", "unionmax30001__rtor__reg.html", "unionmax30001__rtor__reg" ],
+    [ "max30001_status_reg_t", "unionmax30001__status__reg__t.html", "unionmax30001__status__reg__t" ],
+    [ "max30001_cnfg_ecg_reg_t", "max30001g__regs__typedefs_8h.html#a992262f83e43ebce1ae3a6d9c28ebaa2", null ],
+    [ "max30001_cnfg_emux_reg_t", "max30001g__regs__typedefs_8h.html#ac9ddff786bbdceb7f042a636603bad59", null ],
+    [ "max30001_ecg_burst_reg_t", "max30001g__regs__typedefs_8h.html#a4a89fdeca607f7ef7c47255dd75ea0fb", null ],
+    [ "max30001_info_reg_t", "max30001g__regs__typedefs_8h.html#aed6b6c21258c270be702f6ab154b9c09", null ],
+    [ "max30001_rtor_reg_t", "max30001g__regs__typedefs_8h.html#ad83831f78f98fdf1ed186a06aa011e09", null ]
+];

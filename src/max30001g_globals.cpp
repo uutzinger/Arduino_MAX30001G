@@ -10,18 +10,22 @@ volatile bool ecg_available;             // ECG data available interrupt
 volatile bool bioz_available;            // BIOZ data available interrupt
 volatile bool rtor_available;            // R to R data available interrupt
 
-RingBuffer<float 128> ECG_data;
-RingBuffer<float 128> BIOZ_data;
+RingBuffer<float, 128> ECG_data;
+RingBuffer<float, 128> BIOZ_data;
+RingBuffer<float,  16> RTOR_data;
+RingBuffer<ImpedanceSpectrum,  4> BIOZ_spectrum;
+
 int        ecg_counter;                  // number of ECG samples in buffer
 int        bioz_counter;                 // number of BIOZ samples in buffer
-float      heart_rate;                   // in beats per minute
+int        rtor_counter;                 // number of RTOR samples in buffer
 float      rr_interval;                  // in milliseconds
 
-float impedance_magnitude[8];
-float impedance_phase[8]; 
-float impedance_frequency[8];
+float impedance_magnitude[MAX30001_BIOZ_NUM_FREQUENCIES];
+float impedance_phase[MAX30001_BIOZ_NUM_FREQUENCIES];
+float impedance_frequency[MAX30001_BIOZ_NUM_FREQUENCIES];
 
 volatile bool ecg_lead_off;               // ECG lead off detection interrupt
+volatile bool ecg_fast_recovery_occurred; // ECG fast recovery mode interrupt
 volatile bool ecg_overflow_occurred;      // ECG FIFO overflow
 volatile bool bioz_cgm_occurred;          // BIOZ current generator monitor
 volatile bool bioz_undervoltage_occurred; // BIOZ under voltage
@@ -29,6 +33,10 @@ volatile bool bioz_overvoltage_occurred;  // BIOZ over voltage
 volatile bool bioz_overflow_occurred;     // BIOZ FIFO overlow
 volatile bool leads_on_detected;          // Ultra low power leads on
 volatile bool pll_unlocked_occurred;      // PLL is not locked
+
+volatile bool afe_irq_pending = false;    // IRQ occurred if true
+volatile bool afe_irq1_pending = false;   // INTB  edge occurred if true
+volatile bool afe_irq2_pending = false;   // INT2B edge occurred if true
 
 bool over_voltage_detected;
 bool under_voltage_detected;
@@ -41,18 +49,20 @@ bool EOF_detected;
 float    ECG_samplingRate;               // [sps]
 float    BIOZ_samplingRate;              // [sps] 
 float    RtoR_resolution;                // [ms] R to R resolution time
-float    CAL_resolution;                 // [ms] calibration resolition time
+float    RtoR_delay;                     // [ms] R to R detection algorithm delay
+float    CAL_resolution;                 // [us] calibration timing resolution
 float    CAL_fcal;                       // 
 float    fmstr;                          // [Hz] main clock frequency
 float    tres;                           // [micro s] R to R peak detection threshold
 float    ECG_progression;                // [Hz] ECG progression rate
 float    ECG_hpf;                        // [Hz] ECG high pass filter
 float    ECG_lpf;                        // [Hz] ECG low pass filter
+float    ECG_latency;                    // [ms] ECG signal group delay
 int      ECG_gain;                       // [V/V] ECG gain
 int      BIOZ_gain;                      // [V/V] BIOZ gain
 int      BIOZ_cgmag;                     // [nano A] BIOZ current generator magnitude 
-int      BIOZ_cmres;                     // [kOhm] BIOZ common mode feedback resistance for low current mode
-int      RBIASV_res;                     // [MOhm] common mode feedback resistance for ECG and BIOZ high current mode
+uint32_t BIOZ_cmres;                     // [kOhm] BIOZ common mode feedback resistance for low current mode
+uint16_t RBIASV_res;                     // [MOhm] common mode feedback resistance for ECG and BIOZ high current mode
 float    BIOZ_frequency;                 // [HZ]
 float    BIOZ_phase;                     // [degrees]
 float    BIOZ_ahpf;                      // [Hz] BIOZ high pass filter
@@ -61,7 +71,6 @@ float    BIOZ_dlpf;                      // [Hz] BIOZ low pass filter
 float    BIOZ_test_rnom;                 // [kOhm] BIOZ test resistor nominal value
 float    BIOZ_test_rmod;                 // [kOhm] BIOZ test resistor modulation value
 float    BIOZ_test_frequency;            // [Hz] BIOZ test frequency for modulation
-uint32_t BIOZ cmres;                     // [kOhm] common mode feedback resistance
 int32_t  V_ref = 1000;                   // [mV]
 int32_t  V_AVDD = 1800;                  // [mV]
 float    RCAL_freq = 0;                  // Hz resistance modulation for test impedance

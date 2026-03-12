@@ -1,5 +1,2 @@
 # Changelog
-All notable changes to this project will be documented in this file.
-
-
-## [Unreleased]
+ - March 2026: Full release, Untested
