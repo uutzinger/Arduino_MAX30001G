@@ -99,15 +99,10 @@ void loop() {
 ```
 
 # Documentation
- - [API Documentation (generated)](https://github.com/uutzinger/Arduino_MAX30001G/blob/main/docs/index.html)
+ - [API Documentation (generated)](https://uutzinger.github.io/Arduino_MAX30001G/)
  - [Global Variables](<Global Variables.md>)
  - [Interrupt Handling](Interrupts.md)
  - [Changelog](CHANGELOG.md)
-
-GitHub repository: `https://github.com/uutzinger/Arduino_MAX30001G`
-
-If GitHub Pages is enabled for this repository, documentation will be available at:
-`https://uutzinger.github.io/Arduino_MAX30001G/`
 
 # Hardware with MAX30001G
 
