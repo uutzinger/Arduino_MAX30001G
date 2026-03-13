@@ -608,7 +608,7 @@ public:
   void setECGAutoRecovery(int threshold_voltage);
   
   /* @brief Disable ECG fast-recovery mode and return to normal operation. */
-  void setECGNormalRecovery(void);@details
+  void setECGNormalRecovery(void);
   
   /* @brief Enter manual ECG fast-recovery mode. */
   void startECGManualRecovery(void);

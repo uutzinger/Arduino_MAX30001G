@@ -2,8 +2,6 @@
 #include "max30001g.h"
 #include "logger.h"
 
-int currentLogLevel = LOG_LEVEL_INFO;
-
 const uint8_t AFE_CS_PIN = 10;
 const int AFE_INT1_PIN = 2;
 const int AFE_INT2_PIN = -1;
@@ -11,6 +9,8 @@ const int AFE_INT2_PIN = -1;
 MAX30001G afe(AFE_CS_PIN, AFE_INT1_PIN, AFE_INT2_PIN);
 
 void setup() {
+  currentLogLevel = LOG_LEVEL_INFO;
+
   Serial.begin(115200);
   delay(1000);
 

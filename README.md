@@ -23,8 +23,6 @@ Using Arduino-style `setup()` / `loop()` with `setup` + `start/update/stop`:
 #include "max30001g.h"
 #include "logger.h"
 
-int currentLogLevel = LOG_LEVEL_DEBUG;
-
 const uint8_t AFE_CS_PIN  = 10; // SPI chip select pin
 const int AFE_INT1_PIN = 2;     // AFE INTB interrupt
 const int AFE_INT2_PIN = -1;    // AFE INT2B optional
@@ -33,6 +31,9 @@ MAX30001G afe(AFE_CS_PIN, AFE_INT1_PIN, AFE_INT2_PIN);
 bool measurementRunning = false; // Global status
 
 void setup() {
+  // LOG_LEVEL_NONE, LOG_LEVEL_ERROR, LOG_LEVEL_WARN, LOG_LEVEL_INFO, LOG_LEVEL_DEBUG
+  currentLogLevel = LOG_LEVEL_DEBUG;
+
   Serial.begin(115200);         // Baudrate, up to 921600 for ESP
 
   afe.begin();
