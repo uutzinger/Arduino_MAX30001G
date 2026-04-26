@@ -169,16 +169,19 @@ CmresOption selectCmresForCurrent(uint32_t drive_current_nA) {
   return best;
 }
 
-void phaseResolutionFromFcgen(uint8_t fcgen, float &step_deg, uint8_t &max_selector) {
+void phaseResolutionFromFcgen(uint8_t fcgen, float &step_deg, uint8_t &max_selector, uint8_t &selector_stride) {
   if (fcgen == 0b0000) {
     step_deg = 45.0f;
     max_selector = 3U;
+    selector_stride = 4U;
   } else if (fcgen == 0b0001) {
     step_deg = 22.5f;
     max_selector = 7U;
+    selector_stride = 2U;
   } else {
     step_deg = 11.25f;
     max_selector = 15U;
+    selector_stride = 1U;
   }
 }
 
@@ -492,7 +495,8 @@ void MAX30001G::setBIOZPhaseOffsetbyPhase(float phase_deg) {
 
   float step_deg = 11.25f;
   uint8_t max_selector = 15U;
-  phaseResolutionFromFcgen(cnfg_bioz.bit.fcgen, step_deg, max_selector);
+  uint8_t selector_stride = 1U;
+  phaseResolutionFromFcgen(cnfg_bioz.bit.fcgen, step_deg, max_selector, selector_stride);
 
   const float max_phase = static_cast<float>(max_selector) * step_deg;
   if (phase_deg < 0.0f) {
@@ -514,23 +518,27 @@ void MAX30001G::setBIOZPhaseOffsetbyPhase(float phase_deg) {
 void MAX30001G::setBIOZPhaseOffsetbyIndex(uint8_t selector) {
   /*
     FCGEN-dependent PHOFF resolution:
-      FCGEN=0000  -> PHOFF[3:2]*45deg    (0..135deg)
-      FCGEN=0001  -> PHOFF[3:1]*22.5deg  (0..157.5deg)
-      FCGEN>=0010 -> PHOFF[3:0]*11.25deg (0..168.75deg)
+      FCGEN=0000  -> PHOFF[3:2]*45deg    (logical selectors 0..3)
+      FCGEN=0001  -> PHOFF[3:1]*22.5deg  (logical selectors 0..7)
+      FCGEN>=0010 -> PHOFF[3:0]*11.25deg (logical selectors 0..15)
+
+    This API accepts the logical phase index for the current FCGEN class and
+    expands it to the underlying PHOFF register encoding.
   */
 
   cnfg_bioz.all = readRegister24(MAX30001_CNFG_BIOZ);
 
   float step_deg = 11.25f;
   uint8_t max_selector = 15U;
-  phaseResolutionFromFcgen(cnfg_bioz.bit.fcgen, step_deg, max_selector);
+  uint8_t selector_stride = 1U;
+  phaseResolutionFromFcgen(cnfg_bioz.bit.fcgen, step_deg, max_selector, selector_stride);
 
   if (selector > max_selector) {
     LOGW("Phase selector %u invalid for current FCGEN; clamping to %u.", selector, max_selector);
     selector = max_selector;
   }
 
-  cnfg_bioz.bit.phoff = selector;
+  cnfg_bioz.bit.phoff = static_cast<uint8_t>(selector * selector_stride);
   writeRegister(MAX30001_CNFG_BIOZ, cnfg_bioz.all);
 
   BIOZ_phase = static_cast<float>(selector) * step_deg;

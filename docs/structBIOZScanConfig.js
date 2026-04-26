@@ -9,6 +9,7 @@ var structBIOZScanConfig =
     [ "freq_start_index", "structBIOZScanConfig.html#a6e2c45d640326a152a97e18a4590d135", null ],
     [ "high_target_fraction", "structBIOZScanConfig.html#a50341021c965a5c5ff7ed41fb50bf204", null ],
     [ "initial_current_nA", "structBIOZScanConfig.html#a42634ee99e768e219295494e9031f67b", null ],
+    [ "internal_bist_ahpf", "structBIOZScanConfig.html#a0b019940acc92d2f42b932cf1ce6a9e1", null ],
     [ "internal_resistor_ohm", "structBIOZScanConfig.html#ab801be3a2b996825625eb2f66451f243", null ],
     [ "low_target_fraction", "structBIOZScanConfig.html#a87ff5ee2e3de50a87eff2563e7b66a0d", null ],
     [ "max_retries", "structBIOZScanConfig.html#acc651e3648e56163c3ee2e7ffff39c94", null ],

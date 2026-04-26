@@ -366,7 +366,7 @@ Do this after the internal-BIST scan fit model is addressed. Prefer a dedicated 
   - Uses a 1-sample BIOZ FIFO threshold by default for finer time resolution.
   - Prints `sample` CSV rows for individual post-transition samples.
   - Also prints `group8` CSV rows that summarize each consecutive 8-sample block, so results can still be compared with the current production-style scan averaging.
-  - Includes compile-time switches for phase, frequency, current, sampling-rate, DLPF, and BIOZ-start tests.
+  - Includes compile-time switches for phase, frequency, current, sampling-rate, DLPF, AHPF, and BIOZ-start tests.
   - Reports `delta_from_final_percent` using the mean of the last captured 8 valid samples in each case as the temporary final reference.
   - Reports a per-case 0.1% settling summary after the individual sample rows using the first 8-consecutive-sample window within threshold.
   - Prints a final summary table with settled sample index, elapsed milliseconds, and equivalent 8-sample FIFO blocks for each experiment.
@@ -397,6 +397,10 @@ Do this after the internal-BIST scan fit model is addressed. Prefer a dedicated 
   - record how many FIFO thresholds are needed to reach within 1%, 2%, and 5% of the final value.
 - [x] Keep AHPF condition in the settling record because AHPF cutoff may affect baseline and response:
   - Settling characterization results are for AHPF 150 Hz, matching the known-good internal-BIST validation setup.
+- [x] Measure AHPF-only settling with frequency, phase, current, and DLPF fixed:
+  - `256 Hz`: `150 Hz -> 60 Hz` and `60 Hz -> 150 Hz`
+  - `1024 Hz`: `500 Hz -> 150 Hz` and `150 Hz -> 500 Hz`
+  - run the same AHPF transitions at both low and fast BIOZ sampling rates
 - [x] Use the settling results to choose production scan timing:
   - default discard threshold count,
   - whether discard count should depend on sampling rate, DLPF, frequency, or transition type,
@@ -437,6 +441,14 @@ Criterion: first point where 8 consecutive valid samples stay within 0.1% of the
 | fast | dlpf | bypass -> 4Hz | fast | 4Hz | 24 | 377 | 3 |
 | fast | dlpf | 4Hz -> 8Hz | fast | 8Hz | 23 | 377 | 3 |
 | fast | dlpf | 4Hz -> 16Hz | fast | 16Hz | 13 | 251 | 2 |
+| low | ahpf | 150Hz -> 60Hz | low | 4Hz | 24 | 751 | 3 |
+| low | ahpf | 60Hz -> 150Hz | low | 4Hz | 24 | 751 | 3 |
+| low | ahpf | 500Hz -> 150Hz | low | 4Hz | 24 | 751 | 3 |
+| low | ahpf | 150Hz -> 500Hz | low | 4Hz | 24 | 751 | 3 |
+| fast | ahpf | 150Hz -> 60Hz | fast | 4Hz | 24 | 377 | 3 |
+| fast | ahpf | 60Hz -> 150Hz | fast | 4Hz | 24 | 377 | 3 |
+| fast | ahpf | 500Hz -> 150Hz | fast | 4Hz | 24 | 377 | 3 |
+| fast | ahpf | 150Hz -> 500Hz | fast | 4Hz | 24 | 377 | 3 |
 | fast | bioz_start | stopped -> enabled | fast | 4Hz | 17 | 505 | 3 |
 | transition | sampling_rate | low -> fast | fast | 4Hz | 24 | 377 | 3 |
 | transition | sampling_rate | fast -> low | low | 4Hz | 24 | 751 | 3 |
@@ -459,7 +471,8 @@ Criterion: first point where 8 consecutive valid samples stay within 0.1% of the
 
 #### Current Status
 
-- Settling characterization is complete for the internal 1 kOhm BIST path with AHPF 150 Hz.
+- Settling characterization is complete for phase, frequency, current, DLPF, AHPF, BIOZ-start, and sampling-rate transitions on the internal 1 kOhm BIST path.
+- AHPF-only transitions settled in the same `24` sample budget as the current normal scan default.
 - Scan-like settling characterization was rerun after BIOZScan state-machine refactor.
 - BIOZ scan settling defaults remain sample-based: 24 samples normally and 32 samples after current changes.
 - Fast BIOZ sampling should reduce elapsed scan time without reducing the global discard sample count.
@@ -794,6 +807,37 @@ Accuracy observations from this internal `1 kOhm` BIST dataset:
 - For internal BIST regression, reduced phase range appears promising because it preserves magnitude closely while reducing scan time by about `4x`.
 - This does not yet establish that reduced phase range is acceptable for external known-load or tissue measurements; that still requires fixture-based validation.
 
+Post-fix top-frequency full versus reduced comparison:
+
+Full, corrected PHOFF encoding, top bins only:
+
+```text
+frequency_hz,magnitude_ohm,phase_deg
+131072.0,917.385,0.250
+81920.0,914.444,0.250
+40960.0,909.995,0.250
+spectrum_build_time_ms,31168
+```
+
+Reduced, corrected PHOFF encoding, top bins only:
+
+```text
+frequency_hz,magnitude_ohm,phase_deg
+131072.0,917.355,0.250
+81920.0,914.146,0.250
+40960.0,909.433,0.250
+spectrum_build_time_ms,13362
+```
+
+Top-frequency reduced-phase conclusions after the PHOFF fix:
+- `131.072 kHz`: full versus reduced differs by `0.030 ohm` (`0.003%`)
+- `81.92 kHz`: full versus reduced differs by `0.298 ohm` (`0.033%`)
+- `40.96 kHz`: full versus reduced differs by `0.562 ohm` (`0.062%`)
+- Fitted phase is identical in all three bins: `0.250 deg`
+- Reduced phase range cuts top-bin scan time from about `31.2 s` to `13.4 s`, about `2.33x` faster
+- Conclusion: for internal `1 kOhm` BIST validation, `BIOZ_SCAN_PHASE_REDUCED` remains accurate enough at `131.072 kHz`, `81.92 kHz`, and `40.96 kHz`
+- This still does not prove reduced phase range is acceptable for external known-load or tissue measurements; that remains an external-validation task
+
 Repeatability observations from four repeated `fast reduced` internal `1 kOhm` BIST runs:
 
 | Frequency (Hz) | Mean magnitude (ohm) | Min-max spread (ohm) | Spread (%) |
@@ -810,6 +854,309 @@ Repeatability conclusions:
 - Spectrum build time was also stable at `9893` to `9894 ms`.
 - The largest observed run-to-run magnitude spread was `0.276 ohm` at `2048 Hz`, which is about `0.031%`.
 - These repeated-run results suggest the earlier differences between `fast` versus `slow` and `reduced` versus `full` are dominated by systematic configuration effects, not random run-to-run noise.
+
+### Full Spectral Range, reduced Phase validation
+
+Observed result with fixed `AHPF = 150 Hz`:
+
+```text
+Startup active PLL: OK (STATUS=0x0)
+MAX30001G BIOZ internal-resistor fast reduced-phase scan example started.
+Internal 1kOhm BIST validation scan range: 17.78kHz down to 1kHz.
+Validation settings: avg=8, fast=true, phase_range=reduced(0/45/90/135 deg), current=8000nA, settle=24 samples, current-change settle=32 samples.
+Final spectrum table follows when the scan completes.
+frequency_hz,magnitude_ohm,phase_deg
+131072.0,0.028,83.250
+81920.0,453.554,-30.750
+40960.0,908.805,0.250
+18204.0,903.651,0.250
+8192.0,902.273,0.500
+4096.0,901.232,1.000
+2048.0,897.414,2.000
+1024.0,882.589,3.750
+512.0,829.136,7.000
+256.0,665.297,12.500
+128.0,351.297,20.000
+spectrum_build_time_ms,21615
+BIOZ internal-resistor fast reduced-phase scan complete in 21615 ms.
+```
+
+Initial interpretation at the time:
+- The low-frequency end showed the expected degradation trend below `1 kHz`.
+- The high-frequency end appeared strongly degraded, but those specific `81.92 kHz` and `131.072 kHz` conclusions were later invalidated by the PHOFF encoding bug discovered in the driver.
+- Those pre-fix top-bin reduced-phase results should now be treated only as historical/debug evidence, not as valid performance data.
+
+Observed result with fixed `AHPF = 60 Hz`:
+
+```text
+Startup active PLL: OK (STATUS=0x0)
+MAX30001G BIOZ internal-resistor fast reduced-phase scan example started.
+Internal 1kOhm BIST validation scan range: 128kHz down to 125Hz.
+Validation settings: avg=8, fast=true, phase_range=reduced(0/45/90/135 deg), current=8000nA, ahpf=60Hz, settle=24 samples, current-change settle=32 samples.
+Final spectrum table follows when the scan completes.
+frequency_hz,magnitude_ohm,phase_deg
+131072.0,0.022,-142.750
+81920.0,453.460,-31.750
+40960.0,907.984,0.250
+18204.0,901.170,0.250
+8192.0,897.489,0.250
+4096.0,897.842,0.500
+2048.0,895.349,0.750
+1024.0,893.641,1.500
+512.0,886.283,3.000
+256.0,853.639,5.500
+128.0,745.776,10.000
+spectrum_build_time_ms,21614
+BIOZ internal-resistor fast reduced-phase scan complete in 21615 ms.
+```
+
+`AHPF = 150 Hz` versus `AHPF = 60 Hz` magnitude comparison:
+
+| Frequency (Hz) | 150 Hz AHPF (ohm) | 60 Hz AHPF (ohm) | Delta (ohm) | Delta (%) |
+|---:|---:|---:|---:|---:|
+| 131072 | 0.028 | 0.022 | -0.006 | -21.4 |
+| 81920 | 453.554 | 453.460 | -0.094 | 0.0 |
+| 40960 | 908.805 | 907.984 | -0.821 | -0.1 |
+| 18204 | 903.651 | 901.170 | -2.481 | -0.3 |
+| 8192 | 902.273 | 897.489 | -4.784 | -0.5 |
+| 4096 | 901.232 | 897.842 | -3.390 | -0.4 |
+| 2048 | 897.414 | 895.349 | -2.065 | -0.2 |
+| 1024 | 882.589 | 893.641 | +11.052 | +1.3 |
+| 512 | 829.136 | 886.283 | +57.147 | +6.9 |
+| 256 | 665.297 | 853.639 | +188.342 | +28.3 |
+| 128 | 351.297 | 745.776 | +394.479 | +112.3 |
+
+Updated interpretation:
+- Lowering internal-BIST AHPF from `150 Hz` to `60 Hz` materially improves the low-frequency end of the internal full-range scan.
+- Improvement is modest at `1024 Hz`, strong at `512 Hz`, and very large at `256 Hz` and `128 Hz`.
+- Mid-band values from about `2 kHz` through `40.96 kHz` remain broadly consistent between the two AHPF settings.
+- The high-frequency failures at `81.92 kHz` and `131.072 kHz` are unchanged, so they are not caused by the internal AHPF corner choice.
+- Internal-BIST `AHPF = bypass` produces an almost flat `~938 ohm` magnitude from `40.96 kHz` down to `128 Hz`, but the fitted phase becomes erratic across the sweep.
+- Conclusion from the bypass comparison: bypass is useful as an internal-BIST calibration/debug mode, but it is not a good default if the goal is to validate the same filtered signal path used for external impedance scans.
+- Single-point internal-BIST measurements at `40.96 kHz`, `81.92 kHz`, and `131.072 kHz` are stable and correctly scaled at `0 deg`.
+- Software review later found that the high-frequency PHOFF encoding had been implemented incorrectly in the driver:
+  - at `81.92 kHz` (`FCGEN=0001`), hardware uses `PHOFF[3:1]`, so logical phase steps must be encoded with raw PHOFF values `0, 2, 4, ..., 14`
+  - at `131.072 kHz` (`FCGEN=0000`), hardware uses `PHOFF[3:2]`, so logical phase steps must be encoded with raw PHOFF values `0, 4, 8, 12`
+  - the previous software path wrote logical phase indices directly into PHOFF, so the reported `actual_phase_deg` value was optimistic and did not reflect the effective hardware phase at the top two frequency bins
+- Post-fix rerun at `81.92 kHz` with `8000 nA`, `AHPF=150 Hz`, `DLPF=4 Hz`, `DHPF=bypass` showed 8 distinct phase points with an approximately linear triangular-response ramp:
+  - `0 deg` -> `900.386 ohm`
+  - `22.5 deg` -> `676.821 ohm`
+  - `45 deg` -> `452.909 ohm`
+  - `67.5 deg` -> `228.603 ohm`
+  - `90 deg` -> `3.627 ohm`
+  - `112.5 deg` -> `-221.825 ohm`
+  - `135 deg` -> `-448.409 ohm`
+  - `157.5 deg` -> `-676.706 ohm`
+- Conclusion after the PHOFF fix: `81.92 kHz` is not plateaued. The earlier four-level result was caused by the software phase-encoding bug. The corrected internal-BIST response is now consistent with the lower-frequency triangular/linear phase model.
+- Post-fix rerun at `131.072 kHz` with `8000 nA`, `AHPF=150 Hz`, `DLPF=4 Hz`, `DHPF=bypass` showed 4 distinct hardware-supported phase points:
+  - `0 deg` -> `901.701 ohm`
+  - `45 deg` -> `452.723 ohm`
+  - `90 deg` -> `1.954 ohm`
+  - `135 deg` -> `-451.763 ohm`
+- Conclusion after the PHOFF fix: `131.072 kHz` is not phase-insensitive. The earlier flat result was caused by the software phase-encoding bug. The corrected internal-BIST response is now consistent with a 4-point triangular/linear phase model.
+- Full-spectrum corrected fast reduced scan with dynamic AHPF and `24/24` settling:
+
+```text
+Startup active PLL: OK (STATUS=0x0)
+MAX30001G BIOZ internal-resistor scan example started.
+Internal 1kOhm BIST validation scan range: 128000Hz down to 125Hz.
+Validation settings: avg=8, fast=true, phase_range=reduced(0/45/90/135 deg), current=8000nA, ahpf=dynamic, settle=24 samples, current-change settle=24 samples.
+Final spectrum table follows when the scan completes.
+frequency_hz,magnitude_ohm,phase_deg
+131072.0,917.279,0.250
+81920.0,913.932,0.250
+40960.0,909.216,0.250
+18204.0,904.036,0.250
+8192.0,902.670,0.500
+4096.0,901.592,1.000
+2048.0,898.822,2.000
+1024.0,894.382,1.500
+512.0,887.000,3.000
+256.0,853.810,5.500
+128.0,747.944,10.250
+spectrum_build_time_ms,21490
+BIOZ internal-resistor scan complete in 21490 ms.
+```
+
+- Conclusion from the corrected full-spectrum reduced scan:
+  - the full reduced-phase internal-BIST spectrum is now coherent from `131.072 kHz` down to `128 Hz`
+  - the top bins are no longer anomalous and remain close to `~914..917 ohm`
+  - the remaining spectral distortion is concentrated at the low-frequency end below about `1 kHz`
+  - `settle_samples = 24` and `current_change_settle_samples = 24` are sufficient for the practical reduced-phase internal validation scan
+  - this `fast + reduced + dynamic AHPF + 24/24 settling` configuration is now the recommended internal full-spectrum validation setup
+- Datasheet note: the top modulation bins already have reduced hardware phase resolution:
+  - `131.072 kHz` supports `45 deg` phase increments
+  - `81.92 kHz` supports `22.5 deg` phase increments
+  - `40.96 kHz` and below support `11.25 deg` phase increments
+- This explains why the top bins use fewer hardware-supported phase points than the lower frequencies, but after the PHOFF fix both bins still follow the same basic triangular/linear internal-BIST phase-response model.
+
+Current AHPF behavior in the driver:
+- BIOZ scan now supports two AHPF modes:
+  - default per-frequency AHPF table used by both internal and external scans
+  - fixed internal-BIST override via `internal_bist_ahpf`
+- The new internal-BIST comparison confirms that the low-frequency distortion was strongly influenced by the previous fixed `150 Hz` AHPF choice.
+- The high-frequency failure at `81.92 kHz` and `131.072 kHz` is not explained by the AHPF corner choice and must be treated as a separate issue.
+
+Design decision still open before changing external scan behavior:
+- [x] Decide whether changing AHPF between scan bins requires extra settling samples beyond the current `settle_samples` budget.
+- [x] If AHPF changes are not measurably more intrusive than the current frequency/phase changes, use the same dynamic AHPF selection strategy for both internal and external scans.
+- [ ] If AHPF changes do require extra settling, define a separate settle budget for AHPF transitions before enabling per-frequency AHPF updates in production scans.
+
+Status note:
+- The original settling characterization did not measure AHPF-only transitions. It kept AHPF fixed at `150 Hz`.
+- AHPF-only settling has now been measured explicitly.
+- At both low and fast BIOZ sampling rates, the tested AHPF-only transitions settled in `24` samples (`3` FIFO blocks at `avg=8`):
+  - `256 Hz`: `150 Hz -> 60 Hz` and `60 Hz -> 150 Hz`
+  - `1024 Hz`: `500 Hz -> 150 Hz` and `150 Hz -> 500 Hz`
+- Conclusion: AHPF changes do not require more settling than the current normal `settle_samples = 24` budget.
+
+Recommended per-frequency AHPF table for BIOZ scan:
+
+Validation-first rule:
+- Use one explicit AHPF table by modulation-frequency index.
+- Apply the same table for both internal and external BIOZ scans.
+- Reuse the existing normal transition settling budget of `24` samples when frequency changes also change AHPF.
+- Prefer the smallest AHPF corner that is already supported by validation data, rather than a more aggressive theoretical 60 Hz suppression table.
+
+| Frequency index | Modulation frequency (Hz) | Recommended AHPF |
+|---:|---:|---:|
+| 0 | 131072 | 150 Hz |
+| 1 | 81920 | 150 Hz |
+| 2 | 40960 | 150 Hz |
+| 3 | 18204 | 150 Hz |
+| 4 | 8192 | 150 Hz |
+| 5 | 4096 | 150 Hz |
+| 6 | 2048 | 150 Hz |
+| 7 | 1024 | 60 Hz |
+| 8 | 512 | 60 Hz |
+| 9 | 256 | 60 Hz |
+| 10 | 128 | 60 Hz |
+
+Rationale for this table:
+- Internal full-range validation shows a clear benefit from `60 Hz` AHPF at `1024 Hz` and below.
+- Mid-band values from `2048 Hz` through `40.96 kHz` remain stable with `150 Hz`, and `150 Hz` is already the established validated baseline there.
+- This table improves the known low-frequency distortion without introducing unvalidated aggressive AHPF choices such as `500 Hz`, `1 kHz`, `2 kHz`, or `4 kHz`.
+- A more aggressive noise-suppression table can be revisited later after external known-load validation and noise characterization.
+
+Alternative table for later validation only:
+
+Option B, theory-driven higher-corner table:
+
+| Frequency index | Modulation frequency (Hz) | Alternative AHPF |
+|---:|---:|---:|
+| 0 | 131072 | 4000 Hz |
+| 1 | 81920 | 4000 Hz |
+| 2 | 40960 | 4000 Hz |
+| 3 | 18204 | 1000 Hz |
+| 4 | 8192 | 500 Hz |
+| 5 | 4096 | 150 Hz |
+| 6 | 2048 | 150 Hz |
+| 7 | 1024 | 60 Hz |
+| 8 | 512 | 60 Hz |
+| 9 | 256 | 60 Hz |
+| 10 | 128 | 60 Hz or bypass for internal-only characterization |
+
+Status of Option B:
+- Not selected for production scan behavior yet.
+- Useful as a future external-noise-suppression experiment once known-load validation is available.
+- Should not replace the validated 60/150 table until magnitude and phase stability are compared against external known impedances.
+
+Low-frequency task plan:
+- [x] Add an internal-BIST AHPF option to `BIOZScanConfig` so internal scans are not forced to `150 Hz`.
+- [x] Default the new internal-BIST AHPF option to the lowest available corner (`60 Hz`) for full-range internal validation.
+- [x] Preserve the current external scan behavior for now so external scans still select AHPF from the requested sweep range.
+- [x] Re-run internal reduced-phase scans over `1024 Hz`, `512 Hz`, `256 Hz`, and `128 Hz` with:
+  - `AHPF = 60 Hz`
+  - `AHPF = 150 Hz`
+- [x] Compare magnitude and phase results at those frequencies to determine how much of the low-end distortion is caused by the fixed AHPF setting.
+- [x] For internal full-range validation, prefer `AHPF = 60 Hz` over `150 Hz`.
+- [x] Decide whether per-frequency AHPF updates can reuse the current `settle_samples` budget.
+- [x] Define and review the initial per-frequency AHPF selection table for both internal and external scans before implementation.
+- [x] Implement the initial per-frequency `60 Hz` / `150 Hz` AHPF table in BIOZ scan.
+
+High-frequency task plan:
+- [x] Verify and correct high-frequency PHOFF encoding for `81.92 kHz` and `131.072 kHz`.
+- [x] Re-run top-bin phase sweeps after the PHOFF encoding fix.
+- [ ] Run a dedicated top-end characterization sweep covering only:
+  - `131.072 kHz`
+  - `81.92 kHz`
+  - `40.96 kHz`
+- [x] Compare `FULL` versus `REDUCED` at those top frequencies.
+- [x] Compare `fast` versus `slow` at those top frequencies.
+- [x] Compare `settle_samples = 24`, `48`, and `64` at those top frequencies.
+- [ ] Add temporary debug output for raw per-phase measurements at `131.072 kHz` and `81.92 kHz` before fitting.
+- [ ] Determine whether the failure is dominated by:
+  - internal BIST resistor path limitations,
+  - insufficient settling,
+  - fit/model limitations,
+  - or top-frequency analog front-end behavior.
+- [ ] After internal characterization, compare the same frequencies against an external known resistor to separate internal-BIST limitations from general scan limitations.
+
+Top-frequency conclusion so far:
+- `40.96 kHz` is valid in scan mode.
+- After correcting the PHOFF encoding, both top bins now show the expected phase-dependent response in internal-BIST sweep mode.
+- Increasing settling to `48` and `64` samples, using `FULL` phase range, and switching between low and fast BIOZ sampling did not repair the `81.92 kHz` or `131.072 kHz` scan result.
+- Post-fix baseline sweep result at `81.92 kHz`:
+  - `0 / 22.5 / 45 / 67.5 / 90 / 112.5 / 135 / 157.5 deg` now produce 8 distinct points spanning about `+900 ohm` to `-677 ohm`
+  - the corrected response crosses near `90 deg`, matching the expected triangular/linear internal-BIST behavior
+- Post-fix baseline sweep result at `131.072 kHz`:
+  - `0 / 45 / 90 / 135 deg` now produce 4 distinct points spanning about `+902 ohm` to `-452 ohm`
+  - the corrected response also crosses near `90 deg`, matching the expected top-bin 4-point triangular/linear internal-BIST behavior
+- Pre-fix current sweep result at `131.072 kHz`:
+  - `1100 nA` low-current mode measured about `882 ohm` at `0 / 45 / 90 / 135 deg`
+  - `8000 nA`, `16000 nA`, and `32000 nA` measured about `902..903 ohm` at `0 / 45 / 90 / 135 deg`
+  - changing current shifts absolute scale slightly
+  - because those phase points were encoded incorrectly before the fix, this dataset only shows that current changes scale; it must be repeated if current dependence at `131.072 kHz` still matters
+- Pre-fix current sweep result at `81.92 kHz`:
+  - `1100 nA` produced plateaus near `882 -> 661 -> 438 -> 216 ohm`
+  - `8000 nA` produced plateaus near `901 -> 677 -> 453 -> 229 ohm`
+  - `16000 nA` produced plateaus near `902 -> 678 -> 454 -> 229 ohm`
+  - `32000 nA` produced plateaus near `902 -> 678 -> 454 -> 230 ohm`
+  - because those phase points were encoded incorrectly before the fix, this dataset is obsolete for shape analysis and must be repeated if current dependence at `81.92 kHz` still matters
+- Pre-fix DLPF sweep result at `81.92 kHz` with `8000 nA`:
+  - `DLPF=bypass`, `4 Hz`, and `8 Hz` all preserved the same four plateau levels, approximately `901 / 678 / 453 / 229 ohm`
+  - because those phase points were encoded incorrectly before the fix, this dataset is obsolete for DLPF analysis and must be repeated if DLPF dependence at `81.92 kHz` still matters
+- Current evidence still rules out settling, reduced phase count, and fast/slow sampling as primary explanations for the top-bin issue.
+- The major remaining internal questions at the top bins are now only whether current magnitude or DLPF meaningfully change the corrected triangular-response shape or scale.
+
+Decision on next steps:
+- Internal testing can still answer whether `81.92 kHz` and `131.072 kHz` failures depend on current magnitude, DLPF choice, or the internal-BIST path itself.
+- Internal testing can now use the same triangular internal-BIST summary approach at `81.92 kHz` and `131.072 kHz` as at the lower frequencies, but external known impedances are still required before trusting that model for production external scans.
+- Therefore the internal task now is to confirm whether current magnitude and DLPF materially change the corrected top-bin triangular-response shape or only its scale/noise.
+
+Recommended internal follow-up matrix before attaching an external fixture:
+- [ ] Use `BIOZ_Internal_ImpedanceSweep.ino` instead of the scan sketch for top-bin investigation so raw per-phase behavior is visible without the scan fitter masking it.
+- [x] Re-run top-bin sweeps after the PHOFF encoding fix at:
+  - `81920 Hz`
+  - `131072 Hz`
+- [ ] Repeat current checks at frequencies `81920 Hz` and `131072 Hz`:
+  - `1100 nA` low-current mode
+  - `8000 nA` high-current baseline
+  - `16000 nA`
+  - `32000 nA`
+- [ ] Keep `DHPF = bypass` for all of these tests.
+- [ ] Repeat one DLPF comparison at each top frequency:
+  - `bypass`
+  - `4 Hz`
+  - `8 Hz`
+  - `16 Hz`
+- [ ] Record whether the phase-shape class changes:
+  - triangular / approximately linear
+  - stepped / plateaued
+  - phase-insensitive
+- [ ] If current or DLPF changes do not materially change the corrected triangular-response shape at `81.92 kHz` and `131.072 kHz`, move to external known-load validation.
+
+Practical interpretation of those follow-up tests:
+- The PHOFF fix removed the false plateau/flat behavior at the top bins.
+- AHPF is no longer the leading high-frequency suspect; the 60 Hz versus 150 Hz comparison already showed that.
+- Settling, reduced/full phase selection, and fast/slow sampling are also no longer the leading suspects based on the completed tests.
+
+Exit criteria before external calibration:
+- If `81.92 kHz` and `131.072 kHz` keep the corrected triangular-response shape across current and DLPF variants, treat the internal-BIST high-frequency phase path as validated and move to external known-load validation for production-model confirmation.
+- At that point, move to the external fixture and decide whether the top bins:
+  - behave correctly on pure resistors and RC loads,
+  - need a different fit model than the current triangular/cosine choices,
+  - or should be excluded from production scan results.
 
 ### BIOZ Calibration Program Task
 - [ ] Create a dedicated BIOZ calibration utility program before subject/sample measurements.

@@ -58,7 +58,7 @@ var NAVTREEINDEX =
 [
 "annotated.html",
 "max30001g__defs_8h.html#aae7a22121ec5cf26ba05dfdad36a3096",
-"structImpedanceSpectrum.html#ae55f33f783431f7210ac1a636450e6c5"
+"structImpedanceSpectrum.html#ab2642edd3d5e8a7638e96b795b26b192"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

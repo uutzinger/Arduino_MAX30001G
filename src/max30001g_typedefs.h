@@ -69,6 +69,7 @@ enum BIOZScanPhaseRange : uint8_t {
  * @details config.freq_start_index = 0          index of first modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
  * @details config.freq_end_index = 7            index of last modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
  * @details config.phase_range = BIOZ_SCAN_PHASE_FULL use all supported phase points; REDUCED uses 0/45/90/135 degree points
+ * @details config.internal_bist_ahpf = 255      internal-resistor AHPF override; 255 uses the per-frequency scan table, 0=60Hz, 1=150Hz, 2=500Hz, 3=1kHz, 4=2kHz, 5=4kHz, 6/7=bypass
  * @details config.initial_current_nA = 8000     initial current magnitude in nanoAmps (55..96,000)
  * @details config.settle_samples = 24           samples to discard after phase/frequency/filter changes
  * @details config.current_change_settle_samples = 32 samples to discard after drive-current changes
@@ -89,6 +90,7 @@ struct BIOZScanConfig {
   uint8_t freq_start_index;
   uint8_t freq_end_index;
   BIOZScanPhaseRange phase_range;
+  uint8_t internal_bist_ahpf;
   int32_t initial_current_nA;
   uint8_t settle_samples;
   uint8_t current_change_settle_samples;
@@ -109,6 +111,7 @@ struct BIOZScanConfig {
         freq_start_index(0),
         freq_end_index(7),
         phase_range(BIOZ_SCAN_PHASE_FULL),
+        internal_bist_ahpf(255U),
         initial_current_nA(8000),
         settle_samples(24),
         current_change_settle_samples(32) {}

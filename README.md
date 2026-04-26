@@ -4,7 +4,7 @@ This is the MAX30001 library for Arduino. It attempts to be `complete` and suppo
 
 This library has been validated for ECG, continuous BIOZ, combined ECG+BIOZ, internal calibration paths, and the refactored nonblocking BIOZ scan flow that is driven through `setup...()`, `start()`, and repeated `update()`.
 
-Impedance spectroscopy calibration with external known samples is still in progress.
+Impedance Spectroscopy: Internal `1 kOhm` resistor scan validation working across the full `128 kHz` down to `125 Hz` scan range. External known-load validation is still required before calling library production ready.
 
 # Installation
 
@@ -114,7 +114,7 @@ When you open the serial monitor and type `?`, the sketch prints this help menu:
 ```text
 ================================================================================
 | MAX30001G ECG and Bio-Impedance Program                                      |
-| 2026 Urs Utzinger 7 GPT                                                      |
+| 2026 Urs Utzinger & GPT                                                      |
 ================================================================================
 | GENERAL COMMANDS                       | DATA COMMANDS                       |
 |----------------------------------------|-------------------------------------|
@@ -156,6 +156,10 @@ When you open the serial monitor and type `?`, the sketch prints this help menu:
 | Sf<n>: fast mode  (0=off,1) Sf0        | Cm<n>: cal modulation(0-3)  Cm0     |
 | Sr<n>: full range (0=off,1) Sr0        | Cf<n>: mod frequency(0-4)   Cf3     |
 | Si<n>: source     (0=ext,1=int) Si0    |                                     |
+| Sp<n>: phase rng  (0=full,1) Sp0       |                                     |
+| Sh<n>: int AHPF   (255,0-7) Sh255      |                                     |
+| St<n>: settle     (1-64)    St24       |                                     |
+| Sc<n>: cur settle (1-64)    Sc24       |                                     |
 |========================================|=====================================|
 | LOG LEVEL                              | SPECIAL                             |
 |----------------------------------------|-------------------------------------|
@@ -184,6 +188,7 @@ The maintained example sketches match the current driver structure:
 - `examples/ECGandBIOZ/ECGandBIOZ.ino`: simultaneous ECG and BIOZ using `setupECGandBIOZ(...)`
 - `examples/BIOZScan/BIOZScan.ino`: external nonblocking BIOZ spectroscopy using `setupBIOZScan(...)`
 - `examples/BIOZScan_Internal/BIOZScan_Internal.ino`: internal-resistor scan validation using the same scan-owned state machine
+- `examples/BIOZScan_Internal_Fast/BIOZScan_Internal_Fast.ino`: fast reduced-phase internal-resistor full-spectrum validation
 - `examples/Hardware_HealthCheck/Hardware_HealthCheck.ino`: startup communication and hardware checks
 - `examples/MAX30001G/MAX30001G.ino`: interactive serial test program covering mode switches, setup helpers, calibration, scan control, and register inspection
 - `examples/ECG_FIFOInterruptValidation/ECG_FIFOInterruptValidation.ino`: ECG FIFO interrupt and `ECG_data` validation
@@ -220,7 +225,7 @@ See [LICENSE](License.txt).
 
 The MAX30001G is a highly integrated analog front end that consists of a differential `ECG channel` with optional right-leg drive. It employs standard high-pass and low-pass filters, an instrumentation amplifier, and an analog-to-digital converter.
 
-The impedance unit consists of a current driver, analog high-pass filter, and phase-shifted demodulator to measure impedance from 128kHz down to 125Hz modulation frequency at varying phase shifts. Since the analog HPF has limited ability to suppress 60Hz noise, measurements below 500Hz might not be reliable.
+The impedance unit consists of a current driver, analog high-pass filter, and phase-shifted demodulator to measure impedance from 128kHz down to 125Hz modulation frequency at varying phase shifts. Internal-BIST validation shows coherent full-spectrum scans with dynamic AHPF selection, but the low-frequency end still rolls off below about 1kHz and external known-load validation is still required for production scan calibration.
 
 <a href="assets/Blockdiagram.png" target="_blank">
   <img src="assets/Blockdiagram.png" style="width: 800px;">

@@ -2,35 +2,37 @@
 #include "max30001g.h"
 #include "logger.h"
 
-const uint8_t AFE_CS_PIN = 6;
-const int AFE_INT1_PIN = 12;
-const int AFE_INT2_PIN = -1;
-const uint32_t PLL_STARTUP_SETTLE_MS = 500U;
-const uint32_t PLL_STATUS_CLEAR_MS = 10U;
-const uint32_t POINT_TIMEOUT_MS = 2500U;
-const uint32_t DIRECT_FIFO_POLL_MS = 20U;
-const uint16_t DISCARD_SAMPLES = 24U;
-const uint16_t AVERAGE_SAMPLES = 8U;
-const uint8_t FIFO_THRESHOLD_SAMPLES = 1U;
+const uint8_t  AFE_CS_PIN = 6;
+const int      AFE_INT1_PIN = 12;
+const int      AFE_INT2_PIN = -1;
+const uint32_t PLL_STARTUP_SETTLE_MS  =  500U;
+const uint32_t PLL_STATUS_CLEAR_MS    =   10U;
+const uint32_t POINT_TIMEOUT_MS       = 2500U;
+const uint32_t DIRECT_FIFO_POLL_MS    =   20U;
+const uint16_t DISCARD_SAMPLES        =   24U;
+const uint16_t AVERAGE_SAMPLES        =    8U;
+const uint8_t  FIFO_THRESHOLD_SAMPLES =    1U;
 
 // setupBIOZImpedanceCalibration(speed, gain, ahpf, dlpf, dhpf, frequency, current,
 //                               phase, resistance, modulation, modulation_frequency)
 const uint8_t  BIOZ_SPEED_LOW_RATE = 0;       // 0=~25..32sps, 1=~50..64sps
-const uint8_t  BIOZ_GAIN_20_VV = 1;           // 0=10V/V, 1=20V/V, 2=40V/V, 3=80V/V
-const uint8_t  BIOZ_AHPF_150HZ = 1;           // 0=60Hz, 1=150Hz, 2=500Hz, 3=1kHz, 4=2kHz, 5=4kHz, >=6=bypass
-const uint8_t  BIOZ_DLPF_4HZ = 1;             // 0=bypass, 1=~4Hz, 2=~8Hz, 3=~16Hz
-const uint8_t  BIOZ_DHPF_BYPASS = 0;          // 0=bypass, 1=0.05Hz, 2/3=0.5Hz
-const uint32_t BIOZ_DRIVE_CURRENT_NA = 8000UL;
+const uint8_t  BIOZ_GAIN_20_VV     = 1;       // 0=10V/V, 1=20V/V, 2=40V/V, 3=80V/V
+const uint8_t  BIOZ_AHPF_150HZ     = 1;       // 0=60Hz, 1=150Hz, 2=500Hz, 3=1kHz, 4=2kHz, 5=4kHz, >=6=bypass
+const uint8_t  BIOZ_DLPF_4HZ       = 1;       // 0=bypass, 1=~4Hz, 2=~8Hz, 3=~16Hz
+const uint8_t  BIOZ_DHPF_BYPASS    = 0;       // 0=bypass, 1=0.05Hz, 2/3=0.5Hz, must bypass for BIOZ SCan
+const uint32_t BIOZ_DRIVE_CURRENT_NA = 8000UL; // 1100, 8000, 16000, 32000
 const uint32_t BIOZ_INTERNAL_RESISTOR_OHM = 1000UL;
 const uint8_t  BIOZ_RESISTOR_MODULATION = 0;  // 0=constant resistor, 1..3=modulated resistor
 const uint8_t  BIOZ_RESISTOR_MOD_FREQ = 0;    // Used only when BIOZ_RESISTOR_MODULATION is non-zero
 
-const uint32_t SWEEP_FREQUENCIES_HZ[] = {
-  1000UL, 2000UL, 4000UL, 8000UL, 16000UL
-};
+// const uint32_t SWEEP_FREQUENCIES_HZ[] = { 80000UL };
+// const float SWEEP_PHASES_DEG[] = {
+//   0.0f, 22.5f, 45.0f, 67.5f, 90.0f, 112.5f, 135.0f, 157.5f
+// };
 
+const uint32_t SWEEP_FREQUENCIES_HZ[] = { 128000UL };
 const float SWEEP_PHASES_DEG[] = {
-  0.0f, 45.0f, 90.0f, 135.0f, 168.75f
+  0.0f, 45.0f, 90.0f, 135.0f
 };
 
 MAX30001G afe(AFE_CS_PIN, AFE_INT1_PIN, AFE_INT2_PIN);
@@ -47,13 +49,15 @@ void clearBiozAcquisitionState() {
   EOF_detected = false;
 }
 
-void printBiozRegisterSnapshot(const char* context, uint32_t requested_frequency_hz, float phase_deg) {
+void printBiozRegisterSnapshot(const char* context, uint32_t requested_frequency_hz, float requested_phase_deg) {
   Serial.println();
   Serial.print(context);
   Serial.print(" registers at requested ");
   Serial.print(requested_frequency_hz);
-  Serial.print("Hz, phase ");
-  Serial.print(phase_deg, 2);
+  Serial.print("Hz, requested phase ");
+  Serial.print(requested_phase_deg, 2);
+  Serial.print("deg, actual phase ");
+  Serial.print(BIOZ_phase, 2);
   Serial.println("deg:");
   afe.printBiozDiagnosticRegisters(nullptr);
 }
@@ -95,7 +99,7 @@ void printSweepConfig() {
   Serial.print(DISCARD_SAMPLES);
   Serial.print(", average=");
   Serial.println(AVERAGE_SAMPLES);
-  Serial.println("requested_frequency_hz,actual_frequency_hz,phase_deg,mean_ohm,min_ohm,max_ohm,samples,status_hex,pll");
+  Serial.println("requested_frequency_hz,actual_frequency_hz,requested_phase_deg,actual_phase_deg,mean_ohm,min_ohm,max_ohm,samples,status_hex,pll");
 }
 
 void configureSweepPoint(uint32_t requested_frequency_hz, float phase_deg) {
@@ -184,11 +188,12 @@ bool collectSweepPoint(float& mean_ohm, float& min_ohm, float& max_ohm, uint16_t
   return samples == AVERAGE_SAMPLES;
 }
 
-void printSweepPoint(uint32_t requested_frequency_hz, float phase_deg) {
-  configureSweepPoint(requested_frequency_hz, phase_deg);
+void printSweepPoint(uint32_t requested_frequency_hz, float requested_phase_deg) {
+  configureSweepPoint(requested_frequency_hz, requested_phase_deg);
+  const float actual_phase_deg = BIOZ_phase;
 
-  if (phase_deg == 0.0f) {
-    printBiozRegisterSnapshot("BIOZ internal impedance sweep", requested_frequency_hz, phase_deg);
+  if (requested_phase_deg == 0.0f) {
+    printBiozRegisterSnapshot("BIOZ internal impedance sweep", requested_frequency_hz, requested_phase_deg);
   }
 
   float mean_ohm = 0.0f;
@@ -205,7 +210,9 @@ void printSweepPoint(uint32_t requested_frequency_hz, float phase_deg) {
   Serial.print(",");
   Serial.print(BIOZ_frequency, 1);
   Serial.print(",");
-  Serial.print(phase_deg, 2);
+  Serial.print(requested_phase_deg, 2);
+  Serial.print(",");
+  Serial.print(actual_phase_deg, 2);
   Serial.print(",");
   Serial.print(mean_ohm, 3);
   Serial.print(",");

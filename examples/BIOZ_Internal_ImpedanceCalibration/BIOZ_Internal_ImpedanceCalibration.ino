@@ -17,7 +17,7 @@ const uint8_t  FIFO_THRESHOLD_SAMPLES =    1U;
 //                               phase, resistance, modulation, modulation_frequency)
 const uint8_t  BIOZ_SPEED_LOW_RATE = 0;       // 0=~25..32sps, 1=~50..64sps
 const uint8_t  BIOZ_GAIN_20_VV = 1;           // 0=10V/V, 1=20V/V, 2=40V/V, 3=80V/V
-const uint8_t  BIOZ_AHPF_150HZ = 1;           // 0=60Hz, 1=150Hz, 2=500Hz, 3=1kHz, 4=2kHz, 5=4kHz, >=6=bypass
+const uint8_t  BIOZ_AHPF_150HZ = 0;           // 0=60Hz, 1=150Hz, 2=500Hz, 3=1kHz, 4=2kHz, 5=4kHz, >=6=bypass
 const uint8_t  BIOZ_DLPF_4HZ = 1;             // 0=bypass, 1=~4Hz, 2=~8Hz, 3=~16Hz
 const uint8_t  BIOZ_DHPF_BYPASS = 0;          // 0=bypass, 1=0.05Hz, 2/3=0.5Hz
 const uint32_t BIOZ_DRIVE_CURRENT_NA = 8000UL;
@@ -32,11 +32,12 @@ struct InternalImpedancePoint {
 };
 
 const InternalImpedancePoint POINTS[] = {
-  {"baseline", 18204UL, 0.0f},
-  {"baseline",  8000UL, 0.0f},
-  {"baseline",  1024UL, 0.0f},
-  {"changed_frequency_phase", 4000UL, 45.0f}
-};
+  {"baseline", 40960UL, 0.0f},
+  {"baseline", 81920UL, 0.0f},
+  {"baseline",131072UL, 0.0f},
+  {"baseline",131072UL, 45.0f},
+  {"baseline",131072UL, 90.0f},
+ };
 
 MAX30001G afe(AFE_CS_PIN, AFE_INT1_PIN, AFE_INT2_PIN);
 

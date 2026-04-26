@@ -1543,6 +1543,22 @@ void MAX30001G::setupECGandBIOZ(
  *   choose highest available cutoff that is strictly below the lowest scanned modulation frequency.
  *   Example: 500Hz -> AHPF 150Hz; 125Hz -> AHPF 60Hz.
  *
+ * Ideal Modulation AHPF cutoffs 
+ * 131072 -> 4000 
+ *  81920 -> 4000
+ *  40960 -> 4000
+ *  18204 -> 1000
+ *   8192 ->  500
+ *   4096 ->  150
+ *   2048 ->  150
+ *   1024 ->   60
+ *    512 ->   60 or bypass
+ *    256 ->   60 or bypass
+ *    128 ->   60 or bypass
+ *
+ * AHPF Options:
+ * 60, 150, 1000, 2000, 4000, or bypass
+ * 
  * If we choose the following cut on frequencies for AHPF, suppresion of 60Hz noise will be:
  *   60Hz cut on:  -3dB or reduced to 70%
  *  150Hz cut on: -10dB or reduced to 30%
@@ -1646,6 +1662,7 @@ void MAX30001G::setupBIOZScan(const BIOZScanConfig& config, bool reuseCurrents) 
  * freq_start_index:      index of first modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
  * freq_end_index:        index of last modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
  * phase_range:           FULL uses all supported phase points; REDUCED uses 0/45/90/135 degree points
+ * internal_bist_ahpf:    internal-resistor AHPF override; 255 uses per-frequency scan table, 0=60Hz, 1=150Hz, 2=500Hz, 3=1kHz, 4=2kHz, 5=4kHz, 6/7=bypass
  * initial_current_nA:    initial current magnitude in nanoAmps (55..96,000)
  * 
  */
@@ -1697,6 +1714,10 @@ void MAX30001G::setupBIOZScan(const BIOZScanConfig& config, bool reuseCurrents) 
   if ((sanitized_config.phase_range != BIOZ_SCAN_PHASE_FULL) &&
       (sanitized_config.phase_range != BIOZ_SCAN_PHASE_REDUCED)) {
     sanitized_config.phase_range = BIOZ_SCAN_PHASE_FULL;
+  }
+  if ((sanitized_config.internal_bist_ahpf > 7U) &&
+      (sanitized_config.internal_bist_ahpf != 255U)) {
+    sanitized_config.internal_bist_ahpf = 255U;
   }
   if (sanitized_config.initial_current_nA < 55) { sanitized_config.initial_current_nA = 55; }
   if (sanitized_config.initial_current_nA > 96000) { sanitized_config.initial_current_nA = 96000; }
@@ -1814,18 +1835,29 @@ uint8_t MAX30001G::biozScanPhaseSelectorForStep(uint8_t freq_idx, uint8_t phase_
   return reduced_phase_selectors_low[phase_step_idx];
 }
 
-/* 
- * Selects the appropriate AHPF value based on the lowest frequency measured in the BIOZ scan.
+/*
+ * Selects the BIOZ scan AHPF code from a per-frequency table.
+ * The current validated table uses only 60Hz and 150Hz corners.
  */
-uint8_t MAX30001G:: biozScanSelectAHPF(float lowest_frequency_hz) const {
-  static const float kAhpfCutoffHz[6] = {60.0f, 150.0f, 500.0f, 1000.0f, 2000.0f, 4000.0f};
-  uint8_t selected = 0U;
-  for (uint8_t i = 0U; i < 6U; ++i) {
-    if (kAhpfCutoffHz[i] < lowest_frequency_hz) {
-      selected = i;
-    }
+uint8_t MAX30001G:: biozScanSelectAHPF(uint8_t freq_idx) const {
+  static const uint8_t kScanAhpfByFreqIdx[MAX30001_BIOZ_NUM_FREQUENCIES] = {
+    1U, // 128kHz  -> 150Hz
+    1U, //  80kHz  -> 150Hz
+    1U, //  40kHz  -> 150Hz
+    1U, // 17.78kHz-> 150Hz
+    1U, //   8kHz  -> 150Hz
+    1U, //   4kHz  -> 150Hz
+    1U, //   2kHz  -> 150Hz
+    0U, //   1kHz  ->  60Hz
+    0U, // 500Hz   ->  60Hz
+    0U, // 250Hz   ->  60Hz
+    0U  // 125Hz   ->  60Hz
+  };
+
+  if (freq_idx >= MAX30001_BIOZ_NUM_FREQUENCIES) {
+    return 1U;
   }
-  return selected;
+  return kScanAhpfByFreqIdx[freq_idx];
 }
 
 /*
@@ -1948,12 +1980,6 @@ void MAX30001G::stepBIOZScan() {
     return;
   }
 
-  // nominal modulation frequencies
-  constexpr float kNominalFreqHz[MAX30001_BIOZ_NUM_FREQUENCIES] = {
-    128000.0f, 80000.0f, 40000.0f, 17780.0f, 8000.0f, 4000.0f,
-    2000.0f, 1000.0f, 500.0f, 250.0f, 125.0f
-  };
-
   const uint8_t freq_start_index      = _scanRuntimeConfig.freq_start_index;
   const uint8_t freq_end_index        = _scanRuntimeConfig.freq_end_index;
   const uint8_t avg                   = _scanRuntimeConfig.avg;
@@ -2013,23 +2039,15 @@ void MAX30001G::stepBIOZScan() {
         static_cast<float>(_scanRuntimeConfig.timeout_margin_ms)
       );
 
-      const float lowest_nominal_freq_hz = kNominalFreqHz[freq_end_index];
-      const uint8_t ahpf = use_internal_resistor ? 1U :  biozScanSelectAHPF(lowest_nominal_freq_hz);
-
       // Filter choices:
-      // - Internal BIST uses AHPF=150 Hz to match the known-good impedance
-      //   calibration setup.
-      // - External scans choose the highest AHPF cutoff below the lowest scanned
-      //   modulation frequency, preserving the BIOZ carrier while rejecting more
-      //   low-frequency interference when possible.
+      // - Scan AHPF is now selected per frequency bin from a validated table.
+      // - Internal BIST can override that table with a fixed caller-selected
+      //   AHPF code for characterization runs.
       // - DLPF=4 Hz is the current conservative measurement filter; settling
       //   tests showed some faster DLPF transitions, but noise/repeatability has
       //   not yet justified changing this default.
       // - DHPF=bypass keeps the demodulated impedance baseline available.
-      setBIOZfilter(ahpf, 1U, 0U);
-      if (freq_end_index == 9U) {
-        LOGI("scanBIOZ: 250Hz sweep uses AHPF=150Hz (no 125Hz AHPF option in MAX30001).");
-      }
+      setBIOZfilter(biozScanSelectAHPF(freq_start_index), 1U, 0U);
 
       // Disable the voltage calibration source. The internal BIOZ resistor test
       // uses the BMUX BIST path, and external scans should measure the electrode
@@ -2099,6 +2117,10 @@ void MAX30001G::stepBIOZScan() {
       }
 
       setBIOZModulationFrequencybyIndex(_scanFreqIndex);
+      const uint8_t ahpf = (use_internal_resistor && (_scanRuntimeConfig.internal_bist_ahpf != 255U))
+                             ? _scanRuntimeConfig.internal_bist_ahpf
+                             : biozScanSelectAHPF(_scanFreqIndex);
+      setBIOZfilter(ahpf, 1U, 0U);
       _scanFrequency[_scanFreqIndex] = BIOZ_frequency;
       _scanNumPhaseMeasurements = biozScanPhaseCountForFreq(_scanFreqIndex);
       _scanAttempt = 0U;

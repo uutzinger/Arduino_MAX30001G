@@ -309,6 +309,7 @@ public:
    * @details config.freq_start_index = 0          index of first modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
    * @details config.freq_end_index = 7            index of last modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
    * @details config.phase_range = BIOZ_SCAN_PHASE_FULL use all supported phase points; REDUCED uses 0/45/90/135 degree points
+   * @details config.internal_bist_ahpf = 255      internal-resistor AHPF override; 255 uses the per-frequency scan table, 0=60Hz, 1=150Hz, 2=500Hz, 3=1kHz, 4=2kHz, 5=4kHz, 6/7=bypass
    * @details config.initial_current_nA = 8000     initial current magnitude in nanoAmps (55..96,000)
    * @details config.settle_samples = 24           samples to discard after phase/frequency/filter changes
    * @details config.current_change_settle_samples = 32 samples to discard after drive-current changes
@@ -706,9 +707,9 @@ public:
    * @details 3   33.75   67.5  135.0
    * @details 4   45.00   90.0 
    * @details 5   56.25  112.5
-   * @details 6   67.50  125.0
-   * @details 7   78.75  147.5
-   * @details 8   90.00  170.0
+   * @details 6   67.50  135.0
+   * @details 7   78.75  157.5
+   * @details 8   90.00
    * @details 9  101.25
    * @details 10 112.50
    * @details 11 123.75
@@ -1202,7 +1203,7 @@ private:
 
   uint8_t biozScanPhaseCountForFreq(uint8_t freq_idx) const;
   uint8_t biozScanPhaseSelectorForStep(uint8_t freq_idx, uint8_t phase_step_idx) const;
-  uint8_t biozScanSelectAHPF(float lowest_frequency_hz) const;
+  uint8_t biozScanSelectAHPF(uint8_t freq_idx) const;
   float   biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, float outlier_sigma, bool& hasSamples);
 
   // ---------------------------------------------------------------------------------------

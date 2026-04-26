@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['biozscanconfig_442',['BIOZScanConfig',['../structBIOZScanConfig.html',1,'']]]
+  ['biozscanconfig_443',['BIOZScanConfig',['../structBIOZScanConfig.html',1,'']]]
 ];

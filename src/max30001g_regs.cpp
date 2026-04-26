@@ -772,11 +772,11 @@ void MAX30001G::printStatus(void) {
   
     LOG("BIOZ phase offset is ");
     if (cnfg_bioz.bit.fcgen == 0) {
-      LOGln("%f", cnfg_bioz.bit.phoff * 45.0);
+      LOGln("%f", static_cast<float>(cnfg_bioz.bit.phoff >> 2) * 45.0f);
     } else if (cnfg_bioz.bit.fcgen == 1) {
-      LOGln("%f", cnfg_bioz.bit.phoff * 22.5);
+      LOGln("%f", static_cast<float>(cnfg_bioz.bit.phoff >> 1) * 22.5f);
     } else if (cnfg_bioz.bit.fcgen >= 2) {
-      LOGln("%f", cnfg_bioz.bit.phoff * 11.25);
+      LOGln("%f", static_cast<float>(cnfg_bioz.bit.phoff) * 11.25f);
     }
   
     LOG("BIOZ current generator ");

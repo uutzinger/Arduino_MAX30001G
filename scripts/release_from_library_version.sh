@@ -23,7 +23,7 @@ Reads version from library.properties and uses it as the single source of truth.
 Actions:
   1. Mirrors the version into Doxyfile PROJECT_NUMBER
   2. Regenerates docs via scripts/generate_docs.sh
-  3. Stages and commits repo changes for the release version
+  3. Stages and commits repo changes for the release version, excluding .codex
   4. Creates git tag if it does not already exist
   5. Optionally pushes the tag
   6. Optionally creates a GitHub release with gh
@@ -112,7 +112,7 @@ if [[ "$DO_SYNC_DOCS" -eq 1 ]]; then
 fi
 
 if [[ "$DO_COMMIT" -eq 1 ]]; then
-  git add -A .
+  git add -A -- . ':(exclude).codex' ':(exclude).codex/**'
   if ! git diff --cached --quiet; then
     git commit -m "$COMMIT_MESSAGE"
   else

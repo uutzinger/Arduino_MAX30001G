@@ -15,6 +15,7 @@ const bool RUN_FREQUENCY_TESTS = true;
 const bool RUN_CURRENT_TESTS = true;
 const bool RUN_SAMPLING_RATE_TRANSITION_TESTS = true;
 const bool RUN_DLPF_TESTS = true;
+const bool RUN_AHPF_TESTS = true;
 const bool RUN_BIOZ_START_TEST = true;
 
 const uint32_t PLL_STARTUP_SETTLE_MS = 500U;
@@ -32,7 +33,9 @@ const bool PRINT_SAMPLE_ROWS = true;
 const bool PRINT_GROUP_SUMMARY_ROWS = true;
 
 const uint8_t BIOZ_GAIN_20_VV = 1U;
+const uint8_t BIOZ_AHPF_60HZ = 0U;
 const uint8_t BIOZ_AHPF_150HZ = 1U;
+const uint8_t BIOZ_AHPF_500HZ = 2U;
 const uint8_t BIOZ_DHPF_BYPASS = 0U;
 const uint32_t BIOZ_INTERNAL_RESISTOR_OHM = 1000UL;
 const uint8_t BIOZ_RESISTOR_MODULATION = 0U;
@@ -51,6 +54,7 @@ struct BiozPoint {
   float phase_deg;
   uint32_t current_nA;
   uint8_t speed;
+  uint8_t ahpf;
   uint8_t dlpf;
 };
 
@@ -70,6 +74,7 @@ struct SettlingSummary {
   float phase_deg;
   uint32_t current_nA;
   uint8_t speed;
+  uint8_t ahpf;
   uint8_t dlpf;
   float final_reference_ohm;
   SettlingResult result;
@@ -85,6 +90,7 @@ BiozPoint basePoint(uint8_t speed) {
   point.phase_deg = 0.0f;
   point.current_nA = 8000UL;
   point.speed = speed;
+  point.ahpf = BIOZ_AHPF_150HZ;
   point.dlpf = BIOZ_DLPF_4HZ;
   return point;
 }
@@ -166,7 +172,7 @@ void configureScanLikeBioz(const BiozPoint& point, bool enable_bioz) {
   afe.setBIOZModulationFrequencyByFrequency(point.frequency_hz);
   afe.setBIOZmag(point.current_nA);
   afe.setBIOZmodulation((BIOZ_cgmag < 8000UL) ? 0U : 1U);
-  afe.setBIOZfilter(BIOZ_AHPF_150HZ, point.dlpf, BIOZ_DHPF_BYPASS);
+  afe.setBIOZfilter(point.ahpf, point.dlpf, BIOZ_DHPF_BYPASS);
   afe.setBIOZPhaseOffsetbyPhase(point.frequency_hz, point.phase_deg);
 
   afe.setDefaultNoTestSignal();
@@ -231,8 +237,8 @@ void applyTransition(const BiozPoint& from, const BiozPoint& to, bool bioz_start
     afe.setBIOZmodulation((BIOZ_cgmag < 8000UL) ? 0U : 1U);
   }
 
-  if (to.dlpf != from.dlpf) {
-    afe.setBIOZfilter(BIOZ_AHPF_150HZ, to.dlpf, BIOZ_DHPF_BYPASS);
+  if ((to.ahpf != from.ahpf) || (to.dlpf != from.dlpf)) {
+    afe.setBIOZfilter(to.ahpf, to.dlpf, BIOZ_DHPF_BYPASS);
   }
 
   if ((to.phase_deg != from.phase_deg) || (to.frequency_hz != from.frequency_hz)) {
@@ -298,6 +304,20 @@ const char* dlpfLabel(uint8_t dlpf) {
   }
 }
 
+const char* ahpfLabel(uint8_t ahpf) {
+  switch (ahpf) {
+    case BIOZ_AHPF_60HZ: return "60Hz";
+    case BIOZ_AHPF_150HZ: return "150Hz";
+    case BIOZ_AHPF_500HZ: return "500Hz";
+    case 3U: return "1kHz";
+    case 4U: return "2kHz";
+    case 5U: return "4kHz";
+    case 6U:
+    case 7U: return "bypass";
+    default: return "unknown";
+  }
+}
+
 void printExperimentHeader() {
   Serial.println("# BIOZ settling characterization");
   Serial.println("# Experiment: use the MAX30001G internal 1kOhm BIOZ BIST load, change one BIOZ setting at a time, reset/synchronize the FIFO, then record the post-transition settling response.");
@@ -341,6 +361,10 @@ void printCaseSettings(
   Serial.print(speedLabel(target.speed));
   Serial.print("(");
   Serial.print(target.speed);
+  Serial.print("), ahpf=");
+  Serial.print(ahpfLabel(target.ahpf));
+  Serial.print("(");
+  Serial.print(target.ahpf);
   Serial.print("), dlpf=");
   Serial.print(dlpfLabel(target.dlpf));
   Serial.print("(");
@@ -486,6 +510,7 @@ void rememberSettlingSummary(
   summary.phase_deg = target.phase_deg;
   summary.current_nA = BIOZ_cgmag;
   summary.speed = target.speed;
+  summary.ahpf = target.ahpf;
   summary.dlpf = target.dlpf;
   summary.final_reference_ohm = final_reference_ohm;
   summary.result = result;
@@ -494,7 +519,7 @@ void rememberSettlingSummary(
 void printSettlingSummaryTable() {
   Serial.println();
   Serial.println("# final settling summary");
-  Serial.println("suite_speed,test_type,from_setting,to_setting,frequency_hz,phase_deg,current_nA,speed,dlpf,final_reference_ohm,threshold_percent,window_samples,settled,sample_index,elapsed_ms,fifo_blocks_of_8");
+  Serial.println("suite_speed,test_type,from_setting,to_setting,frequency_hz,phase_deg,current_nA,speed,ahpf,dlpf,final_reference_ohm,threshold_percent,window_samples,settled,sample_index,elapsed_ms,fifo_blocks_of_8");
   for (uint8_t i = 0U; i < settlingSummaryCount; ++i) {
     const SettlingSummary& summary = settlingSummaries[i];
     Serial.print(summary.suite_speed);
@@ -512,6 +537,8 @@ void printSettlingSummaryTable() {
     Serial.print(summary.current_nA);
     Serial.print(",");
     Serial.print(speedLabel(summary.speed));
+    Serial.print(",");
+    Serial.print(ahpfLabel(summary.ahpf));
     Serial.print(",");
     Serial.print(dlpfLabel(summary.dlpf));
     Serial.print(",");
@@ -738,6 +765,32 @@ void runDlpfTests(uint8_t base_speed) {
   runSettlingCase(suite_speed, "dlpf", "4Hz", "16Hz", from, to);
 }
 
+void runAhpfTests(uint8_t base_speed) {
+  const char* suite_speed = speedLabel(base_speed);
+  BiozPoint from = basePoint(base_speed);
+  BiozPoint to = from;
+
+  from.frequency_hz = 256U;
+  to.frequency_hz = 256U;
+  from.ahpf = BIOZ_AHPF_150HZ;
+  to.ahpf = BIOZ_AHPF_60HZ;
+  runSettlingCase(suite_speed, "ahpf", "150Hz", "60Hz", from, to);
+
+  from.ahpf = BIOZ_AHPF_60HZ;
+  to.ahpf = BIOZ_AHPF_150HZ;
+  runSettlingCase(suite_speed, "ahpf", "60Hz", "150Hz", from, to);
+
+  from.frequency_hz = 1024U;
+  to.frequency_hz = 1024U;
+  from.ahpf = BIOZ_AHPF_500HZ;
+  to.ahpf = BIOZ_AHPF_150HZ;
+  runSettlingCase(suite_speed, "ahpf", "500Hz", "150Hz", from, to);
+
+  from.ahpf = BIOZ_AHPF_150HZ;
+  to.ahpf = BIOZ_AHPF_500HZ;
+  runSettlingCase(suite_speed, "ahpf", "150Hz", "500Hz", from, to);
+}
+
 void runBiozStartTest(uint8_t base_speed) {
   const char* suite_speed = speedLabel(base_speed);
   BiozPoint from = basePoint(base_speed);
@@ -754,6 +807,7 @@ void runTestSuite(uint8_t base_speed) {
   if (RUN_FREQUENCY_TESTS) { runFrequencyTests(base_speed); }
   if (RUN_CURRENT_TESTS) { runCurrentTests(base_speed); }
   if (RUN_DLPF_TESTS) { runDlpfTests(base_speed); }
+  if (RUN_AHPF_TESTS) { runAhpfTests(base_speed); }
   if (RUN_BIOZ_START_TEST) { runBiozStartTest(base_speed); }
 
   Serial.print("# suite_end: ");

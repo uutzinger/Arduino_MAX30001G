@@ -94,6 +94,10 @@ uint8_t scan_avg = 8;         // Number of averages per frequency point (1-8)
 bool scan_fast = false;       // Fast scan mode (60sps vs 30sps)
 bool scan_fullrange = false;  // Include lowest frequencies
 bool scan_internal = false;   // false=external scan, true=internal resistor scan
+BIOZScanPhaseRange scan_phase_range = BIOZ_SCAN_PHASE_FULL; // FULL or REDUCED
+uint8_t scan_internal_bist_ahpf = 255U; // 255=dynamic table, 0..7=fixed internal-BIST AHPF
+uint8_t scan_settle_samples = 24U; // Samples to discard after phase/frequency/filter changes
+uint8_t scan_current_change_settle_samples = 24U; // Samples to discard after current changes
 
 // BIOZ Calibration
 uint32_t cal_resistance = 1000;  // Internal calibration resistor value (Ohms)
@@ -161,6 +165,10 @@ const char* getModeName(OperationMode mode) {
 
 const char* onOffLabel(bool enabled) {
   return enabled ? "ON" : "OFF";
+}
+
+const char* scanPhaseRangeLabel(BIOZScanPhaseRange range) {
+  return (range == BIOZ_SCAN_PHASE_REDUCED) ? "reduced(0/45/90/135 deg)" : "full";
 }
 
 float requestedEcgSamplingRateSps(uint8_t selector) {
@@ -244,6 +252,21 @@ float requestedCalibrationModulationOhm(uint32_t resistance, uint8_t modulation)
     modulation = 3U;
   }
   return rmod_table[row][modulation];
+}
+
+const char* scanAhpfOverrideLabel(uint8_t selector) {
+  switch (selector) {
+    case 255U: return "dynamic";
+    case 0U: return "60 Hz";
+    case 1U: return "150 Hz";
+    case 2U: return "500 Hz";
+    case 3U: return "1 kHz";
+    case 4U: return "2 kHz";
+    case 5U: return "4 kHz";
+    case 6U:
+    case 7U: return "bypass";
+    default: return "unknown";
+  }
 }
 
 void printHzOrBypass(float hz, uint8_t decimals = 2U) {
@@ -333,6 +356,10 @@ void helpMenu() {
   Serial.println("| Sf<n>: fast mode  (0=off,1) Sf0        | Cm<n>: cal modulation(0-3)  Cm0     |");
   Serial.println("| Sr<n>: full range (0=off,1) Sr0        | Cf<n>: mod frequency(0-4)   Cf3     |");
   Serial.println("| Si<n>: source     (0=ext,1=int) Si0    |                                     |");
+  Serial.println("| Sp<n>: phase rng  (0=full,1) Sp0       |                                     |");
+  Serial.println("| Sh<n>: int AHPF   (255,0-7) Sh255      |                                     |");
+  Serial.println("| St<n>: settle     (1-64)    St24       |                                     |");
+  Serial.println("| Sc<n>: cur settle (1-64)    Sc24       |                                     |");
   Serial.println("|========================================|=====================================|");
   Serial.println("| LOG LEVEL                              | SPECIAL                             |");
   Serial.println("|----------------------------------------|-------------------------------------|");
@@ -435,6 +462,14 @@ void showSettings() {
   Serial.print(scan_fullrange ? "ON" : "OFF");
   Serial.print(" | Source: ");
   Serial.println(scan_internal ? "Internal Resistor" : "External");
+  Serial.print("  Phase Range: ");
+  Serial.print(scanPhaseRangeLabel(scan_phase_range));
+  Serial.print(" | Internal AHPF: ");
+  Serial.print(scanAhpfOverrideLabel(scan_internal_bist_ahpf));
+  Serial.print(" | Settle: ");
+  Serial.print(scan_settle_samples);
+  Serial.print(" | Current Settle: ");
+  Serial.println(scan_current_change_settle_samples);
   Serial.println("--------------------------------------------------------------------------------");
   Serial.println("Calibration Settings:");
   Serial.print("  Requested Resistor: ");
@@ -545,18 +580,24 @@ void applySettings() {
         config.fast = scan_fast;
         config.fourleads = bioz_fourleads;
         config.freq_end_index = scan_fullrange ? (MAX30001_BIOZ_NUM_FREQUENCIES - 1U) : 7U;
+        config.phase_range = scan_phase_range;
         config.use_internal_resistor = scan_internal;
         config.internal_resistor_ohm = static_cast<uint16_t>(cal_resistance);
+        config.internal_bist_ahpf = scan_internal_bist_ahpf;
         config.initial_current_nA = bioz_current;
-        config.settle_samples = 24U;
-        config.current_change_settle_samples = 32U;
+        config.settle_samples = scan_settle_samples;
+        config.current_change_settle_samples = scan_current_change_settle_samples;
         afe.setupBIOZScan(config);
         Serial.print("BIOZ scan mode configured (");
         Serial.print(scan_internal ? "internal resistor" : "external electrodes");
         Serial.println(")");
         Serial.print("  Requested scan start current: ");
         Serial.print(config.initial_current_nA);
-        Serial.print(" nA | settle: ");
+        Serial.print(" nA | phase range: ");
+        Serial.print(scanPhaseRangeLabel(config.phase_range));
+        Serial.print(" | internal AHPF: ");
+        Serial.print(scanAhpfOverrideLabel(config.internal_bist_ahpf));
+        Serial.print(" | settle: ");
         Serial.print(config.settle_samples);
         Serial.print(" samples | current-change settle: ");
         Serial.print(config.current_change_settle_samples);
@@ -1005,6 +1046,54 @@ void handleParameterCommand(const char* command) {
           Serial.println(scan_internal ? "INTERNAL RESISTOR" : "EXTERNAL ELECTRODES");
         } else {
           Serial.println("Scan source must be 0 or 1");
+        }
+        break;
+
+      case 'p':  // Scan phase range
+        if (value == 0 || value == 1) {
+          scan_phase_range = (value == 1) ? BIOZ_SCAN_PHASE_REDUCED : BIOZ_SCAN_PHASE_FULL;
+          Serial.print("Scan phase range requested: ");
+          Serial.println(scanPhaseRangeLabel(scan_phase_range));
+        } else {
+          Serial.println("Scan phase range must be 0 (full) or 1 (reduced)");
+        }
+        break;
+
+      case 'h':  // Scan internal BIST AHPF override
+        if ((value >= 0 && value <= 7) || value == 255) {
+          scan_internal_bist_ahpf = static_cast<uint8_t>(value);
+          Serial.print("Scan internal AHPF requested: ");
+          Serial.println(scanAhpfOverrideLabel(scan_internal_bist_ahpf));
+        } else {
+          Serial.println("Scan internal AHPF must be 255 (dynamic) or 0-7");
+        }
+        break;
+
+      case 't':  // Scan settle samples
+        if (value >= 1 && value <= 64) {
+          scan_settle_samples = static_cast<uint8_t>(value);
+          if (scan_current_change_settle_samples < scan_settle_samples) {
+            scan_current_change_settle_samples = scan_settle_samples;
+          }
+          Serial.print("Scan settle requested: ");
+          Serial.print(scan_settle_samples);
+          Serial.println(" samples");
+        } else {
+          Serial.println("Scan settle must be 1-64 samples");
+        }
+        break;
+
+      case 'c':  // Scan current-change settle samples
+        if (value >= 1 && value <= 64) {
+          scan_current_change_settle_samples = static_cast<uint8_t>(value);
+          if (scan_current_change_settle_samples < scan_settle_samples) {
+            scan_current_change_settle_samples = scan_settle_samples;
+          }
+          Serial.print("Scan current-change settle requested: ");
+          Serial.print(scan_current_change_settle_samples);
+          Serial.println(" samples");
+        } else {
+          Serial.println("Scan current-change settle must be 1-64 samples");
         }
         break;
 

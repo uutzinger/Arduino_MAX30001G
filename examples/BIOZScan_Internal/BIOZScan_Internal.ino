@@ -14,6 +14,36 @@ bool scanStarted = false;
 bool scanReported = false;
 uint32_t scanStartMs = 0U;
 
+const char* ahpfLabel(uint8_t code) {
+  switch (code) {
+    case 255U: return "dynamic";
+    case 0U: return "60Hz";
+    case 1U: return "150Hz";
+    case 2U: return "500Hz";
+    case 3U: return "1kHz";
+    case 4U: return "2kHz";
+    case 5U: return "4kHz";
+    case 6U:
+    case 7U: return "bypass";
+    default: return "unknown";
+  }
+}
+
+const char* phaseRangeLabel(BIOZScanPhaseRange range) {
+  return (range == BIOZ_SCAN_PHASE_REDUCED) ? "reduced(0/45/90/135 deg)" : "full";
+}
+
+float nominalFrequencyHz(uint8_t freq_idx) {
+  static const float kFreqHz[MAX30001_BIOZ_NUM_FREQUENCIES] = {
+    128000.0f, 80000.0f, 40000.0f, 17780.0f, 8000.0f, 4000.0f,
+    2000.0f, 1000.0f, 500.0f, 250.0f, 125.0f
+  };
+  if (freq_idx >= MAX30001_BIOZ_NUM_FREQUENCIES) {
+    return 0.0f;
+  }
+  return kFreqHz[freq_idx];
+}
+
 bool reportPllStatus(const char* context) {
   afe.readStatusRegisters();
   const uint32_t status_word = status.all & 0x00FFFFFFUL;
@@ -73,6 +103,7 @@ void setup() {
   // initial_current_nA: requested starting current in nA for scan auto-ranging
   // use_internal_resistor: true switches the scan from external electrodes to the internal test resistor
   // internal_resistor_ohm: requested nominal internal resistor, nearest supported value is used
+  // internal_bist_ahpf: internal-scan AHPF override (255=use scan table, 0=60Hz, 1=150Hz, 2=500Hz, 3=1kHz, 4=2kHz, 5=4kHz, 6/7=bypass)
   // settle_samples: samples discarded after frequency/phase/filter changes
   // current_change_settle_samples: samples discarded after current changes
   config.avg = 8;
@@ -84,6 +115,7 @@ void setup() {
   config.initial_current_nA = 8000;
   config.use_internal_resistor = true;
   config.internal_resistor_ohm = 1000;
+  config.internal_bist_ahpf = 1U; // Keep the established 150Hz baseline for the 17.78kHz..1kHz validation sweep.
   config.settle_samples = 24;
   config.current_change_settle_samples = 32;
 
@@ -100,8 +132,26 @@ void setup() {
   scanStartMs = millis();
 
   Serial.println("MAX30001G BIOZ internal-resistor scan example started.");
-  Serial.println("Internal 1kOhm BIST validation scan range: 17.78kHz down to 1kHz.");
-  Serial.println("Validation settings: avg=8, fast=false, phase_range=full, current=8000nA, settle=24 samples, current-change settle=32 samples.");
+  Serial.print("Internal 1kOhm BIST validation scan range: ");
+  Serial.print(nominalFrequencyHz(config.freq_start_index), 0);
+  Serial.print("Hz down to ");
+  Serial.print(nominalFrequencyHz(config.freq_end_index), 0);
+  Serial.println("Hz.");
+  Serial.print("Validation settings: avg=");
+  Serial.print(config.avg);
+  Serial.print(", fast=");
+  Serial.print(config.fast ? "true" : "false");
+  Serial.print(", phase_range=");
+  Serial.print(phaseRangeLabel(config.phase_range));
+  Serial.print(", current=");
+  Serial.print(config.initial_current_nA);
+  Serial.print("nA, ahpf=");
+  Serial.print(ahpfLabel(config.internal_bist_ahpf));
+  Serial.print(", settle=");
+  Serial.print(config.settle_samples);
+  Serial.print(" samples, current-change settle=");
+  Serial.print(config.current_change_settle_samples);
+  Serial.println(" samples.");
   Serial.println("Final spectrum table follows when the scan completes.");
 }
 
@@ -116,7 +166,7 @@ void loop() {
     printSpectrum();
     scanReported = true;
     afe.stop();
-    Serial.print("BIOZ internal-resistor full-phase scan complete in ");
+    Serial.print("BIOZ internal-resistor scan complete in ");
     Serial.print(millis() - scanStartMs);
     Serial.println(" ms.");
     return;

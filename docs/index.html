@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">MAX30001G
-   &#160;<span id="projectnumber">1.1.2</span>
+   &#160;<span id="projectnumber">1.2.0</span>
    </div>
    <div id="projectbrief">Arduino library for MAX30001G ECG and BIOZ AFE</div>
   </td>
@@ -89,7 +89,7 @@ $(document).ready(function(){initNavTree('index.html',''); initResizable(); });
 <div class="contents">
 <div class="textblock"><p><a class="anchor" id="md_README"></a> This is the MAX30001 library for Arduino. It attempts to be <code>complete</code> and supports impedance spectroscopy.</p>
 <p>This library has been validated for ECG, continuous BIOZ, combined ECG+BIOZ, internal calibration paths, and the refactored nonblocking BIOZ scan flow that is driven through <code>setup...()</code>, <code>start()</code>, and repeated <code>update()</code>.</p>
-<p>Impedance spectroscopy calibration with external known samples is still in progress.</p>
+<p>Impedance Spectroscopy: Internal <code>1 kOhm</code> resistor scan validation working across the full <code>128 kHz</code> down to <code>125 Hz</code> scan range. External known-load validation is still required before calling library production ready.</p>
 <h1><a class="anchor" id="autotoc_md1"></a>
 Installation</h1>
 <p>Install the library in Arduino IDE or clone the GitHub repository into your Arduino <code>libraries</code> folder.</p>
@@ -193,7 +193,7 @@ Main Sketch</h1>
 <p>When you open the serial monitor and type <code>?</code>, the sketch prints this help menu:</p>
 <div class="fragment"><div class="line">================================================================================</div>
 <div class="line">| MAX30001G ECG and Bio-Impedance Program                                      |</div>
-<div class="line">| 2026 Urs Utzinger 7 GPT                                                      |</div>
+<div class="line">| 2026 Urs Utzinger &amp; GPT                                                      |</div>
 <div class="line">================================================================================</div>
 <div class="line">| GENERAL COMMANDS                       | DATA COMMANDS                       |</div>
 <div class="line">|----------------------------------------|-------------------------------------|</div>
@@ -235,6 +235,10 @@ Main Sketch</h1>
 <div class="line">| Sf&lt;n&gt;: fast mode  (0=off,1) Sf0        | Cm&lt;n&gt;: cal modulation(0-3)  Cm0     |</div>
 <div class="line">| Sr&lt;n&gt;: full range (0=off,1) Sr0        | Cf&lt;n&gt;: mod frequency(0-4)   Cf3     |</div>
 <div class="line">| Si&lt;n&gt;: source     (0=ext,1=int) Si0    |                                     |</div>
+<div class="line">| Sp&lt;n&gt;: phase rng  (0=full,1) Sp0       |                                     |</div>
+<div class="line">| Sh&lt;n&gt;: int AHPF   (255,0-7) Sh255      |                                     |</div>
+<div class="line">| St&lt;n&gt;: settle     (1-64)    St24       |                                     |</div>
+<div class="line">| Sc&lt;n&gt;: cur settle (1-64)    Sc24       |                                     |</div>
 <div class="line">|========================================|=====================================|</div>
 <div class="line">| LOG LEVEL                              | SPECIAL                             |</div>
 <div class="line">|----------------------------------------|-------------------------------------|</div>
@@ -260,6 +264,7 @@ Example Sketches</h1>
 <li><code>examples/ECGandBIOZ/ECGandBIOZ.ino</code>: simultaneous ECG and BIOZ using <code>setupECGandBIOZ(...)</code></li>
 <li><code>examples/BIOZScan/BIOZScan.ino</code>: external nonblocking BIOZ spectroscopy using <code>setupBIOZScan(...)</code></li>
 <li><code>examples/BIOZScan_Internal/BIOZScan_Internal.ino</code>: internal-resistor scan validation using the same scan-owned state machine</li>
+<li><code>examples/BIOZScan_Internal_Fast/BIOZScan_Internal_Fast.ino</code>: fast reduced-phase internal-resistor full-spectrum validation</li>
 <li><code>examples/Hardware_HealthCheck/Hardware_HealthCheck.ino</code>: startup communication and hardware checks</li>
 <li><code>examples/MAX30001G/MAX30001G.ino</code>: interactive serial test program covering mode switches, setup helpers, calibration, scan control, and register inspection</li>
 <li><code>examples/ECG_FIFOInterruptValidation/ECG_FIFOInterruptValidation.ino</code>: ECG FIFO interrupt and <code>ECG_data</code> validation</li>
@@ -297,7 +302,7 @@ License</h1>
 <h1><a class="anchor" id="autotoc_md10"></a>
 Block Diagram of MAX 30001G</h1>
 <p>The <a class="el" href="classMAX30001G.html" title="MAX30001G device driver class used by Arduino sketches.">MAX30001G</a> is a highly integrated analog front end that consists of a differential <code>ECG channel</code> with optional right-leg drive. It employs standard high-pass and low-pass filters, an instrumentation amplifier, and an analog-to-digital converter.</p>
-<p>The impedance unit consists of a current driver, analog high-pass filter, and phase-shifted demodulator to measure impedance from 128kHz down to 125Hz modulation frequency at varying phase shifts. Since the analog HPF has limited ability to suppress 60Hz noise, measurements below 500Hz might not be reliable.</p>
+<p>The impedance unit consists of a current driver, analog high-pass filter, and phase-shifted demodulator to measure impedance from 128kHz down to 125Hz modulation frequency at varying phase shifts. Internal-BIST validation shows coherent full-spectrum scans with dynamic AHPF selection, but the low-frequency end still rolls off below about 1kHz and external known-load validation is still required for production scan calibration.</p>
 <p><a href="assets/Blockdiagram.png" target="_blank"><img src="assets/Blockdiagram.png" alt="" style="width: 800px;" class="inline"/> </a></p>
 <h1><a class="anchor" id="autotoc_md11"></a>
 Input MUX ECG</h1>
