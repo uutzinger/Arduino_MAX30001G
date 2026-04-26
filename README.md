@@ -28,6 +28,7 @@ This driver depends on
 - [Protocentral tinyECG](https://protocentral.com/product/protocentral-tinyecg-max30001-ecg-respiration-module-for-qt-py-xiao/)
 - [Protocentral MAX30001](https://protocentral.com/product/protocentral-max30001/)
 - [Protocentral Healthy Pi 5](https://protocentral.com/product/healthypi-5-vital-signs-monitoring-hat-kit)
+- [Protocentral Healthy Pi Move](https://protocentral.com/product/healthypi-move/)
 
 # Quick Start
 

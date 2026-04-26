@@ -1,7 +1,8 @@
 # Interrupt Handling
 
 The driver keeps default behavior in `serviceAllInterrupts()` (updates global flags), and also supports user callbacks.
-For IRQ-driven sketches, prefer `servicePendingInterrupts()` in `loop()`.
+For most sketches, prefer `update()` in `loop()`. It services pending IRQs, drains enabled FIFOs, reads RTOR when configured, and falls back to `serviceAllInterrupts()` when needed.
+Use `servicePendingInterrupts()` directly only in lower-level custom loops where you want interrupt servicing without the rest of the normal `update()` data-path work.
 
 ## Interrupt Usage
 
@@ -22,15 +23,16 @@ void setup() {
 }
 
 void loop() {
-  if (afe.servicePendingInterrupts()) {
-    // STATUS was serviced and global flags/callbacks are up to date.
+  if (afe.update()) {
+    // Interrupts were serviced and configured data paths were drained.
+    // Read ECG_data / BIOZ_data / RTOR_data here as needed.
   }
 }
 ```
 
 `servicePendingInterrupts()` uses Arduino core APIs `noInterrupts()` and `interrupts()` to atomically read/clear the software pending flags. These APIs are available on AVR, SAMD, ESP8266, and ESP32 Arduino cores, so no API change is needed for ESP-type boards.
 
-If your board does not wire interrupt pins, call `serviceAllInterrupts()` periodically instead.
+If your board does not wire interrupt pins, `update()` falls back to `serviceAllInterrupts()`. If you are not using `update()`, call `serviceAllInterrupts()` periodically instead.
 If you provide your own ISR, set library globals `afe_irq_pending` and `afe_irq1_pending`/`afe_irq2_pending` (do not use a separate local pending flag).
 If you use latched event/fault globals, clear them explicitly with `clearLatchedStatusFlags()` after handling.
 
