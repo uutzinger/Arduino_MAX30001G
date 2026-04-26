@@ -72,8 +72,8 @@ extern float    BIOZ_phase;
 extern float    BIOZ_ahpf;                       // [Hz]   BIOZ analog high pass filter
 extern float    BIOZ_dlpf;                       // [Hz]   BIOZ digital low pass filter
 extern float    BIOZ_dhpf;                       // [Hz]   BIOZ digital high pass filter
-extern float    BIOZ_test_rnom;                  // [kOhm] BIOZ test resistor nominal value
-extern float    BIOZ_test_rmod;                  // [kOhm] BIOZ test resistor modulation value
+extern float    BIOZ_test_rnom;                  // [Ohm] BIOZ test resistor nominal value
+extern float    BIOZ_test_rmod;                  // [Ohm] BIOZ test resistor modulation value
 extern float    BIOZ_test_frequency;             // [Hz]   BIOZ test frequency for modulation
 extern int32_t  V_ref;
 extern int32_t  V_AVDD;

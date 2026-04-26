@@ -68,8 +68,8 @@ float    BIOZ_phase;                     // [degrees]
 float    BIOZ_ahpf;                      // [Hz] BIOZ high pass filter
 float    BIOZ_dhpf;                      // [Hz] BIOZ low pass filter
 float    BIOZ_dlpf;                      // [Hz] BIOZ low pass filter
-float    BIOZ_test_rnom;                 // [kOhm] BIOZ test resistor nominal value
-float    BIOZ_test_rmod;                 // [kOhm] BIOZ test resistor modulation value
+float    BIOZ_test_rnom;                 // [Ohm] BIOZ test resistor nominal value
+float    BIOZ_test_rmod;                 // [Ohm] BIOZ test resistor modulation value
 float    BIOZ_test_frequency;            // [Hz] BIOZ test frequency for modulation
 int32_t  V_ref = 1000;                   // [mV]
 int32_t  V_AVDD = 1800;                  // [mV]

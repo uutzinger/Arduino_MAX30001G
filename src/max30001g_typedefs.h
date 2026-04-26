@@ -11,7 +11,7 @@
 /**
  * @brief ImpedanceModel structure for storing impedance measurement results.
  * @details Contains the magnitude and phase information for each measured impedance point.
- * @details Results of impedance fitting with fitImpedance() function.
+ * @details Results of impedance fitting with cosine or triangular BIOZ fit functions.
  */
 struct ImpedanceModel {
   float magnitude;
@@ -59,6 +59,8 @@ struct HealthCheckResult {
  * @details config.freq_start_index = 0          index of first modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
  * @details config.freq_end_index = 7            index of last modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
  * @details config.initial_current_nA = 8000     initial current magnitude in nanoAmps (55..96,000)
+ * @details config.settle_samples = 24           samples to discard after phase/frequency/filter changes
+ * @details config.current_change_settle_samples = 32 samples to discard after drive-current changes
   */
 struct BIOZScanConfig {
   uint8_t avg;
@@ -76,6 +78,8 @@ struct BIOZScanConfig {
   uint8_t freq_start_index;
   uint8_t freq_end_index;
   int32_t initial_current_nA;
+  uint8_t settle_samples;
+  uint8_t current_change_settle_samples;
 
   BIOZScanConfig()
       : avg(2),
@@ -92,7 +96,9 @@ struct BIOZScanConfig {
         timeout_margin_ms(50),
         freq_start_index(0),
         freq_end_index(7),
-        initial_current_nA(8000) {}
+        initial_current_nA(8000),
+        settle_samples(24),
+        current_change_settle_samples(32) {}
 };
 
 /**

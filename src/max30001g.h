@@ -154,8 +154,8 @@ public:
     uint8_t ahpf = 1, 
     uint8_t dlpf = 1, 
     uint8_t dhpf = 0,
-    uint16_t frequency = 40000, 
-    uint16_t current = 8000, 
+    uint32_t frequency = 40000, 
+    uint32_t current = 8000, 
     float phase = 0.0f,
     bool leadbias = true, 
     bool leadsoffdetect = false, 
@@ -192,8 +192,8 @@ public:
     uint8_t bioz_gain = 1,
     uint8_t bioz_dlpf = 1, 
     uint8_t bioz_dhpf = 0,
-    uint16_t bioz_frequency = 8000, 
-    uint16_t bioz_current = 8000, 
+    uint32_t bioz_frequency = 8000, 
+    uint32_t bioz_current = 8000, 
     float bioz_phase = 0.0f,
     bool leadbias = true, 
     bool leadsoffdetect = false, 
@@ -245,21 +245,21 @@ public:
     uint8_t ahpf = 1, 
     uint8_t dlpf = 1, 
     uint8_t dhpf = 0,
-    uint16_t frequency = 40000, 
-    uint16_t current = 8000, 
+    uint32_t frequency = 40000, 
+    uint32_t current = 8000, 
     float phase = 0.0f,
     uint32_t resistance = 5000, 
     uint8_t modulation = 0, 
     uint8_t modulation_frequency = 3
   );
-  
+
   /**
    * @brief Configure external impedance calibration path.
    * @param frequency BIOZ modulation frequency target in Hz.
    * @param phase Demodulation phase offset in degrees.
    */
   void setupBIOZExternalImpedanceCalibration(
-    uint16_t frequency = 40000, float phase = 0.0f
+    uint32_t frequency = 40000, float phase = 0.0f
   );
 
   /**
@@ -279,7 +279,9 @@ public:
    * @param reuseCurrents True to reuse previously optimized current profile.
    */
   void setupBIOZScan(const BIOZScanConfig& config = BIOZScanConfig(), bool reuseCurrents = false);
-  
+
+  #if 0
+  // LEGACY CODE
   /**
    * @brief Run impedance scan using basic options.
    * @param avg BIOZ FIFO average depth used per point.
@@ -307,11 +309,14 @@ public:
    * @details config.freq_start_index = 0          index of first modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
    * @details config.freq_end_index = 7            index of last modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
    * @details config.initial_current_nA = 8000     initial current magnitude in nanoAmps (55..96,000)
+   * @details config.settle_samples = 24           samples to discard after phase/frequency/filter changes
+   * @details config.current_change_settle_samples = 32 samples to discard after drive-current changes
    * @param config Full scan configuration structure.
    * @param reuseCurrents True to reuse previously learned current profile.
    */
   void scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents = false);
-  
+#endif
+
   /**
    * @brief Start state-machine style BIOZ scan flow.
    * @details Arms non-blocking scan execution; each update() call advances scan steps.
@@ -354,6 +359,9 @@ public:
   
   /* @brief Print all known register mirrors for debugging. */
   void printAllRegisters(void);
+
+  /* @brief Print focused BIOZ diagnostic register values for scan/calibration debugging. */
+  void printBiozDiagnosticRegisters(const char* context = nullptr);
   
   /* @brief Print INFO register decode. */
   void printInfo(void);
@@ -627,13 +635,14 @@ public:
    * @param speed_select 0 low-rate mode (25-32sps), 1 high-rate mode (50..64sps)
    */
   void setBIOZSamplingRate(uint8_t speed_select);
+
   /**
    * @brief Set BIOZ gain and front-end power/noise mode.
    * @details  0  10 V/V
    * @details  1  20 V/V **
    * @details  2  40 V/V
    * @details  3  80 V/V
-   * @param gain Gain selector (0..3 => 10*, 20, 40, 80 V/V).
+   * @param gain Gain selector (0..3 => 10, 20**, 40, 80 V/V).
    * @param lowNoise True for low-noise mode, false for low-power mode.
    */
   void setBIOZgain(uint8_t gain, bool lowNoise);
@@ -654,7 +663,7 @@ public:
    * @details       125 might have 60/50Hz interference
    * @param frequency_hz Requested frequency in Hz (mapped to nearest valid FCGEN).
    */
-  void setBIOZModulationFrequencyByFrequency(uint16_t frequency_hz);
+  void setBIOZModulationFrequencyByFrequency(uint32_t frequency_hz);
 
   /**
    * @brief Set BIOZ modulation frequency by FCGEN index.
@@ -718,7 +727,7 @@ public:
    * @param frequency_hz Frequency context in Hz.
    * @param phase_deg Requested phase in degrees.
    */
-  void setBIOZPhaseOffsetbyPhase(uint16_t frequency_hz, float phase_deg);
+  void setBIOZPhaseOffsetbyPhase(uint32_t frequency_hz, float phase_deg);
 
   /**
    * @brief Configure BIOZ analog and digital filters.
@@ -731,7 +740,7 @@ public:
    * @details  5  4000 Hz
    * @details >=6  bypass
    * @details dlpf (set higher for fast changing signals, but more noise)
-   * @details  0   0 Hz
+   * @details  0   bypass
    * @details  1   4 Hz **
    * @details  2   8 Hz
    * @details  3  16 Hz
@@ -1177,7 +1186,8 @@ private:
    * @param phase Phase parameter of sample in degrees.
    * @return Modeled impedance projection at demodulation phase offset.
    */
-  float impedancemodel(float theta, float magnitude, float phase);
+  float impedanceCosineModel(float theta, float magnitude, float phase);
+  float impedanceTriangularModel(float theta, float magnitude, float phase);
 
   /**
    * @brief Fit impedance magnitude/phase from multi-phase measurements.
@@ -1186,11 +1196,12 @@ private:
    * @param num_points Number of valid measurements (array size).
    * @return Fitted impedance model parameters.
    */
-  ImpedanceModel fitImpedance(const float* phases, const float* impedances, int num_points);
+  ImpedanceModel fitImpedanceCosine(const float* phases, const float* impedances, int num_points);
+  ImpedanceModel fitImpedanceTriangular(const float* phases, const float* impedances, int num_points);
 
   uint8_t biozScanPhaseCountForFreq(uint8_t freq_idx) const;
-  uint8_t biozScanSelectAHpf(float lowest_frequency_hz) const;
-  float biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, float outlier_sigma, bool& hasSamples);
+  uint8_t biozScanSelectAHPF(float lowest_frequency_hz) const;
+  float   biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, float outlier_sigma, bool& hasSamples);
 
   // ---------------------------------------------------------------------------------------
   // Device
@@ -1210,10 +1221,13 @@ private:
     BIOZ_SCAN_IDLE = 0,
     BIOZ_SCAN_INIT,
     BIOZ_SCAN_CONFIG_FREQ,
-    BIOZ_SCAN_PREPARE_ATTEMPT,
+    BIOZ_SCAN_CONFIG_CURRENT,
     BIOZ_SCAN_CONFIG_PHASE,
-    BIOZ_SCAN_WAIT_DATA,
-    BIOZ_SCAN_PROCESS_PHASE,
+    BIOZ_SCAN_BEGIN_POINT,
+    BIOZ_SCAN_DISCARD_POINT,
+    BIOZ_SCAN_COLLECT_POINT,
+    BIOZ_SCAN_PROCESS_POINT,
+    BIOZ_SCAN_NEXT_PHASE,
     BIOZ_SCAN_EVALUATE_ATTEMPT,
     BIOZ_SCAN_FINALIZE_FREQ,
     BIOZ_SCAN_FINISH
@@ -1271,6 +1285,11 @@ private:
   uint8_t _scanPhaseIndex;
   uint8_t _scanAttempt;
   uint8_t _scanNumPhaseMeasurements;
+  uint8_t _scanDiscardSamplesSeen;
+  uint8_t _scanDiscardSamplesTarget;
+  uint8_t _scanCollectSamplesTarget;
+  bool _scanCurrentChangedForAttempt;
+  uint32_t _scanFifoTimeoutMs;
   uint32_t _scanWaitDeadlineMs;
 
   float _scanThresholdMin;

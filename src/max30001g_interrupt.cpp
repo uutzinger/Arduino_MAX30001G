@@ -560,27 +560,27 @@ void MAX30001G::setFIFOInterruptThreshold(uint8_t ecg,  uint8_t bioz) {
   bioz 1..8
 
  mngr_int.bit.e_fit
-  ECG interrupt treshold
+  ECG interrupt threshold
   value+1 = 1-32 unread samples
 
  mngr_int.bit.b_fit
-  BIOZ interrupt treshold
+  BIOZ interrupt threshold
   value+1 = 1-8 unread samples
 */
   mngr_int.all  = readRegister24(MAX30001_MNGR_INT);
 
   if ((bioz <= 8) && (bioz > 0)) {
-    mngr_int.bit.b_fit = bioz-1; // 1-8  BIOZ interrupt treshold
-    LOGln("BIOZ interrupt treshold set to %d - 1", bioz);
+    mngr_int.bit.b_fit = bioz-1; // 1-8  BIOZ interrupt threshold
+    LOGD("BIOZ interrupt threshold set to %d - 1", bioz);
   } else {
-    LOGE("BIOZ interrupt treshold out of range: 1..8");
+    LOGE("BIOZ interrupt threshold out of range: 1..8");
   }
 
   if ((ecg <= 32) && (ecg > 0)) {
-    mngr_int.bit.e_fit = ecg-1; // 1-32  ECG interrupt treshold
-    LOGln("ECG interrupt treshold set to %d - 1", ecg);
+    mngr_int.bit.e_fit = ecg-1; // 1-32  ECG interrupt threshold
+    LOGD("ECG interrupt threshold set to %d - 1", ecg);
   } else {
-    LOGE("ECG interrupt treshold out of range: 1..32");
+    LOGE("ECG interrupt threshold out of range: 1..32");
   }
 
   writeRegister(MAX30001_MNGR_INT, mngr_int.all);

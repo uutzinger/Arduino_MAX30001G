@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">MAX30001G
-   &#160;<span id="projectnumber">1.0.2</span>
+   &#160;<span id="projectnumber">1.1.0</span>
    </div>
    <div id="projectbrief">Arduino library for MAX30001G ECG and BIOZ AFE</div>
   </td>
@@ -106,6 +106,8 @@ Public Member Functions</h2></td></tr>
 Public Attributes</h2></td></tr>
 <tr class="memitem:ab514de9899d73f497021ba73b203618b"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBIOZScanConfig.html#ab514de9899d73f497021ba73b203618b">avg</a></td></tr>
 <tr class="separator:ab514de9899d73f497021ba73b203618b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad457f2f4384457177c9d8772d1db69a5"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBIOZScanConfig.html#ad457f2f4384457177c9d8772d1db69a5">current_change_settle_samples</a></td></tr>
+<tr class="separator:ad457f2f4384457177c9d8772d1db69a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac208b75eb391bd0deafc8fe42e26a7c7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBIOZScanConfig.html#ac208b75eb391bd0deafc8fe42e26a7c7">fast</a></td></tr>
 <tr class="separator:ac208b75eb391bd0deafc8fe42e26a7c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3ffa74a1cb95e239aa7a679a994a85ab"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBIOZScanConfig.html#a3ffa74a1cb95e239aa7a679a994a85ab">fourleads</a></td></tr>
@@ -128,6 +130,8 @@ Public Attributes</h2></td></tr>
 <tr class="separator:aa903cfb2abbd1ff467702d029d703174"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9f7418f511194f2e8132daa664a4851e"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBIOZScanConfig.html#a9f7418f511194f2e8132daa664a4851e">outlier_sigma</a></td></tr>
 <tr class="separator:a9f7418f511194f2e8132daa664a4851e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a598f7f674693a49cb3931eb555a83409"><td class="memItemLeft" align="right" valign="top">uint8_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBIOZScanConfig.html#a598f7f674693a49cb3931eb555a83409">settle_samples</a></td></tr>
+<tr class="separator:a598f7f674693a49cb3931eb555a83409"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a664475d516c4dd5c8e4d9e8915c15287"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBIOZScanConfig.html#a664475d516c4dd5c8e4d9e8915c15287">target_fraction</a></td></tr>
 <tr class="separator:a664475d516c4dd5c8e4d9e8915c15287"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab98f968b4bb1f7397ca8a3f7446f0361"><td class="memItemLeft" align="right" valign="top">uint16_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structBIOZScanConfig.html#ab98f968b4bb1f7397ca8a3f7446f0361">timeout_margin_ms</a></td></tr>
@@ -149,7 +153,9 @@ Public Attributes</h2></td></tr>
 <p>config.timeout_margin_ms = 50 margin in milliseconds for FIFO read timeout when waiting for samples at each point</p>
 <p>config.freq_start_index = 0 index of first modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)</p>
 <p>config.freq_end_index = 7 index of last modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)</p>
-<p>config.initial_current_nA = 8000 initial current magnitude in nanoAmps (55..96,000) </p>
+<p>config.initial_current_nA = 8000 initial current magnitude in nanoAmps (55..96,000)</p>
+<p>config.settle_samples = 24 samples to discard after phase/frequency/filter changes</p>
+<p>config.current_change_settle_samples = 32 samples to discard after drive-current changes </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a0355cbbb54fac5f3a2e1025a95b4f4ee"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0355cbbb54fac5f3a2e1025a95b4f4ee">&#9670;&nbsp;</a></span>BIOZScanConfig()</h2>
@@ -185,6 +191,20 @@ Public Attributes</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">uint8_t BIOZScanConfig::avg</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad457f2f4384457177c9d8772d1db69a5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad457f2f4384457177c9d8772d1db69a5">&#9670;&nbsp;</a></span>current_change_settle_samples</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint8_t BIOZScanConfig::current_change_settle_samples</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -339,6 +359,20 @@ Public Attributes</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">float BIOZScanConfig::outlier_sigma</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a598f7f674693a49cb3931eb555a83409"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a598f7f674693a49cb3931eb555a83409">&#9670;&nbsp;</a></span>settle_samples</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">uint8_t BIOZScanConfig::settle_samples</td>
         </tr>
       </table>
 </div><div class="memdoc">

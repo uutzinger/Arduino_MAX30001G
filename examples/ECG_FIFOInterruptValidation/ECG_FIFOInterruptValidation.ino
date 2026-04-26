@@ -1,0 +1,130 @@
+#include <Arduino.h>
+#include "max30001g.h"
+#include "logger.h"
+
+const uint8_t AFE_CS_PIN = 6;
+const int AFE_INT1_PIN = 12;
+const int AFE_INT2_PIN = -1;
+
+const uint32_t PLL_STARTUP_SETTLE_MS = 500U;
+const uint32_t PLL_STATUS_CLEAR_MS = 10U;
+const uint32_t VALIDATION_DURATION_MS = 15000U;
+const uint32_t EXPECTED_MIN_SAMPLES = 1500U;
+const uint32_t MAX_ALLOWED_GAP_MS = 250U;
+const uint8_t ECG_FIFO_THRESHOLD = 8U;
+
+MAX30001G afe(AFE_CS_PIN, AFE_INT1_PIN, AFE_INT2_PIN);
+
+uint32_t started_ms = 0U;
+uint32_t last_sample_ms = 0U;
+uint32_t max_gap_ms = 0U;
+uint32_t ecg_samples = 0U;
+uint32_t overflow_events = 0U;
+bool completed = false;
+
+void clearValidationState() {
+  ECG_data.clear();
+  ecg_available = false;
+  afe_irq_pending = false;
+  afe_irq1_pending = false;
+  afe_irq2_pending = false;
+  ecg_overflow_occurred = false;
+  valid_data_detected = false;
+  EOF_detected = false;
+}
+
+uint32_t statusWord() {
+  afe.readStatusRegisters();
+  return status.all & 0x00FFFFFFUL;
+}
+
+bool pllOk(uint32_t word) {
+  return (word & MAX30001_STATUS_PLLINT) == 0U;
+}
+
+void drainEcgData() {
+  float value = 0.0f;
+  while (ECG_data.available() > 0U) {
+    ECG_data.pop(value);
+    const uint32_t now = millis();
+    if (last_sample_ms > 0U) {
+      const uint32_t gap = now - last_sample_ms;
+      if (gap > max_gap_ms) {
+        max_gap_ms = gap;
+      }
+    }
+    last_sample_ms = now;
+    ecg_samples++;
+  }
+}
+
+void printSummary(bool pass, uint32_t final_status) {
+  Serial.println();
+  Serial.println("ECG FIFO interrupt validation summary");
+  Serial.print("samples_received=");
+  Serial.println(ecg_samples);
+  Serial.print("expected_min_samples=");
+  Serial.println(EXPECTED_MIN_SAMPLES);
+  Serial.print("max_gap_ms=");
+  Serial.println(max_gap_ms);
+  Serial.print("max_allowed_gap_ms=");
+  Serial.println(MAX_ALLOWED_GAP_MS);
+  Serial.print("overflow_events=");
+  Serial.println(overflow_events);
+  Serial.print("status_hex=0x");
+  Serial.println(final_status, HEX);
+  Serial.print("pll=");
+  Serial.println(pllOk(final_status) ? "OK" : "UNLOCKED");
+  Serial.print("result=");
+  Serial.println(pass ? "PASS" : "FAIL");
+}
+
+void setup() {
+  currentLogLevel = LOG_LEVEL_WARN;
+
+  Serial.begin(115200);
+  delay(1000);
+
+  afe.begin();
+  afe.setupECGSignalCalibration(1, 2); // ~256 sps, 80 V/V internal ECG calibration
+  afe.setFIFOInterruptThreshold(ECG_FIFO_THRESHOLD, 8U);
+  afe.start();
+  delay(PLL_STARTUP_SETTLE_MS);
+  afe.readStatusRegisters();
+  delay(PLL_STATUS_CLEAR_MS);
+  afe.FIFOReset();
+  clearValidationState();
+
+  started_ms = millis();
+  last_sample_ms = started_ms;
+
+  Serial.println("MAX30001G ECG FIFO interrupt validation started.");
+  Serial.println("Direct FIFO fallback is disabled during the validation window.");
+}
+
+void loop() {
+  if (completed) {
+    delay(1000);
+    return;
+  }
+
+  const bool overflow_before = ecg_overflow_occurred;
+  afe.update();
+  if (overflow_before || ecg_overflow_occurred) {
+    overflow_events++;
+    ecg_overflow_occurred = false;
+  }
+  drainEcgData();
+
+  const uint32_t now = millis();
+  if ((now - started_ms) >= VALIDATION_DURATION_MS) {
+    const uint32_t final_status = statusWord();
+    const bool pass = (ecg_samples >= EXPECTED_MIN_SAMPLES) &&
+                      (max_gap_ms <= MAX_ALLOWED_GAP_MS) &&
+                      (overflow_events == 0U) &&
+                      pllOk(final_status);
+    printSummary(pass, final_status);
+    afe.stop();
+    completed = true;
+  }
+}

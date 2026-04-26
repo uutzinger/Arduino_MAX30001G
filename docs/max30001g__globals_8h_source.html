@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">MAX30001G
-   &#160;<span id="projectnumber">1.0.2</span>
+   &#160;<span id="projectnumber">1.1.0</span>
    </div>
    <div id="projectbrief">Arduino library for MAX30001G ECG and BIOZ AFE</div>
   </td>
@@ -91,7 +91,7 @@ $(document).ready(function(){initNavTree('max30001g__globals_8h_source.html','')
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="preprocessor">#define MAX30001G_GLOBALS_H</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160; </div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#include &lt;stdint.h&gt;</span></div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="RingBuffer_8h.html">RingBuffer.h</a>&quot;</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#include &quot;RingBuffer.h&quot;</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="max30001g__defs_8h.html">max30001g_defs.h</a>&quot;</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="max30001g__typedefs_8h.html">max30001g_typedefs.h</a>&quot;</span></div>
 <div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="max30001g__regs__typedefs_8h.html">max30001g_regs_typedefs.h</a>&quot;</span></div>
@@ -103,10 +103,10 @@ $(document).ready(function(){initNavTree('max30001g__globals_8h_source.html','')
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment">// Data Buffers</span></div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">extern</span> <a class="code" href="classRingBuffer.html">RingBuffer&lt;float, 128&gt;</a> <a class="code" href="max30001g__globals_8h.html#af5f23e5189683022c4c3b8c7972292c1">ECG_data</a>;</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">extern</span> <a class="code" href="classRingBuffer.html">RingBuffer&lt;float, 128&gt;</a> <a class="code" href="max30001g__globals_8h.html#aee94df20a0534933c060b7259379f149">BIOZ_data</a>;</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="keyword">extern</span> <a class="code" href="classRingBuffer.html">RingBuffer&lt;float, 16&gt;</a> <a class="code" href="max30001g__globals_8h.html#a9a410de28f3b52b9faa9debaa0a655b2">RTOR_data</a>;</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="keyword">extern</span> <a class="code" href="classRingBuffer.html">RingBuffer&lt;ImpedanceSpectrum, 4&gt;</a> <a class="code" href="max30001g__globals_8h.html#a2f3fafd9433026e9fc6a3d23036891d6">BIOZ_spectrum</a>;</div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">extern</span> RingBuffer&lt;float, 128&gt; <a class="code" href="max30001g__globals_8h.html#af5f23e5189683022c4c3b8c7972292c1">ECG_data</a>;</div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="keyword">extern</span> RingBuffer&lt;float, 128&gt; <a class="code" href="max30001g__globals_8h.html#aee94df20a0534933c060b7259379f149">BIOZ_data</a>;</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="keyword">extern</span> RingBuffer&lt;float, 16&gt; <a class="code" href="max30001g__globals_8h.html#a9a410de28f3b52b9faa9debaa0a655b2">RTOR_data</a>;</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="keyword">extern</span> RingBuffer&lt;ImpedanceSpectrum, 4&gt; <a class="code" href="max30001g__globals_8h.html#a2f3fafd9433026e9fc6a3d23036891d6">BIOZ_spectrum</a>;</div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="max30001g__globals_8h.html#a9f301cb1734a4f9fbb1534923470a5b9">ecg_counter</a>;</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">int</span> <a class="code" href="max30001g__globals_8h.html#ad5ec2a6f42f628b7380272e4fd148fc0">bioz_counter</a>;</div>
@@ -161,8 +161,8 @@ $(document).ready(function(){initNavTree('max30001g__globals_8h_source.html','')
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">float</span>    <a class="code" href="max30001g__globals_8h.html#aba4f88751f662859620a6d7afe35bdd0">BIOZ_ahpf</a>;                       <span class="comment">// [Hz]   BIOZ analog high pass filter</span></div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">float</span>    <a class="code" href="max30001g__globals_8h.html#a2546f690d5d5ecdc90f387dacbda70ac">BIOZ_dlpf</a>;                       <span class="comment">// [Hz]   BIOZ digital low pass filter</span></div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">float</span>    <a class="code" href="max30001g__globals_8h.html#a352514516add4c24fc10fc470fc9843c">BIOZ_dhpf</a>;                       <span class="comment">// [Hz]   BIOZ digital high pass filter</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">float</span>    <a class="code" href="max30001g__globals_8h.html#a9e0b5d97a37f56da5c7b328c188b98c2">BIOZ_test_rnom</a>;                  <span class="comment">// [kOhm] BIOZ test resistor nominal value</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">float</span>    <a class="code" href="max30001g__globals_8h.html#a7d2b43aefb6ff0faa3287776debb308d">BIOZ_test_rmod</a>;                  <span class="comment">// [kOhm] BIOZ test resistor modulation value</span></div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">float</span>    <a class="code" href="max30001g__globals_8h.html#a9e0b5d97a37f56da5c7b328c188b98c2">BIOZ_test_rnom</a>;                  <span class="comment">// [Ohm] BIOZ test resistor nominal value</span></div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">float</span>    <a class="code" href="max30001g__globals_8h.html#a7d2b43aefb6ff0faa3287776debb308d">BIOZ_test_rmod</a>;                  <span class="comment">// [Ohm] BIOZ test resistor modulation value</span></div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">float</span>    <a class="code" href="max30001g__globals_8h.html#ad6d6ef3864d3ec992f710217a1fd9354">BIOZ_test_frequency</a>;             <span class="comment">// [Hz]   BIOZ test frequency for modulation</span></div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="keyword">extern</span> int32_t  <a class="code" href="max30001g__globals_8h.html#a66c6c8ff74726d690e40e4fb59673327">V_ref</a>;</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="keyword">extern</span> int32_t  <a class="code" href="max30001g__globals_8h.html#a14c0e09f6c279b3a39384a8f3245ee84">V_AVDD</a>;</div>
@@ -186,8 +186,6 @@ $(document).ready(function(){initNavTree('max30001g__globals_8h_source.html','')
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="keyword">extern</span> <a class="code" href="unionmax30001__cnfg__rtor2__reg__t.html">max30001_cnfg_rtor2_reg_t</a>   <a class="code" href="max30001g__globals_8h.html#a74d06b6fe8dd7c78b3bb8790a94a538a">cnfg_rtor2</a>;</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// MAX30001G_GLOBALS_H</span></div>
-<div class="ttc" id="aRingBuffer_8h_html"><div class="ttname"><a href="RingBuffer_8h.html">RingBuffer.h</a></div></div>
-<div class="ttc" id="aclassRingBuffer_html"><div class="ttname"><a href="classRingBuffer.html">RingBuffer</a></div><div class="ttdef"><b>Definition:</b> RingBuffer.h:53</div></div>
 <div class="ttc" id="amax30001g__defs_8h_html"><div class="ttname"><a href="max30001g__defs_8h.html">max30001g_defs.h</a></div></div>
 <div class="ttc" id="amax30001g__defs_8h_html_a1550cf6c8eb56b28c9e8e8c3f7074191"><div class="ttname"><a href="max30001g__defs_8h.html#a1550cf6c8eb56b28c9e8e8c3f7074191">MAX30001_BIOZ_NUM_FREQUENCIES</a></div><div class="ttdeci">#define MAX30001_BIOZ_NUM_FREQUENCIES</div><div class="ttdef"><b>Definition:</b> max30001g_defs.h:11</div></div>
 <div class="ttc" id="amax30001g__globals_8h_html_a06968b23fcc97c5ccc6a9f6f5a99839c"><div class="ttname"><a href="max30001g__globals_8h.html#a06968b23fcc97c5ccc6a9f6f5a99839c">valid_data_detected</a></div><div class="ttdeci">bool valid_data_detected</div><div class="ttdef"><b>Definition:</b> max30001g_globals.cpp:43</div></div>

@@ -52,7 +52,6 @@ var menudata={children:[
 {text:"v",url:"functions_v.html#index_v"},
 {text:"w",url:"functions_w.html#index_w"}]},
 {text:"Functions",url:"functions_func.html",children:[
-{text:"a",url:"functions_func.html#index_a"},
 {text:"b",url:"functions_func.html#index_b"},
 {text:"c",url:"functions_func.html#index_c"},
 {text:"e",url:"functions_func.html#index_e"},
@@ -127,5 +126,4 @@ var menudata={children:[
 {text:"Typedefs",url:"globals_type.html"},
 {text:"Macros",url:"globals_defs.html",children:[
 {text:"d",url:"globals_defs.html#index_d"},
-{text:"m",url:"globals_defs.html#index_m"},
-{text:"r",url:"globals_defs.html#index_r"}]}]}]}]}
+{text:"m",url:"globals_defs.html#index_m"}]}]}]}]}

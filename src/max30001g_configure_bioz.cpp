@@ -242,7 +242,7 @@ void MAX30001G::setBIOZgain(uint8_t gain, bool lowNoise) {
   LOGI("BIOZ gain set to %d V/V (%s mode)", BIOZ_gain, lowNoise ? "low-noise" : "low-power");
 }
 
-void MAX30001G::setBIOZModulationFrequencyByFrequency(uint16_t frequency_hz) {
+void MAX30001G::setBIOZModulationFrequencyByFrequency(uint32_t frequency_hz) {
   /*
     Select nearest valid BIOZ FCGEN option from a target frequency in Hz.
     FCGEN is discrete (Table 42), so this helper maps by nearest value.
@@ -481,7 +481,7 @@ void MAX30001G::setBIOZmag(uint32_t current_nA) {
   * 
   **/
 
-void MAX30001G::setBIOZPhaseOffsetbyPhase(uint16_t frequency_hz, float phase_deg) {
+void MAX30001G::setBIOZPhaseOffsetbyPhase(uint32_t frequency_hz, float phase_deg) {
   // Convenience API for "value-based" scan workflows: select frequency then phase.
   setBIOZModulationFrequencyByFrequency(frequency_hz);
   setBIOZPhaseOffsetbyPhase(phase_deg);

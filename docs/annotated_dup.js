@@ -22,6 +22,5 @@ var annotated_dup =
     [ "max30001_mngr_int_reg_t", "unionmax30001__mngr__int__reg__t.html", "unionmax30001__mngr__int__reg__t" ],
     [ "max30001_rtor_reg", "unionmax30001__rtor__reg.html", "unionmax30001__rtor__reg" ],
     [ "max30001_status_reg_t", "unionmax30001__status__reg__t.html", "unionmax30001__status__reg__t" ],
-    [ "MAX30001G", "classMAX30001G.html", "classMAX30001G" ],
-    [ "RingBuffer", "classRingBuffer.html", "classRingBuffer" ]
+    [ "MAX30001G", "classMAX30001G.html", "classMAX30001G" ]
 ];

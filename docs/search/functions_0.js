@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['available_494',['available',['../classRingBuffer.html#a1dd7287bfce538851489e97c0fca7b28',1,'RingBuffer']]]
+  ['begin_482',['begin',['../classMAX30001G.html#a142395384adb4690fec6a05d2b984b07',1,'MAX30001G']]],
+  ['biozscanconfig_483',['BIOZScanConfig',['../structBIOZScanConfig.html#a0355cbbb54fac5f3a2e1025a95b4f4ee',1,'BIOZScanConfig']]]
 ];

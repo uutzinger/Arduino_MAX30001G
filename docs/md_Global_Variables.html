@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">MAX30001G
-   &#160;<span id="projectnumber">1.0.2</span>
+   &#160;<span id="projectnumber">1.1.0</span>
    </div>
    <div id="projectbrief">Arduino library for MAX30001G ECG and BIOZ AFE</div>
   </td>
@@ -88,7 +88,7 @@ $(document).ready(function(){initNavTree('md_Global_Variables.html',''); initRes
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>Global variables are updated by the driver and can be read by user application. They should not be written to.</p>
-<h1><a class="anchor" id="autotoc_md20"></a>
+<h1><a class="anchor" id="autotoc_md21"></a>
 AFE globals</h1>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -110,7 +110,7 @@ AFE globals</h1>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>V_AVDD</code>   </td><td class="markdownTableBodyNone">mV   </td><td class="markdownTableBodyNone">Analog supply voltage   </td></tr>
 </table>
-<h1><a class="anchor" id="autotoc_md21"></a>
+<h1><a class="anchor" id="autotoc_md22"></a>
 BIOZ globals</h1>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -140,7 +140,7 @@ BIOZ globals</h1>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>BIOZ_test_frequency</code>   </td><td class="markdownTableBodyNone">Hz   </td><td class="markdownTableBodyNone">BIOZ test resistor modulation frequency   </td></tr>
 </table>
-<h1><a class="anchor" id="autotoc_md22"></a>
+<h1><a class="anchor" id="autotoc_md23"></a>
 ECG globals</h1>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -162,17 +162,17 @@ ECG globals</h1>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>RtoR_delay</code>   </td><td class="markdownTableBodyNone">ms   </td><td class="markdownTableBodyNone">R-to-R detection delay   </td></tr>
 </table>
-<h1><a class="anchor" id="autotoc_md23"></a>
+<h1><a class="anchor" id="autotoc_md24"></a>
 Data related globals</h1>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadNone">Variable   </th><th class="markdownTableHeadNone">Type   </th><th class="markdownTableHeadNone">Description    </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>ECG_data</code>   </td><td class="markdownTableBodyNone"><code><a class="el" href="classRingBuffer.html">RingBuffer</a>&lt;float,128&gt;</code>   </td><td class="markdownTableBodyNone">ECG samples buffer    </td></tr>
+<td class="markdownTableBodyNone"><code>ECG_data</code>   </td><td class="markdownTableBodyNone"><code>RingBuffer&lt;float,128&gt;</code>   </td><td class="markdownTableBodyNone">ECG samples buffer    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>BIOZ_data</code>   </td><td class="markdownTableBodyNone"><code><a class="el" href="classRingBuffer.html">RingBuffer</a>&lt;float,128&gt;</code>   </td><td class="markdownTableBodyNone">BIOZ samples buffer    </td></tr>
+<td class="markdownTableBodyNone"><code>BIOZ_data</code>   </td><td class="markdownTableBodyNone"><code>RingBuffer&lt;float,128&gt;</code>   </td><td class="markdownTableBodyNone">BIOZ samples buffer    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>RTOR_data</code>   </td><td class="markdownTableBodyNone"><code><a class="el" href="classRingBuffer.html">RingBuffer</a>&lt;float,16&gt;</code>   </td><td class="markdownTableBodyNone">RR interval samples buffer (<code>ms</code>)    </td></tr>
+<td class="markdownTableBodyNone"><code>RTOR_data</code>   </td><td class="markdownTableBodyNone"><code>RingBuffer&lt;float,16&gt;</code>   </td><td class="markdownTableBodyNone">RR interval samples buffer (<code>ms</code>)    </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>ecg_available</code>   </td><td class="markdownTableBodyNone"><code>bool</code>   </td><td class="markdownTableBodyNone">ECG data-ready latch    </td></tr>
 <tr class="markdownTableRowOdd">
@@ -188,7 +188,7 @@ Data related globals</h1>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>rtor_counter</code>   </td><td class="markdownTableBodyNone"><code>int</code>   </td><td class="markdownTableBodyNone">Samples added by last RTOR read   </td></tr>
 </table>
-<h1><a class="anchor" id="autotoc_md24"></a>
+<h1><a class="anchor" id="autotoc_md25"></a>
 Impedance spectroscopy</h1>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -200,7 +200,7 @@ Impedance spectroscopy</h1>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>impedance_frequency[11]</code>   </td><td class="markdownTableBodyNone"><code>float[11]</code>   </td><td class="markdownTableBodyNone">Hz   </td><td class="markdownTableBodyNone">Frequency bins   </td></tr>
 </table>
-<h1><a class="anchor" id="autotoc_md25"></a>
+<h1><a class="anchor" id="autotoc_md26"></a>
 Error &amp; Status globals</h1>
 <table class="markdownTable">
 <tr class="markdownTableHead">

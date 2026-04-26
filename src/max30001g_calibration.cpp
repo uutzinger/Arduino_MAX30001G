@@ -465,10 +465,6 @@ void MAX30001G::setBIOZTestImpedance(
   cnfg_bioz_lc.all = readRegister24(MAX30001_CNFG_BIOZ_LC);
   cnfg_cal.all     = readRegister24(MAX30001_CNFG_CAL);
 
-  // Do not route VCAL while using impedance test.
-  cnfg_bmux.bit.calp_sel = 0U;
-  cnfg_bmux.bit.caln_sel = 0U;
-
   if (!enable) {
     cnfg_bioz_lc.bit.en_bistr = 0U;
     cnfg_bmux.bit.en_bist = 0U;
@@ -488,6 +484,8 @@ void MAX30001G::setBIOZTestImpedance(
 
   // RMOD BIST requires VCAL disabled.
   cnfg_cal.bit.vcal = 0U;
+  cnfg_bmux.bit.calp_sel = 0U;
+  cnfg_bmux.bit.caln_sel = 0U;
 
   if (useHighResistance) {
     if (rnomValue > 3U) {

@@ -93,6 +93,26 @@ void MAX30001G::printAllRegisters() {
   printCNFG_RTOR2();
 }
 
+void MAX30001G::printBiozDiagnosticRegisters(const char* context) {
+  if ((context != nullptr) && (context[0] != '\0')) {
+    LOGln("");
+    LOGln("%s registers:", context);
+  } else {
+    LOGln("");
+    LOGln("BIOZ diagnostic registers:");
+  }
+
+  LOGln("STATUS       = 0x%06lX", static_cast<unsigned long>(readRegister24(MAX30001_STATUS) & 0x00FFFFFFUL));
+  LOGln("CNFG_GEN     = 0x%06lX", static_cast<unsigned long>(readRegister24(MAX30001_CNFG_GEN) & 0x00FFFFFFUL));
+  LOGln("CNFG_BMUX    = 0x%06lX", static_cast<unsigned long>(readRegister24(MAX30001_CNFG_BMUX) & 0x00FFFFFFUL));
+  LOGln("CNFG_BIOZ    = 0x%06lX", static_cast<unsigned long>(readRegister24(MAX30001_CNFG_BIOZ) & 0x00FFFFFFUL));
+  LOGln("CNFG_BIOZ_LC = 0x%06lX", static_cast<unsigned long>(readRegister24(MAX30001_CNFG_BIOZ_LC) & 0x00FFFFFFUL));
+  LOGln("MNGR_INT     = 0x%06lX", static_cast<unsigned long>(readRegister24(MAX30001_MNGR_INT) & 0x00FFFFFFUL));
+  LOGln("EN_INT1      = 0x%06lX", static_cast<unsigned long>(readRegister24(MAX30001_EN_INT1) & 0x00FFFFFFUL));
+  LOGln("EN_INT2      = 0x%06lX", static_cast<unsigned long>(readRegister24(MAX30001_EN_INT2) & 0x00FFFFFFUL));
+  LOGln("");
+}
+
 void MAX30001G::readInfo(void)
 {
     /*
@@ -116,10 +136,11 @@ void MAX30001G::readStatusRegisters() {
 }
 
 void MAX30001G::printStatus(void) {
+    LOGln("");
     LOGln("MAX30001 Status Register:");
-    LOGln("----------------------------");
+    LOGln("-------------------------");
   
-    LOGln("ECG ------------------------");
+    LOGln("ECG ---");
   
     if (status.bit.dcloffint == 1) {
       LOGln("Lead ECG leads are off:");
@@ -137,13 +158,13 @@ void MAX30001G::printStatus(void) {
       LOGln("Lead ECG leads are on.");
     }
   
-    LOGln("ECG FIFO interrupt is %s", status.bit.eint ? "on" : "off");
-    LOGln("ECG FIFO overflow is  %s", status.bit.eovf ? "on" : "off");
-    LOGln("ECG Sample interrupt  %s", status.bit.samp ? "occurred" : "not present");
-    LOGln("ECG R to R interrupt  %s", status.bit.rrint ? "occurred" : "not present");
+    LOGln("ECG FIFO interrupt is          %s", status.bit.eint ? "on" : "off");
+    LOGln("ECG FIFO overflow is           %s", status.bit.eovf ? "on" : "off");
+    LOGln("ECG Sample interrupt           %s", status.bit.samp ? "occurred" : "not present");
+    LOGln("ECG R to R interrupt           %s", status.bit.rrint ? "occurred" : "not present");
     LOGln("ECG Fast Recovery interrupt is %s", status.bit.fstint ? "on" : "off");
   
-    LOGln("BIOZ -----------------------");
+    LOGln("BIOZ ---");
   
     if (status.bit.bcgmon == 1) {
       LOGln("BIOZ leads are off.");
@@ -160,16 +181,17 @@ void MAX30001G::printStatus(void) {
   }
   
   void MAX30001G::printEN_INT(max30001_en_int_reg_t en_int) {
+    LOGln("");
     LOGln("MAX30001 Interrupts:");
-    LOGln("----------------------------");
+    LOGln("--------------------");
     if (en_int.bit.intb_type == 0) {
-      LOGln("Interrupts are disabled");
+      LOGln("Interrupts are                                  disabled");
     } else if (en_int.bit.intb_type == 1) {
-      LOGln("Interrupt is CMOS driver");
+      LOGln("Interrupt is                                    CMOS driver");
     } else if (en_int.bit.intb_type == 2) {
-      LOGln("Interrupt is Open Drain driver");
+      LOGln("Interrupt is                                    Open Drain driver");
     } else if (en_int.bit.intb_type == 3) {
-      LOGln("Interrupt is Open Drain with 125k pullup driver");
+      LOGln("Interrupt is                                    Open Drain with 125k pullup driver");
     }
     LOGln("PLL interrupt is                                %s", en_int.bit.en_pllint    ? "enabled" : "disabled");
     LOGln("Sample synch pulse is                           %s", en_int.bit.en_samp      ? "enabled" : "disabled");
@@ -187,8 +209,9 @@ void MAX30001G::printStatus(void) {
   }
   
   void MAX30001G::printMNGR_INT(void) {
+    LOGln("");
     LOGln("MAX30001 Interrupt Management:");
-    LOGln("----------------------------");
+    LOGln("------------------------------");
   
     if (mngr_int.bit.samp_it == 0) {
       LOGln("Sample interrupt on every sample");
@@ -218,8 +241,9 @@ void MAX30001G::printStatus(void) {
   }
   
   void MAX30001G::printMNGR_DYN(void) {
+    LOGln("");
     LOGln("MAX30001 Dynamic Modes:");
-    LOGln("----------------------------");
+    LOGln("-----------------------");
   
     if (cnfg_gen.bit.en_bloff >= 2) {
       LOGln("BIOZ lead off high threshold: +/- %u * 32", mngr_dyn.bit.bloff_hi_it);
@@ -245,21 +269,23 @@ void MAX30001G::printStatus(void) {
     /*
     Print the information register
     */
+    LOGln("");
     LOGln("MAX30001 Information Register:");
-    LOGln("----------------------------");
+    LOGln("------------------------------");
     LOGln("Nibble 1:       %u", info.bit.n1);
     LOGln("Nibble 2:       %u", info.bit.n2);
     LOGln("Nibble 3:       %u", info.bit.n3);
-    LOGln("Constant 1: (should be 1) %u", info.bit.c1);
+    LOGln("Constant 1:     %u (should be 1)", info.bit.c1);
     LOGln("2 Bit Value:    %u", info.bit.n4);
     LOGln("Revision:       %u", info.bit.revision);
-    LOGln("Constant 2: (should be 5) %u", info.bit.c2);
+    LOGln("Constant 2:     %u (should be 5)", info.bit.c2);
   }
   
   void MAX30001G::printCNFG_GEN()
   {
+    LOGln("");
     LOGln("MAX30001 General Config:");
-    LOGln("----------------------------");
+    LOGln("------------------------");
     LOGln("ECG  is %s", cnfg_gen.bit.en_ecg ? "enabled" : "disabled");
     LOGln("BIOZ is %s", cnfg_gen.bit.en_bioz ? "enabled" : "disabled");
   
@@ -288,9 +314,7 @@ void MAX30001G::printStatus(void) {
         LOGln("FMSTR is undefined");
         break;
     }
-  
-    LOGln("--------------------------");
-  
+
     if (cnfg_gen.bit.en_rbias > 0) {
       if (cnfg_gen.bit.en_rbias == 1 && cnfg_gen.bit.en_ecg == 1) {
         LOGln("ECG bias resistor is enabled");
@@ -310,8 +334,6 @@ void MAX30001G::printStatus(void) {
     } else {
       LOGln("ECG and BIOZ bias resistors are disabled");
     }
-  
-    LOGln("--------------------------");
   
     if (cnfg_gen.bit.en_dcloff == 1) {
       LOGln("ECG lead off detection is enabled");
@@ -336,16 +358,12 @@ void MAX30001G::printStatus(void) {
       LOGln("ECG lead off detection is disabled");
     }
   
-    LOGln("--------------------------");
-  
     switch (cnfg_gen.bit.en_ulp_lon) {
       case 0: LOGln("ECG Ultra low power leads on detection is disabled"); break;
       case 1: LOGln("ECG Ultra low power leads on detection is enabled"); break;
       default: LOGln("ECG Ultra low power leads on detection is not defined"); break;
     }
-  
-    LOGln("--------------------------");
-  
+
     if (cnfg_gen.bit.en_bloff > 0) {
       LOGln("BIOZ lead off detection is enabled");
       switch (cnfg_gen.bit.en_bloff) {
@@ -360,6 +378,7 @@ void MAX30001G::printStatus(void) {
   }
   
   void MAX30001G::printCNFG_CAL() {
+      LOGln("");
       LOGln("MAX30001 Internal Voltage Calibration Source:");
       LOGln("---------------------------------------------");
   
@@ -368,14 +387,14 @@ void MAX30001G::printStatus(void) {
         LOGln("Voltage calibration source is %s", cnfg_cal.bit.vmode ? "bipolar" : "unipolar");
         LOGln("Magnitude is %s", cnfg_cal.bit.vmag ? "0.5mV" : "0.25mV");
         switch (cnfg_cal.bit.fcal) {
-          case 0: LOGln("Frequency is %u Hz", fmstr / 128); break;
-          case 1: LOGln("Frequency is %u Hz", fmstr / 512); break;
-          case 2: LOGln("Frequency is %u Hz", fmstr / 2048); break;
-          case 3: LOGln("Frequency is %u Hz", fmstr / 8192); break;
-          case 4: LOGln("Frequency is %u Hz", fmstr / 32768); break;
-          case 5: LOGln("Frequency is %u Hz", fmstr / 131072); break;
-          case 6: LOGln("Frequency is %u Hz", fmstr / 524288); break;
-          case 7: LOGln("Frequency is %u Hz", fmstr / 2097152); break;
+          case 0: LOGln("Frequency is %.6f Hz", fmstr / 128.0f); break;
+          case 1: LOGln("Frequency is %.6f Hz", fmstr / 512.0f); break;
+          case 2: LOGln("Frequency is %.6f Hz", fmstr / 2048.0f); break;
+          case 3: LOGln("Frequency is %.6f Hz", fmstr / 8192.0f); break;
+          case 4: LOGln("Frequency is %.6f Hz", fmstr / 32768.0f); break;
+          case 5: LOGln("Frequency is %.6f Hz", fmstr / 131072.0f); break;
+          case 6: LOGln("Frequency is %.6f Hz", fmstr / 524288.0f); break;
+          case 7: LOGln("Frequency is %.6f Hz", fmstr / 2097152.0f); break;
           default: LOGln("Frequency is not defined"); break;
         }
     } else {
@@ -390,6 +409,7 @@ void MAX30001G::printStatus(void) {
   }
   
   void MAX30001G::printCNFG_EMUX() {
+    LOGln("");
     LOGln("MAX30001 ECG multiplexer:");
     LOGln("-------------------------");
   
@@ -419,6 +439,7 @@ void MAX30001G::printStatus(void) {
   }
   
   void MAX30001G::printCNFG_ECG() {
+    LOGln("");
     LOGln("MAX30001 ECG settings:");
     LOGln("----------------------");
   
@@ -548,19 +569,20 @@ void MAX30001G::printStatus(void) {
   }
   
   void MAX30001G::printCNFG_BMUX() {
+    LOGln("");
     LOGln("BIOZ MUX Configuration");
     LOGln("----------------------");
   
     LOGln("Calibration");
     LOG("BIOZ Calibration source frequency is ");
     if (cnfg_bmux.bit.fbist == 0) {
-      LOGln("%5u", fmstr / (1 << 13));
+      LOGln("%.6f Hz", fmstr / static_cast<float>(1UL << 13));
     } else if (cnfg_bmux.bit.fbist == 1) {
-      LOGln("%5u", fmstr / (1 << 15));
+      LOGln("%.6f Hz", fmstr / static_cast<float>(1UL << 15));
     } else if (cnfg_bmux.bit.fbist == 2) {
-      LOGln("%5u", fmstr / (1 << 17));
+      LOGln("%.6f Hz", fmstr / static_cast<float>(1UL << 17));
     } else if (cnfg_bmux.bit.fbist == 3) {
-      LOGln("%5u", fmstr / (1 << 19));
+      LOGln("%.6f Hz", fmstr / static_cast<float>(1UL << 19));
     }
   
     LOG("BIOZ nominal resistance is ");
@@ -744,8 +766,9 @@ void MAX30001G::printStatus(void) {
   }
   
   void MAX30001G::printCNFG_BIOZ() {
+    LOGln("");
     LOGln("BIOZ Configuration");
-    LOGln("----------------------");
+    LOGln("------------------");
   
     LOG("BIOZ phase offset is ");
     if (cnfg_bioz.bit.fcgen == 0) {
@@ -930,6 +953,7 @@ void MAX30001G::printStatus(void) {
   }
   
   void MAX30001G::printCNFG_BIOZ_LC() {
+    LOGln("");
     LOGln("BIOZ Low Current Configuration");
     LOGln("------------------------------");
   
@@ -1016,6 +1040,7 @@ void MAX30001G::printStatus(void) {
   }
   
   void MAX30001G::printCNFG_RTOR1() {
+    LOGln("");
     LOGln("R to R configuration");
     LOGln("--------------------");
   
@@ -1084,6 +1109,7 @@ void MAX30001G::printStatus(void) {
   }
   
   void MAX30001G::printCNFG_RTOR2(){
+    LOGln("");
     LOGln("R to R Configuration");
     LOGln("--------------------");
   

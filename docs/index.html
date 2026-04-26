@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">MAX30001G
-   &#160;<span id="projectnumber">1.0.2</span>
+   &#160;<span id="projectnumber">1.1.0</span>
    </div>
    <div id="projectbrief">Arduino library for MAX30001G ECG and BIOZ AFE</div>
   </td>
@@ -88,7 +88,8 @@ $(document).ready(function(){initNavTree('index.html',''); initResizable(); });
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p><a class="anchor" id="md_README"></a> This is the MAX30001 library for Arduino. It attempts to be <code>complete</code> and supports impedance spectroscopy.</p>
-<p>This library is currently untested.</p>
+<p>This library has been validated for ECG, continuous BIOZ, combined ECG+BIOZ, internal calibration paths, and the refactored nonblocking BIOZ scan flow that is driven through <code>setup...()</code>, <code>start()</code>, and repeated <code>update()</code>.</p>
+<p>Impedance spectroscopy calibration with external known samples is still in progress.</p>
 <h1><a class="anchor" id="autotoc_md1"></a>
 Installation</h1>
 <p>Install the library in Arduino IDE or clone the GitHub repository into your Arduino <code>libraries</code> folder.</p>
@@ -105,8 +106,6 @@ Quick Start</h1>
 <div class="line"><span class="preprocessor">#include &quot;<a class="code" href="max30001g_8h.html">max30001g.h</a>&quot;</span></div>
 <div class="line"><span class="preprocessor">#include &quot;logger.h&quot;</span></div>
 <div class="line"> </div>
-<div class="line"><span class="keywordtype">int</span> currentLogLevel = LOG_LEVEL_DEBUG;</div>
-<div class="line"> </div>
 <div class="line"><span class="keyword">const</span> uint8_t AFE_CS_PIN  = 10; <span class="comment">// SPI chip select pin</span></div>
 <div class="line"><span class="keyword">const</span> <span class="keywordtype">int</span> AFE_INT1_PIN = 2;     <span class="comment">// AFE INTB interrupt</span></div>
 <div class="line"><span class="keyword">const</span> <span class="keywordtype">int</span> AFE_INT2_PIN = -1;    <span class="comment">// AFE INT2B optional</span></div>
@@ -115,6 +114,9 @@ Quick Start</h1>
 <div class="line"><span class="keywordtype">bool</span> measurementRunning = <span class="keyword">false</span>; <span class="comment">// Global status</span></div>
 <div class="line"> </div>
 <div class="line"><span class="keywordtype">void</span> setup() {</div>
+<div class="line">  <span class="comment">// LOG_LEVEL_NONE, LOG_LEVEL_ERROR, LOG_LEVEL_WARN, LOG_LEVEL_INFO, LOG_LEVEL_DEBUG</span></div>
+<div class="line">  currentLogLevel = LOG_LEVEL_DEBUG;</div>
+<div class="line"> </div>
 <div class="line">  Serial.begin(115200);         <span class="comment">// Baudrate, up to 921600 for ESP</span></div>
 <div class="line"> </div>
 <div class="line">  afe.begin();</div>
@@ -183,7 +185,27 @@ Quick Start</h1>
 <div class="ttc" id="amax30001g__globals_8cpp_html_a9a410de28f3b52b9faa9debaa0a655b2"><div class="ttname"><a href="max30001g__globals_8cpp.html#a9a410de28f3b52b9faa9debaa0a655b2">RTOR_data</a></div><div class="ttdeci">RingBuffer&lt; float, 16 &gt; RTOR_data</div><div class="ttdef"><b>Definition:</b> max30001g_globals.cpp:15</div></div>
 <div class="ttc" id="amax30001g__globals_8cpp_html_aee94df20a0534933c060b7259379f149"><div class="ttname"><a href="max30001g__globals_8cpp.html#aee94df20a0534933c060b7259379f149">BIOZ_data</a></div><div class="ttdeci">RingBuffer&lt; float, 128 &gt; BIOZ_data</div><div class="ttdef"><b>Definition:</b> max30001g_globals.cpp:14</div></div>
 <div class="ttc" id="amax30001g__globals_8cpp_html_af5f23e5189683022c4c3b8c7972292c1"><div class="ttname"><a href="max30001g__globals_8cpp.html#af5f23e5189683022c4c3b8c7972292c1">ECG_data</a></div><div class="ttdeci">RingBuffer&lt; float, 128 &gt; ECG_data</div><div class="ttdef"><b>Definition:</b> max30001g_globals.cpp:13</div></div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md4"></a>
+</div><!-- fragment --><p>BIOZ spectroscopy uses the same configure/start/update lifecycle, but <code>setupBIOZScan(...)</code> only configures the scan. Call <code>start()</code> once, then keep calling <code>update()</code> until a spectrum becomes available in <code>BIOZ_spectrum</code>.</p>
+<h1><a class="anchor" id="autotoc_md4"></a>
+Example Sketches</h1>
+<p>The maintained example sketches match the current driver structure:</p>
+<ul>
+<li><code>examples/ECG/ECG.ino</code>: continuous ECG using <code>setupECG(...)</code>, <code>start()</code>, and repeated <code>update()</code></li>
+<li><code>examples/BIOZ/BIOZ.ino</code>: continuous fixed-frequency BIOZ using <code>setupBIOZ(...)</code></li>
+<li><code>examples/ECGandBIOZ/ECGandBIOZ.ino</code>: simultaneous ECG and BIOZ using <code>setupECGandBIOZ(...)</code></li>
+<li><code>examples/BIOZScan/BIOZScan.ino</code>: external nonblocking BIOZ spectroscopy using <code>setupBIOZScan(...)</code></li>
+<li><code>examples/BIOZScan_Internal/BIOZScan_Internal.ino</code>: internal-resistor scan validation using the same scan-owned state machine</li>
+<li><code>examples/Hardware_HealthCheck/Hardware_HealthCheck.ino</code>: startup communication and hardware checks</li>
+<li><code>examples/MAX30001G/MAX30001G.ino</code>: interactive serial test program covering mode switches, setup helpers, calibration, scan control, and register inspection</li>
+<li><code>examples/ECG_FIFOInterruptValidation/ECG_FIFOInterruptValidation.ino</code>: ECG FIFO interrupt and <code>ECG_data</code> validation</li>
+<li><code>examples/BIOZ_FIFOInterruptValidation/BIOZ_FIFOInterruptValidation.ino</code>: BIOZ FIFO interrupt and <code>BIOZ_data</code> validation</li>
+<li><code>examples/ECGandBIOZ_FIFOInterruptValidation/ECGandBIOZ_FIFOInterruptValidation.ino</code>: combined FIFO drain validation</li>
+<li><code>examples/BIOZ_Internal_ImpedanceCalibration/BIOZ_Internal_ImpedanceCalibration.ino</code>: internal BIST point measurements outside the scan flow</li>
+<li><code>examples/BIOZ_External_ImpedanceCalibration/BIOZ_External_ImpedanceCalibration.ino</code>: external known-load impedance calibration</li>
+<li><code>examples/BIOZ_SignalCalibration/BIOZ_SignalCalibration.ino</code> and <code>examples/ECG_SignalCalibration/ECG_SignalCalibration.ino</code>: internal signal-generator calibration paths</li>
+</ul>
+<p>If you want one sketch that reflects the latest driver organization most closely, start with <code>examples/MAX30001G/MAX30001G.ino</code> for interactive coverage or <code>examples/BIOZScan_Internal/BIOZScan_Internal.ino</code> for the current BIOZ scan lifecycle.</p>
+<h1><a class="anchor" id="autotoc_md5"></a>
 Documentation</h1>
 <ul>
 <li><a href="https://uutzinger.github.io/Arduino_MAX30001G/">API Documentation (generated)</a></li>
@@ -191,7 +213,7 @@ Documentation</h1>
 <li><a class="el" href="md_Interrupts.html">Interrupt Handling</a></li>
 <li><a class="el" href="md_CHANGELOG.html">Changelog</a></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md5"></a>
+<h1><a class="anchor" id="autotoc_md6"></a>
 Hardware with MAX30001G</h1>
 <ul>
 <li><a href="https://github.com/MediBrick/ECG_BIOZ_Brick">MediBrick ECG and BIOZ</a></li>
@@ -199,25 +221,25 @@ Hardware with MAX30001G</h1>
 <li><a href="https://protocentral.com/product/protocentral-max30001/">Protocentral MAX30001</a></li>
 <li><a href="https://protocentral.com/product/healthypi-5-vital-signs-monitoring-hat-kit">Protocentral Healthy Pi 5</a></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md6"></a>
+<h1><a class="anchor" id="autotoc_md7"></a>
 Contributing</h1>
 <ul>
 <li>Urs Utzinger, 2025-2026</li>
-<li>GPT-5.3</li>
+<li>GPT, 2025- 2026</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md7"></a>
+<h1><a class="anchor" id="autotoc_md8"></a>
 License</h1>
 <p>See <a href="License.txt">LICENSE</a>.</p>
-<h1><a class="anchor" id="autotoc_md8"></a>
+<h1><a class="anchor" id="autotoc_md9"></a>
 Block Diagram of MAX 30001G</h1>
 <p>The <a class="el" href="classMAX30001G.html" title="MAX30001G device driver class used by Arduino sketches.">MAX30001G</a> is a highly integrated analog front end that consists of a differential <code>ECG channel</code> with optional right-leg drive. It employs standard high-pass and low-pass filters, an instrumentation amplifier, and an analog-to-digital converter.</p>
 <p>The impedance unit consists of a current driver, analog high-pass filter, and phase-shifted demodulator to measure impedance from 128kHz down to 125Hz modulation frequency at varying phase shifts. Since the analog HPF has limited ability to suppress 60Hz noise, measurements below 500Hz might not be reliable.</p>
 <p><a href="assets/Blockdiagram.png" target="_blank"><img src="assets/Blockdiagram.png" alt="" style="width: 800px;" class="inline"/> </a></p>
-<h1><a class="anchor" id="autotoc_md9"></a>
+<h1><a class="anchor" id="autotoc_md10"></a>
 Input MUX ECG</h1>
 <p>Besides ESD protection, the input MUX can detect lead-off and lead-on conditions. In addition, it can switch input electrode polarity and correct common-voltage bias on the subject. Input can be turned off and replaced with an internal signal generator for testing purposes.</p>
 <p><a href="assets/ECG_InputMUX.png" target="_blank"><img src="assets/ECG_InputMUX.png" alt="" style="width: 800px;" class="inline"/> </a></p>
-<h1><a class="anchor" id="autotoc_md10"></a>
+<h1><a class="anchor" id="autotoc_md11"></a>
 Input MUX BIOZ</h1>
 <p>Similar to the ECG input MUX, the BIOZ input MUX has ESD protection as well as lead-on and lead-off detection. Besides input signal calibration, a programmable resistor can be measured internally as simulated impedance.</p>
 <p><a href="assets/BIOZ_InputMUX.png" target="_blank"><img src="assets/BIOZ_InputMUX.png" alt="" style="width: 800px;" class="inline"/> </a> </p>

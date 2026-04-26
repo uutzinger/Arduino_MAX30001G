@@ -2,11 +2,53 @@
 #include "max30001g.h"
 #include "logger.h"
 
-const uint8_t AFE_CS_PIN = 10;
-const int AFE_INT1_PIN = 2;
-const int AFE_INT2_PIN = -1;
+const uint8_t AFE_CS_PIN = 6;
+const int AFE_INT1_PIN = 12;
+const int AFE_INT2_PIN = 13;
+const uint32_t ECG_DATA_TIMEOUT_MS = 100U;
+const uint32_t BIOZ_DATA_TIMEOUT_MS = 500U;
+const uint8_t ECG_FIFO_INTERRUPT_THRESHOLD = 8U;
 
 MAX30001G afe(AFE_CS_PIN, AFE_INT1_PIN, AFE_INT2_PIN);
+uint32_t last_ecg_data_ms = 0;
+uint32_t last_bioz_data_ms = 0;
+
+bool drainEcgData() {
+  float value = 0.0f;
+  bool had_data = false;
+  while (ECG_data.available() > 0) {
+    ECG_data.pop(value);
+    Serial.print("ECG [mV]: ");
+    Serial.println(value, 3);
+    had_data = true;
+  }
+  return had_data;
+}
+
+bool drainBiozData() {
+  float value = 0.0f;
+  bool had_data = false;
+  while (BIOZ_data.available() > 0) {
+    BIOZ_data.pop(value);
+    Serial.print("BIOZ [ohm]: ");
+    Serial.println(value, 3);
+    had_data = true;
+  }
+  return had_data;
+}
+
+void drainRtorData() {
+  float value = 0.0f;
+  while (RTOR_data.available() > 0) {
+    RTOR_data.pop(value);
+    Serial.print("RR [ms]: ");
+    Serial.println(value, 1);
+    if (value > 0.0f) {
+      Serial.print("HR [bpm]: ");
+      Serial.println(60000.0f / value, 1);
+    }
+  }
+}
 
 void setup() {
   currentLogLevel = LOG_LEVEL_INFO;
@@ -41,37 +83,52 @@ void setup() {
     8000, 8000, 0.0f,
     true, false, false
   );
+  afe.setFIFOInterruptThreshold(ECG_FIFO_INTERRUPT_THRESHOLD, 8);
   afe.start();
+  last_ecg_data_ms = millis();
+  last_bioz_data_ms = millis();
 
   Serial.println("MAX30001G ECG and BIOZ example started.");
 }
 
 void loop() {
-  if (!afe.update()) {
-    return;
+  afe.update();
+
+  if (drainEcgData()) {
+    last_ecg_data_ms = millis();
+  }
+  if (drainBiozData()) {
+    last_bioz_data_ms = millis();
+  }
+  drainRtorData();
+
+  const uint32_t now = millis();
+
+  if ((now - last_ecg_data_ms) >= ECG_DATA_TIMEOUT_MS) {
+    Serial.println("No ECG data in ECG_data after 100 ms; switching to direct ECG FIFO read.");
+    afe.readECG_FIFO(false);
+    if (drainEcgData()) {
+      last_ecg_data_ms = millis();
+    } else {
+      Serial.println("No ECG data from ECG_data or direct ECG FIFO read.");
+      afe.readStatusRegisters();
+      afe.printStatus();
+      last_ecg_data_ms = now;
+    }
+
+    drainRtorData();
   }
 
-  float value = 0.0f;
-
-  while (ECG_data.available() > 0) {
-    ECG_data.pop(value);
-    Serial.print("ECG [mV]: ");
-    Serial.println(value, 3);
-  }
-
-  while (BIOZ_data.available() > 0) {
-    BIOZ_data.pop(value);
-    Serial.print("BIOZ [ohm]: ");
-    Serial.println(value, 3);
-  }
-
-  while (RTOR_data.available() > 0) {
-    RTOR_data.pop(value);
-    Serial.print("RR [ms]: ");
-    Serial.println(value, 1);
-    if (value > 0.0f) {
-      Serial.print("HR [bpm]: ");
-      Serial.println(60000.0f / value, 1);
+  if ((now - last_bioz_data_ms) >= BIOZ_DATA_TIMEOUT_MS) {
+    Serial.println("No BIOZ data in BIOZ_data after 500 ms; switching to direct BIOZ FIFO read.");
+    afe.readBIOZ_FIFO(false);
+    if (drainBiozData()) {
+      last_bioz_data_ms = millis();
+    } else {
+      Serial.println("No BIOZ data from BIOZ_data or direct BIOZ FIFO read.");
+      afe.readStatusRegisters();
+      afe.printStatus();
+      last_bioz_data_ms = now;
     }
   }
 }

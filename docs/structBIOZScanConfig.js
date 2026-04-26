@@ -2,6 +2,7 @@ var structBIOZScanConfig =
 [
     [ "BIOZScanConfig", "structBIOZScanConfig.html#a0355cbbb54fac5f3a2e1025a95b4f4ee", null ],
     [ "avg", "structBIOZScanConfig.html#ab514de9899d73f497021ba73b203618b", null ],
+    [ "current_change_settle_samples", "structBIOZScanConfig.html#ad457f2f4384457177c9d8772d1db69a5", null ],
     [ "fast", "structBIOZScanConfig.html#ac208b75eb391bd0deafc8fe42e26a7c7", null ],
     [ "fourleads", "structBIOZScanConfig.html#a3ffa74a1cb95e239aa7a679a994a85ab", null ],
     [ "freq_end_index", "structBIOZScanConfig.html#a2b1b7241cc89b9a198824eddae4b607b", null ],
@@ -13,6 +14,7 @@ var structBIOZScanConfig =
     [ "max_retries", "structBIOZScanConfig.html#acc651e3648e56163c3ee2e7ffff39c94", null ],
     [ "outlier_min_samples", "structBIOZScanConfig.html#aa903cfb2abbd1ff467702d029d703174", null ],
     [ "outlier_sigma", "structBIOZScanConfig.html#a9f7418f511194f2e8132daa664a4851e", null ],
+    [ "settle_samples", "structBIOZScanConfig.html#a598f7f674693a49cb3931eb555a83409", null ],
     [ "target_fraction", "structBIOZScanConfig.html#a664475d516c4dd5c8e4d9e8915c15287", null ],
     [ "timeout_margin_ms", "structBIOZScanConfig.html#ab98f968b4bb1f7397ca8a3f7446f0361", null ],
     [ "use_internal_resistor", "structBIOZScanConfig.html#a044eb575fcf82d51bc1e143072c30186", null ]

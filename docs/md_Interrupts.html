@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">MAX30001G
-   &#160;<span id="projectnumber">1.0.2</span>
+   &#160;<span id="projectnumber">1.1.0</span>
    </div>
    <div id="projectbrief">Arduino library for MAX30001G ECG and BIOZ AFE</div>
   </td>
@@ -88,7 +88,7 @@ $(document).ready(function(){initNavTree('md_Interrupts.html',''); initResizable
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>The driver keeps default behavior in <code>serviceAllInterrupts()</code> (updates global flags), and also supports user callbacks. For IRQ-driven sketches, prefer <code>servicePendingInterrupts()</code> in <code>loop()</code>.</p>
-<h1><a class="anchor" id="autotoc_md13"></a>
+<h1><a class="anchor" id="autotoc_md14"></a>
 Interrupt Usage</h1>
 <p>Wire <a class="el" href="classMAX30001G.html" title="MAX30001G device driver class used by Arduino sketches.">MAX30001G</a> <code>INTB</code> (and optional <code>INT2B</code>) to interrupt-capable GPIO pins and pass those pins to the constructor.</p>
 <div class="fragment"><div class="line"><span class="keyword">const</span> uint8_t AFE_CS_PIN  = 10;</div>
@@ -112,7 +112,7 @@ Interrupt Usage</h1>
 <div class="ttc" id="aclassMAX30001G_html"><div class="ttname"><a href="classMAX30001G.html">MAX30001G</a></div><div class="ttdoc">MAX30001G device driver class used by Arduino sketches.</div><div class="ttdef"><b>Definition:</b> max30001g.h:34</div></div>
 </div><!-- fragment --><p><code>servicePendingInterrupts()</code> uses Arduino core APIs <code>noInterrupts()</code> and <code>interrupts()</code> to atomically read/clear the software pending flags. These APIs are available on AVR, SAMD, ESP8266, and ESP32 Arduino cores, so no API change is needed for ESP-type boards.</p>
 <p>If your board does not wire interrupt pins, call <code>serviceAllInterrupts()</code> periodically instead. If you provide your own ISR, set library globals <code>afe_irq_pending</code> and <code>afe_irq1_pending</code>/<code>afe_irq2_pending</code> (do not use a separate local pending flag). If you use latched event/fault globals, clear them explicitly with <code>clearLatchedStatusFlags()</code> after handling.</p>
-<h1><a class="anchor" id="autotoc_md14"></a>
+<h1><a class="anchor" id="autotoc_md15"></a>
 Configure which events drive INT1/INT2</h1>
 <p><code>setInterrupt1(...)</code> and <code>setInterrupt2(...)</code> program <a class="el" href="classMAX30001G.html" title="MAX30001G device driver class used by Arduino sketches.">MAX30001G</a> <code>EN_INT1</code> and <code>EN_INT2</code>.</p>
 <p>Example:</p>
@@ -120,7 +120,7 @@ Configure which events drive INT1/INT2</h1>
 <div class="line">afe.setInterrupt1(<span class="keyword">true</span>,  <span class="keyword">true</span>,  <span class="keyword">false</span>, <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
 <div class="line"><span class="comment">// INT2: R-to-R interrupt</span></div>
 <div class="line">afe.setInterrupt2(<span class="keyword">false</span>, <span class="keyword">false</span>, <span class="keyword">true</span>,  <span class="keyword">false</span>, <span class="keyword">false</span>);</div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md15"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md16"></a>
 Available per-event callbacks (&lt;tt&gt;InterruptEvent&lt;/tt&gt;)</h1>
 <ul>
 <li><code><a class="el" href="classMAX30001G.html#afd5657c975d738da119bedededfa6b4da9157422fb4e2cdd10f6aba422293801a">MAX30001G::IRQ_ECG_FIFO</a></code> -&gt; <code>MAX30001_STATUS_EINT</code></li>
@@ -136,7 +136,7 @@ Available per-event callbacks (&lt;tt&gt;InterruptEvent&lt;/tt&gt;)</h1>
 <li><code><a class="el" href="classMAX30001G.html#afd5657c975d738da119bedededfa6b4da9ee7f4d74edfcc4e37e9ca85cb362c3d">MAX30001G::IRQ_RTOR</a></code> -&gt; <code>MAX30001_STATUS_RRINT</code></li>
 <li><code><a class="el" href="classMAX30001G.html#afd5657c975d738da119bedededfa6b4daaac78e6cde671808f1f2287c0dc5c59b">MAX30001G::IRQ_PLL_UNLOCK</a></code> -&gt; <code>MAX30001_STATUS_PLLINT</code></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md16"></a>
+<h1><a class="anchor" id="autotoc_md17"></a>
 Example: Individual ECG and BIOZ FIFO callbacks</h1>
 <div class="fragment"><div class="line"><span class="keywordtype">void</span> onEcgFifo(<a class="code" href="classMAX30001G.html">MAX30001G</a>* dev, uint32_t <a class="code" href="max30001g__globals_8cpp.html#a938a269d71710354360b7e1aa6ebbea8">status</a>, <span class="keywordtype">void</span>* ctx) {</div>
 <div class="line">  (void)<a class="code" href="max30001g__globals_8cpp.html#a938a269d71710354360b7e1aa6ebbea8">status</a>;</div>
@@ -159,7 +159,7 @@ Example: Individual ECG and BIOZ FIFO callbacks</h1>
 <div class="ttc" id="aclassMAX30001G_html_afd5657c975d738da119bedededfa6b4da9157422fb4e2cdd10f6aba422293801a"><div class="ttname"><a href="classMAX30001G.html#afd5657c975d738da119bedededfa6b4da9157422fb4e2cdd10f6aba422293801a">MAX30001G::IRQ_ECG_FIFO</a></div><div class="ttdeci">@ IRQ_ECG_FIFO</div><div class="ttdef"><b>Definition:</b> max30001g.h:51</div></div>
 <div class="ttc" id="aclassMAX30001G_html_afd5657c975d738da119bedededfa6b4daf302ec32840322bd45ad63fdac243a7a"><div class="ttname"><a href="classMAX30001G.html#afd5657c975d738da119bedededfa6b4daf302ec32840322bd45ad63fdac243a7a">MAX30001G::IRQ_BIOZ_FIFO</a></div><div class="ttdeci">@ IRQ_BIOZ_FIFO</div><div class="ttdef"><b>Definition:</b> max30001g.h:55</div></div>
 <div class="ttc" id="amax30001g__globals_8cpp_html_a938a269d71710354360b7e1aa6ebbea8"><div class="ttname"><a href="max30001g__globals_8cpp.html#a938a269d71710354360b7e1aa6ebbea8">status</a></div><div class="ttdeci">max30001_status_reg_t status</div><div class="ttdef"><b>Definition:</b> max30001g_globals.cpp:80</div></div>
-</div><!-- fragment --><h1><a class="anchor" id="autotoc_md17"></a>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md18"></a>
 Example: One aggregate callback</h1>
 <div class="fragment"><div class="line"><span class="keywordtype">void</span> onAfeAggregate(<a class="code" href="classMAX30001G.html">MAX30001G</a>* dev, uint32_t <a class="code" href="max30001g__globals_8cpp.html#a938a269d71710354360b7e1aa6ebbea8">status</a>, <span class="keywordtype">void</span>* ctx) {</div>
 <div class="line">  (void)ctx;</div>
@@ -178,7 +178,7 @@ Example: One aggregate callback</h1>
 <div class="ttc" id="amax30001g__defs_8h_html_a6e1829ae90e135ed6e4fda46eec8ebc4"><div class="ttname"><a href="max30001g__defs_8h.html#a6e1829ae90e135ed6e4fda46eec8ebc4">MAX30001_STATUS_BINT</a></div><div class="ttdeci">#define MAX30001_STATUS_BINT</div><div class="ttdef"><b>Definition:</b> max30001g_defs.h:67</div></div>
 <div class="ttc" id="amax30001g__defs_8h_html_a9ce8604d2a5b82e742b3c97fa1c306c9"><div class="ttname"><a href="max30001g__defs_8h.html#a9ce8604d2a5b82e742b3c97fa1c306c9">MAX30001_STATUS_EINT</a></div><div class="ttdeci">#define MAX30001_STATUS_EINT</div><div class="ttdef"><b>Definition:</b> max30001g_defs.h:63</div></div>
 </div><!-- fragment --><p>If aggregate and individual callbacks are both registered, aggregate runs first.</p>
-<h1><a class="anchor" id="autotoc_md18"></a>
+<h1><a class="anchor" id="autotoc_md19"></a>
 Interrupt Callback API summary</h1>
 <ul>
 <li><code>setInterruptEventCallback(event, cb, context)</code></li>

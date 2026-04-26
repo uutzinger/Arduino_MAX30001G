@@ -43,11 +43,13 @@ inline float biozCodeToOhm(int32_t code) {
   // BioZ (Ω) = ADC x VREF / (2^19 x BIOZ_CGMAG x BIOZ_GAIN)
   //   BIOZ_CGMAG is 55 to 96000 nano A, set by CNFG_BIOZ and CNFG_BIOZ_LC 
   //   BIOZ_GAIN = 10V/V, 20V/V, 40V/V, or 80V/V. BIOZ_GAIN are set in CNFG_BIOZ (0x18).
-  const float denom = 524288.0f * static_cast<float>(BIOZ_cgmag) * static_cast<float>(BIOZ_gain) * 1e-9f;
+  const float vref_volts = static_cast<float>(V_ref) * 1e-3f;
+  const float current_amps = static_cast<float>(BIOZ_cgmag) * 1e-9f;
+  const float denom = 524288.0f * current_amps * static_cast<float>(BIOZ_gain);
   if (denom == 0.0f) {
     return std::numeric_limits<float>::infinity();
   }
-  return (static_cast<float>(code) * static_cast<float>(V_ref)) / denom;
+  return (static_cast<float>(code) * vref_volts) / denom;
 }
 
 inline bool isEcgTagWithSample(uint8_t tag) {

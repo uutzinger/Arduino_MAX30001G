@@ -7,6 +7,93 @@
 // Urs Utzinger, July 2024 - present
 // GPT-5.3 assisted development, review and testing, Spring 2026                                                             
 /******************************************************************************************************/
+/*
+// The driver has four layers:
+//
+// Low-level register setters
+// setBIOZModulationFrequency..., setBIOZPhaseOffset..., setBIOZmag, setBIOZfilter, setBIOZTestImpedance.
+// 
+// Profile setup functions
+// setupBIOZ(), setupECGandBIOZ(), setupBIOZScan().
+// These define mode, register baseline, interrupt behavior, and lifecycle.
+//
+// Point acquisition primitive
+// No active blocking point helper is currently exposed. A future helper would
+// collect one settled averaged point in an already selected measurement context.
+//
+// Scan orchestration
+// setupBIOZScan() and stepBIOZScan()
+// They choose frequency, current, phase, retry behavior, fitting model, and result output.
+*/
+/******************************************************************************************************/
+/* Continuous ECG */
+// setupECG(...)
+// start()
+// repeated update()
+/******************************************************************************************************/
+/* Continuous BIOZ */
+// setupBIOZ(...)
+// start()
+// repeated update()
+/******************************************************************************************************/
+/* Continuous BIOZ & ECG*/
+// setupECGandBIOZ()...)
+// start()
+// repeated update()
+/******************************************************************************************************/
+/* BIOZ Scan */
+// 
+// Configure scan baseline once:
+// 
+// 1 sampling rate
+//   gain
+//   filters
+//   internal/external path
+//   interrupts
+//   lead settings
+//   initial current profile
+//   For each frequency:
+// 
+// 2 configure frequency
+//   configure current
+//   configure modulation mode
+//   For each phase:
+// 
+// 3 configure phase only
+//   reset/sync if required
+//   discard configured sample count
+//   average configured sample count
+//   store one phase-point result
+// 
+// 4 After phases:
+//   evaluate raw range
+//   retry with adjusted current if needed
+//   fit impedance model
+//   move to next frequency
+//
+// 5 Finish:
+//   publish ImpedanceSpectrum
+//
+/******************************************************************************************************/
+// Nonblocking point engine for scan:
+//   beginBIOZScan(config)
+//   stepBIOZScan()
+//   isBIOZScanDone() 
+//   getBIOZScanResult()
+//
+// Optimization =========
+// Make the scan architecture correct. Then optimize transitions:
+// 
+// If only phase changes, only write phase register and discard settle_samples.
+// If frequency changes, write frequency, maybe update AHPF/current limits, discard settle_samples.
+// If current changes, write current and modulation mode, discard current_change_settle_samples.
+// If internal BIST requires restart, restart only for internal mode.
+// External mode should avoid unnecessary stop/start unless hardware data says otherwise.
+// 
+// Current scan refactor status ============
+// - BIOZ scan execution owns discard/average/retry/fitting in stepBIOZScan().
+/******************************************************************************************************/
+
 
 #include "logger.h"
 #include "max30001g.h"
@@ -76,7 +163,15 @@
   BIOZ Hardware
   -------------
 
-NEED TO COMPLETE BIOZ DESCRIPTION HERE
+  The BIOZ channel drives a programmable oscillating current through BIP/BIN,
+  demodulates the response at the selected modulation frequency and phase, and
+  reports FIFO samples proportional to the measured impedance projection. The
+  scan code steps modulation frequency and demodulation phase, discards settling
+  samples after each transition, then fits the phase response. Internal BIST
+  routes a nominal resistor through the on-chip BIOZ test path; external scans
+  use the electrode path and should use external calibration loads for accuracy.
+
+  Need to complete
 
 */
 
@@ -121,6 +216,11 @@ MAX30001G::MAX30001G(uint8_t csPin, int intPin1, int intPin2)
     _scanPhaseIndex(0U),
     _scanAttempt(0U),
     _scanNumPhaseMeasurements(0U),
+    _scanDiscardSamplesSeen(0U),
+    _scanDiscardSamplesTarget(0U),
+    _scanCollectSamplesTarget(0U),
+    _scanCurrentChangedForAttempt(false),
+    _scanFifoTimeoutMs(0U),
     _scanWaitDeadlineMs(0U),
     _scanThresholdMin(0.0f),
     _scanThresholdMax(0.0f),
@@ -297,10 +397,11 @@ bool MAX30001G::update(bool reportRaw) {
   bool handled = false;
   bool serviced = servicePendingInterrupts();
 
-  // Poll STATUS when no hardware interrupt pins are wired.
-  if (!serviced && (_intPin1 < 0) && (_intPin2 < 0)) {
+  // Fallback polling path:
+  // If no IRQ was latched, poll STATUS once anyway. This keeps the examples
+  // alive when interrupt wiring is absent, misconfigured, or temporarily missed.
+  if (!serviced) {
     serviceAllInterrupts();
-    serviced = true;
   }
   handled = serviced;
 
@@ -349,6 +450,26 @@ void MAX30001G::end(){
       detachInterrupt(irq2);
     }
   }
+}
+
+/******************************************************************************************************/
+// Enable ECG, BIOZ, RtoR
+/******************************************************************************************************/
+
+void MAX30001G::enableAFE(bool enableECG, bool enableBIOZ, bool enableRtoR) {
+  cnfg_gen.all   = readRegister24(MAX30001_CNFG_GEN);
+  cnfg_rtor1.all = readRegister24(MAX30001_CNFG_RTOR1);
+
+  cnfg_gen.bit.en_ecg    = enableECG ? 1 : 0;
+  cnfg_gen.bit.en_bioz   = enableBIOZ ? 1 : 0;  
+  cnfg_rtor1.bit.en_rtor = enableRtoR ? 1 : 0;
+
+  if (enableRtoR && !enableECG) {
+    cnfg_gen.bit.en_ecg  = 1;
+    LOGW("To enable RtoR you must enable ECG. ECG enabled.");
+  }
+  writeRegister(MAX30001_CNFG_GEN, cnfg_gen.all);
+  writeRegister(MAX30001_CNFG_RTOR1, cnfg_rtor1.all);
 }
 
 /******************************************************************************************************/
@@ -602,7 +723,7 @@ void MAX30001G::setupECGSignalCalibration(uint8_t speed, uint8_t gain) {
 void MAX30001G::setupBIOZ(
   uint8_t speed, uint8_t gain, 
   uint8_t ahpf, uint8_t dlpf, uint8_t dhpf, 
-  uint16_t frequency, uint16_t current, float phase, 
+  uint32_t frequency, uint32_t current, float phase, 
   bool leadbias, bool leadsoffdetect, bool fourleads
 ) {
 
@@ -814,7 +935,7 @@ void MAX30001G::setupBIOZSignalCalibration(
  *
  * Fixed for this setup:
  *   AHPF  = bypass (required so ~1Hz VCAL is not attenuated)
- *   DLPF  = 16Hz
+ *   DLPF  = bypass
  *   DHPF  = bypass
  *   CGMAG = 0 (current generator off)
  *   BMUX_CG_MODE = 0
@@ -855,7 +976,7 @@ void MAX30001G::setupBIOZSignalCalibration(
   // VCAL path setup: keep generator path idle.
   // AHPF must be bypassed for low-frequency VCAL (default is ~1Hz).
   const uint8_t ahpf = 6; // bypass
-  const uint8_t dlpf = 3; // ~16Hz
+  const uint8_t dlpf = 0; // bypass
   const uint8_t dhpf = 0; // bypass
   setBIOZfilter(ahpf, dlpf, dhpf);
   setBIOZmodulation(0);   // required-safe mode when generator is idle/low-current path
@@ -884,7 +1005,7 @@ void MAX30001G::setupBIOZSignalCalibration(
 void MAX30001G::setupBIOZImpedanceCalibration(
   uint8_t speed, uint8_t gain, 
   uint8_t ahpf, uint8_t dlpf, uint8_t dhpf, 
-  uint16_t frequency, uint16_t current, float phase, 
+  uint32_t frequency, uint32_t current, float phase, 
   uint32_t resistance, uint8_t modulation, uint8_t modulation_frequency
 )
 {
@@ -1130,7 +1251,7 @@ void MAX30001G::setupBIOZImpedanceCalibration(
   
 }
 
-void MAX30001G::setupBIOZExternalImpedanceCalibration(uint16_t frequency, float phase)
+void MAX30001G::setupBIOZExternalImpedanceCalibration(uint32_t frequency, float phase)
 {
   /*
    * Configure BIOZ path to measure an external 100 Ohm calibration resistor on PCB.
@@ -1160,7 +1281,7 @@ void MAX30001G::setupECGandBIOZ(
   uint8_t ecg_speed, uint8_t ecg_gain, bool ecg_threeleads,
   uint8_t bioz_speed, uint8_t bioz_gain, 
   uint8_t bioz_dlpf, uint8_t bioz_dhpf, 
-  uint16_t bioz_frequency, uint16_t bioz_current, float bioz_phase, 
+  uint32_t bioz_frequency, uint32_t bioz_current, float bioz_phase, 
   bool leadbias, bool leadsoffdetect, bool bioz_fourleads
 ) {
 /******************************************************************************************************/
@@ -1511,20 +1632,20 @@ void MAX30001G::setupBIOZScan(uint8_t avg, bool fast, bool fourleads, bool fullR
 void MAX30001G::setupBIOZScan(const BIOZScanConfig& config, bool reuseCurrents) {
 /*
  * BIOZ Scan Configuration
- * avg:       number of samples to average at each frequency/phase point (1-8)
- * fast:      if true, use 60sps BIOZ sampling rate; otherwise use 30sps
- * fourleads: if true, use 4-wire BIOZ configuration; otherwise use 2-wire
+ * avg:                   number of samples to average at each frequency/phase point (1-8)
+ * fast:                  if true, use 60sps BIOZ sampling rate; otherwise use 30sps
+ * fourleads:             if true, use 4-wire BIOZ configuration; otherwise use 2-wire
  * use_internal_resistor: if true, scan the internal calibration resistor instead of external electrodes
  * internal_resistor_ohm: nominal internal resistor, nearest supported value is selected
- * max_retries: number of retries per frequency/phase point if measurement is unsuccessful (0-3)
- * low_target_fraction: signal is low if below 10% of ADC range for current adjustment
- * high_target_fraction: signal is high if above 90% of ADC range for current adjustment
- * target_fraction: signal is ok if above 60% of ADC range for current adjustment
- * outlier_sigma: number of standard deviations for outlier rejection when averaging multiple readings at each point
- * timeout_margin_ms: margin in milliseconds for FIFO read timeout when waiting for samples at each point
- * freq_start_index: index of first modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
- * freq_end_index: index of last modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
- * initial_current_nA: initial current magnitude in nanoAmps (55..96,000)
+ * max_retries:           number of retries per frequency/phase point if measurement is unsuccessful (0-3)
+ * low_target_fraction:   signal is low if below 10% of ADC range for current adjustment
+ * high_target_fraction:  signal is high if above 90% of ADC range for current adjustment
+ * target_fraction:       signal is ok if above 60% of ADC range for current adjustment
+ * outlier_sigma:         number of standard deviations for outlier rejection when averaging multiple readings at each point
+ * timeout_margin_ms:     margin in milliseconds for FIFO read timeout when waiting for samples at each point
+ * freq_start_index:      index of first modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
+ * freq_end_index:        index of last modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
+ * initial_current_nA:    initial current magnitude in nanoAmps (55..96,000)
  * 
  */
 
@@ -1540,6 +1661,7 @@ void MAX30001G::setupBIOZScan(const BIOZScanConfig& config, bool reuseCurrents) 
   if (sanitized_config.low_target_fraction > 0.80f) { sanitized_config.low_target_fraction = 0.80f; }
   if (sanitized_config.high_target_fraction < 0.20f) { sanitized_config.high_target_fraction = 0.20f; }
   if (sanitized_config.high_target_fraction > 0.98f) { sanitized_config.high_target_fraction = 0.98f; }
+  
   if (sanitized_config.high_target_fraction <= sanitized_config.low_target_fraction) {
     sanitized_config.high_target_fraction = sanitized_config.low_target_fraction + 0.05f;
     if (sanitized_config.high_target_fraction > 0.98f) {
@@ -1574,37 +1696,54 @@ void MAX30001G::setupBIOZScan(const BIOZScanConfig& config, bool reuseCurrents) 
   if (sanitized_config.initial_current_nA < 55) { sanitized_config.initial_current_nA = 55; }
   if (sanitized_config.initial_current_nA > 96000) { sanitized_config.initial_current_nA = 96000; }
   sanitized_config.initial_current_nA = closestCurrent(sanitized_config.initial_current_nA);
+  if (sanitized_config.settle_samples < sanitized_config.avg) {
+    sanitized_config.settle_samples = sanitized_config.avg;
+  }
+  if (sanitized_config.settle_samples > 64U) {
+    sanitized_config.settle_samples = 64U;
+  }
+  if (sanitized_config.current_change_settle_samples < sanitized_config.settle_samples) {
+    sanitized_config.current_change_settle_samples = sanitized_config.settle_samples;
+  }
+  if (sanitized_config.current_change_settle_samples > 64U) {
+    sanitized_config.current_change_settle_samples = 64U;
+  }
 
   if (sanitized_config.internal_resistor_ohm < 625U) { sanitized_config.internal_resistor_ohm = 625U; }
   if (sanitized_config.internal_resistor_ohm > 5000U) { sanitized_config.internal_resistor_ohm = 5000U; }
 
-  _profile = PROFILE_BIOZ_SCAN;
-  _configured = true;
-  _running = false;
-  _useECG = false;
-  _useBIOZ = false;
-  _useRTOR = false;
-  _drainECGOnUpdate = false;
-  _drainBIOZOnUpdate = false;
-  _readRTOROnUpdate = false;
-  _applyLeadSettingsOnStart = false;
-  _leadBiasEnable = false;
-  _leadBiasResistance = 0U;
-  _leadOffEnable = false;
-  _leadOffBioz4 = false;
-  _leadOffElectrodeImpedance = 0U;
-  _leadOnEnable = false;
+  _profile                      = PROFILE_BIOZ_SCAN;
+  _configured                   = true;
+  _running                      = false;
+  _useECG                       = false;
+  _useBIOZ                      = false;
+  _useRTOR                      = false;
+  _drainECGOnUpdate             = false;
+  _drainBIOZOnUpdate            = false;
+  _readRTOROnUpdate             = false;
+  _applyLeadSettingsOnStart     = false;
+  _leadBiasEnable               = false;
+  _leadBiasResistance           = 0U;
+  _leadOffEnable                = false;
+  _leadOffBioz4                 = false;
+  _leadOffElectrodeImpedance    = 0U;
+  _leadOnEnable                 = false;
 
-  _scanRuntimeConfig = sanitized_config;
-  _scanReuseCurrents = reuseCurrents;
-  _scanInProgress = false;
-  _scanCompleted = false;
-  _BIOZScanState = BIOZ_SCAN_IDLE;
-  _scanFreqIndex = 0U;
-  _scanPhaseIndex = 0U;
-  _scanAttempt = 0U;
-  _scanNumPhaseMeasurements = 0U;
-  _scanWaitDeadlineMs = 0U;
+  _scanRuntimeConfig            = sanitized_config;
+  _scanReuseCurrents            = reuseCurrents;
+  _scanInProgress               = false;
+  _scanCompleted                = false;
+  _BIOZScanState                = BIOZ_SCAN_IDLE;
+  _scanFreqIndex                = 0U;
+  _scanPhaseIndex               = 0U;
+  _scanAttempt                  = 0U;
+  _scanNumPhaseMeasurements     = 0U;
+  _scanDiscardSamplesSeen       = 0U;
+  _scanDiscardSamplesTarget     = 0U;
+  _scanCollectSamplesTarget     = 0U;
+  _scanCurrentChangedForAttempt = false;
+  _scanFifoTimeoutMs            = 0U;
+  _scanWaitDeadlineMs           = 0U;
 }
 
 /*
@@ -1642,9 +1781,9 @@ uint8_t MAX30001G::biozScanPhaseCountForFreq(uint8_t freq_idx) const {
 }
 
 /* 
- * Selects the appropriate AHpf value based on the lowest frequency measured in the BIOZ scan.
+ * Selects the appropriate AHPF value based on the lowest frequency measured in the BIOZ scan.
  */
-uint8_t MAX30001G::biozScanSelectAHpf(float lowest_frequency_hz) const {
+uint8_t MAX30001G:: biozScanSelectAHPF(float lowest_frequency_hz) const {
   static const float kAhpfCutoffHz[6] = {60.0f, 150.0f, 500.0f, 1000.0f, 2000.0f, 4000.0f};
   uint8_t selected = 0U;
   for (uint8_t i = 0U; i < 6U; ++i) {
@@ -1656,10 +1795,44 @@ uint8_t MAX30001G::biozScanSelectAHpf(float lowest_frequency_hz) const {
 }
 
 /*
- * Calculates the robust mean of samples in the BIOZ_data RingBuffer, excluding outliers.
+ * Selects the current matching requested current with least error
+ * Input current in nanoamps
+ */
+int32_t MAX30001G::closestCurrent(int32_t input) {
+  // The list of selectable values sorted in ascending order
+  int32_t currentValues[] = {0, 55, 110, 220, 330, 440, 550, 660, 880, 1100, 8000, 16000, 32000, 48000, 64000, 80000, 96000};
+  int size = sizeof(currentValues) / sizeof(currentValues[0]);
+
+  // If the input is smaller than or equal to the smallest element, return 0
+  if (input <= currentValues[0]) {
+    return currentValues[0];
+  }
+
+  // Iterate over the array to find the closest smaller or equal value
+  for (int i = 1; i < size; i++) {
+    if (currentValues[i] >= input) {
+      if ((input - currentValues[i - 1]) < (currentValues[i] - input)) {
+        return currentValues[i - 1];
+      } else {
+        return currentValues[i];
+      }
+    } 
+  }
+
+  // If input is larger than the largest value, return the largest value
+  return currentValues[size - 1];
+}
+
+
+/*********************************************************
+ * Empties the BIOZ data ring buffer
+ *
+ * Calculates the robust mean of samples excluding outliers.
  */
 float MAX30001G::biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, float outlier_sigma, bool& hasSamples) {
   float samples[32];
+
+  // obtain samples from the buffer up to a maximum of 32 
   uint8_t n = 0U;
   while ((BIOZ_data.available() > 0U) && (n < 32U)) {
     float value = 0.0f;
@@ -1669,21 +1842,25 @@ float MAX30001G::biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, float
     samples[n++] = value;
   }
 
+  // sanity exit if no samples obtained
   hasSamples = (n > 0U);
   if (!hasSamples) {
     return NAN;
   }
 
+  // calculate mean
   float mean = 0.0f;
   for (uint8_t i = 0U; i < n; ++i) {
     mean += samples[i];
   }
   mean /= static_cast<float>(n);
 
+  // sanity exit if not enough samples to perform outlier rejection
   if (n < outlier_min_samples) {
     return mean;
   }
 
+  // calculate standard deviation
   float var = 0.0f;
   for (uint8_t i = 0U; i < n; ++i) {
     const float d = samples[i] - mean;
@@ -1691,10 +1868,13 @@ float MAX30001G::biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, float
   }
   var /= static_cast<float>(n);
   const float std = sqrtf(var);
+
+  // sanity exit if no variation in samples
   if (std <= 0.0f) {
     return mean;
   }
 
+  // remove outliers and calculate mean of remaining samples
   const float reject = outlier_sigma * std;
   float filtered_sum = 0.0f;
   uint8_t filtered_n = 0U;
@@ -1710,15 +1890,16 @@ float MAX30001G::biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, float
   return filtered_sum / static_cast<float>(filtered_n);
 }
 
-/*************************************************
+/*********************************************************
  * This is the state machine for performing the BIOZ scan. 
  * It is called repeatedly in the main loop through  update function
- * and moves the scan through its the scan process.
+ * and moves the scan through its scan process.
  * The states are: 
  *  - initializing the scan, 
  *  - configuring the frequency
  *  - setting current generator for current frequency
  *  - configuring the phase offset
+ *  - discarding the configured number of settling samples after frequency/phase/current changes
  *  - awaiting samples
  *  - process samples which includes calculating the mean and outlier rejection
  *  - avaluating all phase measuremetns at given frequency and deciding if we need to adjust current and retry or move on to next frequency
@@ -1727,37 +1908,41 @@ float MAX30001G::biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, float
  */
 
 void MAX30001G::stepBIOZScan() {
+
+  // sanity exit if scan is not in progress
   if (!_scanInProgress) {
     return;
   }
 
+  // nominal modulation frequencies
   constexpr float kNominalFreqHz[MAX30001_BIOZ_NUM_FREQUENCIES] = {
     128000.0f, 80000.0f, 40000.0f, 17780.0f, 8000.0f, 4000.0f,
     2000.0f, 1000.0f, 500.0f, 250.0f, 125.0f
   };
 
-  const uint8_t freq_start_index = _scanRuntimeConfig.freq_start_index;
-  const uint8_t freq_end_index = _scanRuntimeConfig.freq_end_index;
-  const uint8_t avg = _scanRuntimeConfig.avg;
-  const bool fast = _scanRuntimeConfig.fast;
-  const bool fourleads = _scanRuntimeConfig.fourleads;
-  const bool use_internal_resistor = _scanRuntimeConfig.use_internal_resistor;
+  const uint8_t freq_start_index      = _scanRuntimeConfig.freq_start_index;
+  const uint8_t freq_end_index        = _scanRuntimeConfig.freq_end_index;
+  const uint8_t avg                   = _scanRuntimeConfig.avg;
+  const bool    fast                  = _scanRuntimeConfig.fast;
+  const bool    fourleads             = _scanRuntimeConfig.fourleads;
+  const bool    use_internal_resistor = _scanRuntimeConfig.use_internal_resistor;
 
   switch (_BIOZScanState) {
     case BIOZ_SCAN_INIT: {
+      // initialize state variables and configure AFE for first frequency
       _scanThresholdMin = 524288.0f * _scanRuntimeConfig.low_target_fraction;
       _scanThresholdMax = 524288.0f * _scanRuntimeConfig.high_target_fraction;
-      _scanAdcTarget = 524288.0f * _scanRuntimeConfig.target_fraction;
+      _scanAdcTarget    = 524288.0f * _scanRuntimeConfig.target_fraction;
 
       for (uint8_t i = 0U; i < MAX30001_BIOZ_NUM_FREQUENCIES; ++i) {
-        _scanFrequency[i] = 0.0f;
-        _scanCurrent[i] = _scanRuntimeConfig.initial_current_nA;
+        _scanFrequency[i]      = 0.0f;
+        _scanCurrent[i]        = _scanRuntimeConfig.initial_current_nA;
         impedance_magnitude[i] = 0.0f;
-        impedance_phase[i] = 0.0f;
+        impedance_phase[i]     = 0.0f;
         impedance_frequency[i] = 0.0f;
         for (uint8_t j = 0U; j < MAX30001_BIOZ_NUM_PHASES; ++j) {
           _scanImpedance[i][j] = NAN;
-          _scanPhaseDeg[i][j] = NAN;
+          _scanPhaseDeg[i][j]  = NAN;
         }
       }
 
@@ -1773,20 +1958,48 @@ void MAX30001G::stepBIOZScan() {
         LOGI("scanBIOZ: reusing previously optimized current profile.");
       }
 
+      // bring system to known state before configuring
       swReset();
       setFMSTR(0);
 
+      // BIOZ sample rate: low-rate mode is about 25..32 sps, fast mode is
+      // about 50..64 sps depending on FMSTR. Settling is configured in samples,
+      // so fast mode reduces elapsed time without changing discard sample count.
       setBIOZSamplingRate(fast ? 1U : 0U);
+
+      // Use 20 V/V gain in low-noise INA mode. 
+      // BIOZScan auto-ranging changes drive current, not gain.
       setBIOZgain(1U, true);
-      setBIOZmodulation(2U);
+
+      // FIFO wait timeout is invariant during one scan because avg,
+      // BIOZ_samplingRate, and timeout_margin_ms do not change after init.
+      const float sps = (BIOZ_samplingRate > 1.0f) ? BIOZ_samplingRate : 1.0f;
+      _scanFifoTimeoutMs = static_cast<uint32_t>(
+        (1000.0f * (static_cast<float>(avg) + 2.0f) / sps) +
+        static_cast<float>(_scanRuntimeConfig.timeout_margin_ms)
+      );
 
       const float lowest_nominal_freq_hz = kNominalFreqHz[freq_end_index];
-      const uint8_t ahpf = biozScanSelectAHpf(lowest_nominal_freq_hz);
+      const uint8_t ahpf = use_internal_resistor ? 1U :  biozScanSelectAHPF(lowest_nominal_freq_hz);
+
+      // Filter choices:
+      // - Internal BIST uses AHPF=150 Hz to match the known-good impedance
+      //   calibration setup.
+      // - External scans choose the highest AHPF cutoff below the lowest scanned
+      //   modulation frequency, preserving the BIOZ carrier while rejecting more
+      //   low-frequency interference when possible.
+      // - DLPF=4 Hz is the current conservative measurement filter; settling
+      //   tests showed some faster DLPF transitions, but noise/repeatability has
+      //   not yet justified changing this default.
+      // - DHPF=bypass keeps the demodulated impedance baseline available.
       setBIOZfilter(ahpf, 1U, 0U);
       if (freq_end_index == 9U) {
         LOGI("scanBIOZ: 250Hz sweep uses AHPF=150Hz (no 125Hz AHPF option in MAX30001).");
       }
 
+      // Disable the voltage calibration source. The internal BIOZ resistor test
+      // uses the BMUX BIST path, and external scans should measure the electrode
+      // path without VCAL injection.
       setDefaultNoTestSignal();
       if (use_internal_resistor) {
         const uint16_t resistor = _scanRuntimeConfig.internal_resistor_ohm;
@@ -1799,22 +2012,44 @@ void MAX30001G::stepBIOZScan() {
         else if (resistor >  714U) { rnom_value = 5U; }
         else if (resistor >  625U) { rnom_value = 6U; }
         else                       { rnom_value = 7U; }
+
+        // Enable the low-resistance internal BIST load. Arguments are:
+        //   enable=true,
+        //   useHighResistance=false -> use BMUX RNOM low-resistance path,
+        //   enableModulation=false -> fixed resistor, not RNOM/RMOD switching,
+        //   rnom_value -> nearest supported nominal resistor,
+        //   rmodValue=0 and modFreq=0 -> ignored because modulation is disabled.
         setBIOZTestImpedance(true, false, false, rnom_value, 0U, 0U);
       } else {
+        // External specimen/electrode scan: ensure internal BIOZ BIST is off.
         setDefaultNoBIOZTestImpedance();
       }
+
+      // BIOZ scan is independent of ECG R-to-R detection.
       setDefaultNoRtoR();
+
+      // Use standard interrupt clearing: status/read operations clear latched
+      // interrupt bits, and sample-sync pulse self-clears.
       setDefaultInterruptClearing();
 
-      setFIFOInterruptThreshold(1U, avg);
+      // ECG threshold is parked at its maximum because ECG is disabled. BIOZ
+      // threshold equals avg so each BIOZ FIFO interrupt represents one
+      // averaged phase-point block.
+      setFIFOInterruptThreshold(32U, avg);
+
+      // Route BIOZ FIFO interrupts to INT1. INT2 is unused for scans.
       setInterrupt1(false, true, false, false, false);
       setInterrupt2(false, false, false, false, false);
 
+      // Start BIOZ only. ECG/R-to-R stay off. Lead bias, lead-off detection, and
+      // ultra-low-power leads-on detection are disabled so they do not alter the
+      // scan path or generate unrelated interrupts.
       enableAFE(false, true, false);
       setLeadsBias(false, 0U);
       setLeadsOffDetection(false, fourleads, 0U);
       setLeadsOnDetection(false);
 
+      // Clear stale samples and synchronize the first BIOZ conversion sequence.
       FIFOReset();
       synch();
 
@@ -1833,13 +2068,16 @@ void MAX30001G::stepBIOZScan() {
       _scanFrequency[_scanFreqIndex] = BIOZ_frequency;
       _scanNumPhaseMeasurements = biozScanPhaseCountForFreq(_scanFreqIndex);
       _scanAttempt = 0U;
-      _BIOZScanState = BIOZ_SCAN_PREPARE_ATTEMPT;
+      _BIOZScanState = BIOZ_SCAN_CONFIG_CURRENT;
       return;
     }
 
-    case BIOZ_SCAN_PREPARE_ATTEMPT: {
+    case BIOZ_SCAN_CONFIG_CURRENT: {
+      const int32_t previous_current_nA = BIOZ_cgmag;
       setBIOZmag(_scanCurrent[_scanFreqIndex]);
       _scanCurrent[_scanFreqIndex] = BIOZ_cgmag;
+      _scanCurrentChangedForAttempt = (_scanCurrent[_scanFreqIndex] != previous_current_nA);
+      setBIOZmodulation((_scanCurrent[_scanFreqIndex] < 8000) ? 0U : 1U);
 
       _scanMaxAbsRaw = 0.0f;
       _scanSawValid = false;
@@ -1861,52 +2099,111 @@ void MAX30001G::stepBIOZScan() {
       setBIOZPhaseOffsetbyIndex(_scanPhaseIndex);
       _scanPhaseDeg[_scanFreqIndex][_scanPhaseIndex] = BIOZ_phase;
 
+      _BIOZScanState = BIOZ_SCAN_BEGIN_POINT;
+      return;
+    }
+
+    case BIOZ_SCAN_BEGIN_POINT: {
       FIFOReset();
       synch();
 
       BIOZ_data.clear();
-      bioz_available = false;
-      afe_irq_pending = false;
-      afe_irq1_pending = false;
-      afe_irq2_pending = false;
-      valid_data_detected = false;
-      over_voltage_detected = false;
+      bioz_available         = false;
+      afe_irq_pending        = false;
+      afe_irq1_pending       = false;
+      afe_irq2_pending       = false;
+      valid_data_detected    = false;
+      over_voltage_detected  = false;
       under_voltage_detected = false;
 
-      const float sps = (BIOZ_samplingRate > 1.0f) ? BIOZ_samplingRate : 1.0f;
-      const uint32_t timeout_ms = static_cast<uint32_t>(
-        (1000.0f * (static_cast<float>(avg) + 2.0f) / sps) +
-        static_cast<float>(_scanRuntimeConfig.timeout_margin_ms)
-      );
-      _scanWaitDeadlineMs = millis() + timeout_ms;
-      _BIOZScanState = BIOZ_SCAN_WAIT_DATA;
+      // AFE settling is tracked in samples so low-rate and fast scans share
+      // the same stability criterion.
+      _scanDiscardSamplesSeen = 0U;
+      const uint8_t settle_samples = _scanCurrentChangedForAttempt
+                                       ? _scanRuntimeConfig.current_change_settle_samples
+                                       : _scanRuntimeConfig.settle_samples;
+      _scanDiscardSamplesTarget = settle_samples;
+      _scanCollectSamplesTarget = avg;
+      _scanCurrentChangedForAttempt = false;
+      _scanWaitDeadlineMs = millis() + _scanFifoTimeoutMs;
+      _BIOZScanState = (_scanDiscardSamplesTarget == 0U)
+                          ? BIOZ_SCAN_COLLECT_POINT
+                          : BIOZ_SCAN_DISCARD_POINT;
       return;
     }
 
-    case BIOZ_SCAN_WAIT_DATA: {
+    case BIOZ_SCAN_DISCARD_POINT: {
       bool serviced = servicePendingInterrupts();
-      if (!serviced && (_intPin1 < 0) && (_intPin2 < 0)) {
+      if (!serviced) {
         serviceAllInterrupts();
       }
 
       if (bioz_available) {
         bioz_available = false;
         readBIOZ_FIFO(true);
-        _BIOZScanState = BIOZ_SCAN_PROCESS_PHASE;
+
+        float discarded = 0.0f;
+        while ((BIOZ_data.available() > 0U) &&
+               (_scanDiscardSamplesSeen < _scanDiscardSamplesTarget)) {
+          if (BIOZ_data.pop(discarded) != 1U) {
+            break;
+          }
+          _scanDiscardSamplesSeen++;
+        }
+
+        if (_scanDiscardSamplesSeen >= _scanDiscardSamplesTarget) {
+          BIOZ_data.clear();
+          valid_data_detected = false;
+          over_voltage_detected = false;
+          under_voltage_detected = false;
+          _scanWaitDeadlineMs = millis() + _scanFifoTimeoutMs;
+          _BIOZScanState = BIOZ_SCAN_COLLECT_POINT;
+          return;
+        }
+
+        valid_data_detected = false;
+        over_voltage_detected = false;
+        under_voltage_detected = false;
+        _scanWaitDeadlineMs = millis() + _scanFifoTimeoutMs;
         return;
+      }
+
+      if (static_cast<int32_t>(millis() - _scanWaitDeadlineMs) >= 0) {
+        LOGW("scanBIOZ: timeout waiting for discard samples (phase idx=%u).", _scanPhaseIndex);
+        BIOZ_data.clear();
+        _scanWaitDeadlineMs = millis() + _scanFifoTimeoutMs;
+        _BIOZScanState = BIOZ_SCAN_COLLECT_POINT;
+      }
+      return;
+    }
+
+    case BIOZ_SCAN_COLLECT_POINT: {
+      bool serviced = servicePendingInterrupts();
+      if (!serviced) {
+        serviceAllInterrupts();
+      }
+
+      if (bioz_available) {
+        bioz_available = false;
+        readBIOZ_FIFO(true);
+        if (BIOZ_data.available() >= _scanCollectSamplesTarget) {
+          _BIOZScanState = BIOZ_SCAN_PROCESS_POINT;
+          return;
+        }
+        _scanWaitDeadlineMs = millis() + _scanFifoTimeoutMs;
       }
 
       if (static_cast<int32_t>(millis() - _scanWaitDeadlineMs) >= 0) {
         LOGW("scanBIOZ: timeout waiting for BIOZ data (phase idx=%u).", _scanPhaseIndex);
         _scanSawInvalidOrRange = true;
         _scanImpedance[_scanFreqIndex][_scanPhaseIndex] = NAN;
-        _scanPhaseIndex++;
-        _BIOZScanState = BIOZ_SCAN_CONFIG_PHASE;
+        BIOZ_data.clear();
+        _BIOZScanState = BIOZ_SCAN_NEXT_PHASE;
       }
       return;
     }
 
-    case BIOZ_SCAN_PROCESS_PHASE: {
+    case BIOZ_SCAN_PROCESS_POINT: {
       bool hasSamples = false;
       const float raw_mean = biozScanRobustMeanFromBuffer(
         _scanRuntimeConfig.outlier_min_samples, _scanRuntimeConfig.outlier_sigma, hasSamples
@@ -1936,21 +2233,26 @@ void MAX30001G::stepBIOZScan() {
           _scanAnyInTarget = true;
         }
 
-        const float denom = 524288.0f * static_cast<float>(BIOZ_cgmag) * static_cast<float>(BIOZ_gain) * 1e-9f;
+        const float vref_volts = static_cast<float>(V_ref) * 1e-3f;
+        const float current_amps = static_cast<float>(BIOZ_cgmag) * 1e-9f;
+        const float denom = 524288.0f * current_amps * static_cast<float>(BIOZ_gain);
         _scanImpedance[_scanFreqIndex][_scanPhaseIndex] =
-            (denom > 0.0f) ? (raw_mean * static_cast<float>(V_ref)) / denom : NAN;
+            (denom > 0.0f) ? (raw_mean * vref_volts) / denom : NAN;
 
-        LOGD("scanBIOZ: f=%.1fHz, phase=%.2fdeg, raw=%.1f, Z=%.2fohm, I=%ldnA",
-             _scanFrequency[_scanFreqIndex], _scanPhaseDeg[_scanFreqIndex][_scanPhaseIndex], raw_mean,
-             _scanImpedance[_scanFreqIndex][_scanPhaseIndex], static_cast<long>(_scanCurrent[_scanFreqIndex]));
       }
 
+      _BIOZScanState = BIOZ_SCAN_NEXT_PHASE;
+      return;
+    }
+
+    case BIOZ_SCAN_NEXT_PHASE: {
       _scanPhaseIndex++;
       _BIOZScanState = BIOZ_SCAN_CONFIG_PHASE;
       return;
     }
 
     case BIOZ_SCAN_EVALUATE_ATTEMPT: {
+      // Examine samples and adjust current if needed
       bool accepted = false;
 
       if (!_scanSawValid) {
@@ -1981,7 +2283,7 @@ void MAX30001G::stepBIOZScan() {
               ((_scanAttempt + 1U) < _scanRuntimeConfig.max_retries)) {
             _scanCurrent[_scanFreqIndex] = desired_current;
             _scanAttempt++;
-            _BIOZScanState = BIOZ_SCAN_PREPARE_ATTEMPT;
+            _BIOZScanState = BIOZ_SCAN_CONFIG_CURRENT;
             return;
           }
         }
@@ -1997,9 +2299,14 @@ void MAX30001G::stepBIOZScan() {
     }
 
     case BIOZ_SCAN_FINALIZE_FREQ: {
-      const ImpedanceModel result = fitImpedance(
-        _scanPhaseDeg[_scanFreqIndex], _scanImpedance[_scanFreqIndex], _scanNumPhaseMeasurements
-      );
+      // fit impedance model to phase measurements at current frequency and store results
+      const ImpedanceModel result = use_internal_resistor
+                                      ? fitImpedanceTriangular(_scanPhaseDeg[_scanFreqIndex],
+                                                               _scanImpedance[_scanFreqIndex],
+                                                               _scanNumPhaseMeasurements)
+                                      : fitImpedanceCosine(_scanPhaseDeg[_scanFreqIndex],
+                                                           _scanImpedance[_scanFreqIndex],
+                                                           _scanNumPhaseMeasurements);
       impedance_magnitude[_scanFreqIndex] = result.magnitude;
       impedance_phase[_scanFreqIndex] = result.phase;
       impedance_frequency[_scanFreqIndex] = _scanFrequency[_scanFreqIndex];
@@ -2011,6 +2318,8 @@ void MAX30001G::stepBIOZScan() {
     }
 
     case BIOZ_SCAN_FINISH: {
+      // create spectrum and cleanup
+
       _scanCurrentProfileValid = true;
       _scanProfileFreqStart = freq_start_index;
       _scanProfileFreqEnd = freq_end_index;
@@ -2036,16 +2345,224 @@ void MAX30001G::stepBIOZScan() {
 
     case BIOZ_SCAN_IDLE:
     default:
+      // should not be here, but if we are, just stay here and do nothing
       _scanInProgress = false;
       _running = false;
       return;
   }
 }
 
+
+/******************************************************************************************************/
+// Impedance model and fitting functions for BIOZ scan results
+/******************************************************************************************************/
+
+float MAX30001G::impedanceCosineModel(float phase_offset_deg, float magnitude_ohm, float phase_deg) {
+  /*
+    Model used by demodulation-based BIOZ measurement at a fixed injection frequency:
+      measurement = |Z| * cos(phase - phase_offset)
+    All phase arguments are in degrees.
+  */
+  const float deg_to_rad = static_cast<float>(PI) / 180.0f;
+  return magnitude_ohm * cosf((phase_deg - phase_offset_deg) * deg_to_rad);
+}
+
+float MAX30001G::impedanceTriangularModel(float phase_offset_deg, float magnitude_ohm, float phase_deg) {
+  /*
+    Empirical model for the MAX30001G internal BIOZ BIST path:
+      measurement = |Z| * triangle(phase_offset - phase)
+
+    The unit triangle is +1 at 0 degrees, 0 at +/-90 degrees,
+    and -1 at +/-180 degrees. It is periodic over 360 degrees.
+  */
+  float delta = fmodf(phase_offset_deg - phase_deg + 180.0f, 360.0f);
+  if (delta < 0.0f) {
+    delta += 360.0f;
+  }
+  delta -= 180.0f;
+  const float basis = 1.0f - (fabsf(delta) / 90.0f);
+  return magnitude_ohm * basis;
+}
+
+ImpedanceModel MAX30001G::fitImpedanceCosine(const float* phase_offsets, const float* measurements, int num_phase_measurements) {
+/*
+ * Fit the measured impedance data (measurements, phase_offsetes) to a model of the form:
+ * 
+ * Z = A * cos(theta) + B * sin(theta)
+ * 
+ * Measurements represent: V/I = |Z| cos(theta - phase_offset) and are in Ohms
+ * 
+ * V:             voltage measured by the AFE (BIOZ signal)
+ * I:             current set for the AFE current generator
+ * phase_offset:  phase offset of the demodulator compared to the current generator 
+ * Z:             impedance computed
+ * |Z|:           magntidue of impedance
+ * theta:         phase computed
+ * A:             resistance computed
+ * B:             reactance comuted
+ * 
+ * The function returns the magnitude (|Z|) and phase (theta) of the impedance model via a least squares fitting approach.
+ * The returned phase is in degrees.
+ * 
+ * This function handles all impedance measurement approaches:
+ * - 2 phase offset of 0 and 90 degrees (quadrature demodulation) 
+ *     [sin_sin, cos_cos terms = 1, cos_sin, sin_cos terms = 0]
+ * - phase offsets at uniform intervals covering 0 to 360 degrees 
+ *     [cos_sin, sin_cos terms = 0]
+ * - phase offsets at arbitrary intervals
+ * 
+ * Urs Utzinger and ChatGPT
+ */
+    if ((phase_offsets == nullptr) || (measurements == nullptr) || (num_phase_measurements < 2)) {
+      return {0.0f, 0.0f};
+    }
+
+    // Initialize sums for least squares
+    float sum_cos_cos = 0.0f;
+    float sum_sin_sin = 0.0f;
+    float sum_cos_sin = 0.0f;
+    float sum_measurements_cos = 0.0f;
+    float sum_measurements_sin = 0.0f;
+    int num_valid_points = 0;
+    const float deg_to_rad = static_cast<float>(PI) / 180.0f;
+
+    for (int i = 0; i < num_phase_measurements; ++i) {
+      if (isfinite(measurements[i]) && isfinite(phase_offsets[i])) {
+        num_valid_points++;
+        const float phi = phase_offsets[i] * deg_to_rad;
+        const float cos_theta = cosf(phi);
+        const float sin_theta = sinf(phi);
+        sum_cos_cos += cos_theta * cos_theta;
+        sum_sin_sin += sin_theta * sin_theta;
+        sum_cos_sin += cos_theta * sin_theta;
+        sum_measurements_cos += measurements[i] * cos_theta;
+        sum_measurements_sin += measurements[i] * sin_theta;
+      }
+    }
+
+    if (num_valid_points < 2) {
+      return {0.0f, 0.0f}; // Need at least two valid points.
+    }
+
+    // Compute the determinant
+    const float denom = sum_cos_cos * sum_sin_sin - sum_cos_sin * sum_cos_sin;
+    if (fabsf(denom) < 1.0e-6f) {
+      // Handle singularity (e.g., insufficient variation in phase offsets)
+      return {0.0f, 0.0f};
+    }
+
+    // Solve for A and B
+    const float A = (sum_measurements_cos * sum_sin_sin - sum_measurements_sin * sum_cos_sin) / denom;
+    const float B = (sum_measurements_sin * sum_cos_cos - sum_measurements_cos * sum_cos_sin) / denom;
+
+    // Compute magnitude and phase
+    const float magnitude = sqrtf(A * A + B * B);
+    const float phase_deg = atan2f(B, A) * (180.0f / static_cast<float>(PI));
+
+    return {magnitude, phase_deg};
+}
+
+ImpedanceModel MAX30001G::fitImpedanceTriangular(const float* phase_offsets, const float* measurements, int num_phase_measurements) {
+/*
+ * Fit the internal-BIST phase response to:
+ *
+ *   measurement = offset + amplitude * triangle(phase_offset - phase)
+ *
+ * This is intended for the MAX30001G internal BIOZ BIST validation path,
+ * where measurements are empirically triangular/linear over 0..180 degrees.
+ * External tissue/sample impedance should keep using fitImpedanceCosine().
+ */
+    if ((phase_offsets == nullptr) || (measurements == nullptr) || (num_phase_measurements < 2)) {
+      return {0.0f, 0.0f};
+    }
+
+    float best_sse = 3.402823466e+38F;
+    float best_amplitude = 0.0f;
+    float best_phase = 0.0f;
+
+    constexpr float kPhaseStepDeg = 0.25f;
+    for (float candidate_phase = 0.0f; candidate_phase < 360.0f; candidate_phase += kPhaseStepDeg) {
+      float sum_x = 0.0f;
+      float sum_xx = 0.0f;
+      float sum_y = 0.0f;
+      float sum_xy = 0.0f;
+      int n = 0;
+
+      for (int i = 0; i < num_phase_measurements; ++i) {
+        if (!isfinite(measurements[i]) || !isfinite(phase_offsets[i])) {
+          continue;
+        }
+        const float x = impedanceTriangularModel(phase_offsets[i], 1.0f, candidate_phase);
+        const float y = measurements[i];
+        sum_x += x;
+        sum_xx += x * x;
+        sum_y += y;
+        sum_xy += x * y;
+        n++;
+      }
+
+      if (n < 2) {
+        continue;
+      }
+
+      const float denom = (static_cast<float>(n) * sum_xx) - (sum_x * sum_x);
+      if (fabsf(denom) < 1.0e-6f) {
+        continue;
+      }
+
+      const float amplitude = ((static_cast<float>(n) * sum_xy) - (sum_x * sum_y)) / denom;
+      const float offset = (sum_y - (amplitude * sum_x)) / static_cast<float>(n);
+
+      float sse = 0.0f;
+      for (int i = 0; i < num_phase_measurements; ++i) {
+        if (!isfinite(measurements[i]) || !isfinite(phase_offsets[i])) {
+          continue;
+        }
+        const float x = impedanceTriangularModel(phase_offsets[i], 1.0f, candidate_phase);
+        const float residual = measurements[i] - (offset + amplitude * x);
+        sse += residual * residual;
+      }
+
+      if (sse < best_sse) {
+        best_sse = sse;
+        best_amplitude = amplitude;
+        best_phase = candidate_phase;
+      }
+    }
+
+    if (!isfinite(best_sse)) {
+      return {0.0f, 0.0f};
+    }
+
+    if (best_amplitude < 0.0f) {
+      best_amplitude = -best_amplitude;
+      best_phase += 180.0f;
+    }
+
+    best_phase = fmodf(best_phase, 360.0f);
+    if (best_phase < 0.0f) {
+      best_phase += 360.0f;
+    }
+    if (best_phase > 180.0f) {
+      best_phase -= 360.0f;
+    }
+
+    return {best_amplitude, best_phase};
+}
+
+/*********************************************************
+ * Legacy blocking BIOZ scan implementation.
+ *
+ * The current examples use the asynchronous setupBIOZScan()/start()/update()
+ * state machine above. Retain this code for reference while disabling it so
+ * future scan work has a single active implementation path.
+ */
+
+/*
 void MAX30001G::scanBIOZ(uint8_t avg, bool fast, bool fourleads, bool fullRange) {
   BIOZScanConfig config;
-  config.avg = avg;
-  config.fast = fast;
+  config.avg       = avg;
+  config.fast      = fast;
   config.fourleads = fourleads;
   config.freq_end_index = fullRange ? (MAX30001_BIOZ_NUM_FREQUENCIES - 1U) : 7U;
   scanBIOZ(config, true);
@@ -2053,37 +2570,39 @@ void MAX30001G::scanBIOZ(uint8_t avg, bool fast, bool fourleads, bool fullRange)
 
 void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
 
-  constexpr uint8_t kNumFreq = MAX30001_BIOZ_NUM_FREQUENCIES; // FCGEN 0000..1010 -> 128k..125Hz
-  constexpr uint8_t kMaxPhase = MAX30001_BIOZ_NUM_PHASES;     // max supported phase offsets
+  constexpr uint8_t kNumFreq  = MAX30001_BIOZ_NUM_FREQUENCIES; // FCGEN 0000..1010 -> 128k..125Hz
+  constexpr uint8_t kMaxPhase = MAX30001_BIOZ_NUM_PHASES;      // max supported phase offsets
   constexpr float kNominalFreqHz[kNumFreq] = {
     128000.0f, 80000.0f, 40000.0f, 17780.0f, 8000.0f, 4000.0f,
     2000.0f, 1000.0f, 500.0f, 250.0f, 125.0f
   };
 
-  uint8_t avg = config.avg;
-  bool fast = config.fast;
-  bool fourleads = config.fourleads;
-  uint8_t max_retries = config.max_retries;
-  float low_target_fraction = config.low_target_fraction;
-  float high_target_fraction = config.high_target_fraction;
-  float target_fraction = config.target_fraction;
-  uint8_t outlier_min_samples = config.outlier_min_samples;
-  float outlier_sigma = config.outlier_sigma;
-  uint16_t timeout_margin_ms = config.timeout_margin_ms;
-  uint8_t freq_start_index = config.freq_start_index;
-  uint8_t freq_end_index = config.freq_end_index;
-  int32_t initial_current_nA = config.initial_current_nA;
-  bool use_internal_resistor = config.use_internal_resistor;
+  uint8_t  avg                   = config.avg;
+  bool     fast                  = config.fast;
+  bool     fourleads             = config.fourleads;
+  uint8_t  max_retries           = config.max_retries;
+  float    low_target_fraction   = config.low_target_fraction;
+  float    high_target_fraction  = config.high_target_fraction;
+  float    target_fraction       = config.target_fraction;
+  uint8_t  outlier_min_samples   = config.outlier_min_samples;
+  float    outlier_sigma         = config.outlier_sigma;
+  uint16_t timeout_margin_ms     = config.timeout_margin_ms;
+  uint8_t  freq_start_index      = config.freq_start_index;
+  uint8_t  freq_end_index        = config.freq_end_index;
+  int32_t  initial_current_nA    = config.initial_current_nA;
+  uint8_t  settle_samples        = config.settle_samples;
+  uint8_t  current_change_settle_samples = config.current_change_settle_samples;
+  bool     use_internal_resistor = config.use_internal_resistor;
   uint16_t internal_resistor_ohm = config.internal_resistor_ohm;
 
   if (avg < 1U) { avg = 1U; }
   if (avg > 8U) { avg = 8U; }
 
-  if (max_retries < 1U) { max_retries = 1U; }
+  if (max_retries < 1U)  { max_retries = 1U; }
   if (max_retries > 10U) { max_retries = 10U; }
 
-  if (low_target_fraction < 0.02f) { low_target_fraction = 0.02f; }
-  if (low_target_fraction > 0.80f) { low_target_fraction = 0.80f; }
+  if (low_target_fraction  < 0.02f) { low_target_fraction = 0.02f; }
+  if (low_target_fraction  > 0.80f) { low_target_fraction = 0.80f; }
   if (high_target_fraction < 0.20f) { high_target_fraction = 0.20f; }
   if (high_target_fraction > 0.98f) { high_target_fraction = 0.98f; }
   if (high_target_fraction <= low_target_fraction) {
@@ -2109,6 +2628,14 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
   if (initial_current_nA < 55) { initial_current_nA = 55; }
   if (initial_current_nA > 96000) { initial_current_nA = 96000; }
   initial_current_nA = closestCurrent(initial_current_nA);
+  if (settle_samples < avg) { settle_samples = avg; }
+  if (settle_samples > 64U) { settle_samples = 64U; }
+  if (current_change_settle_samples < settle_samples) {
+    current_change_settle_samples = settle_samples;
+  }
+  if (current_change_settle_samples > 64U) {
+    current_change_settle_samples = 64U;
+  }
   if (internal_resistor_ohm < 625U) { internal_resistor_ohm = 625U; }
   if (internal_resistor_ohm > 5000U) { internal_resistor_ohm = 5000U; }
 
@@ -2117,10 +2644,10 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
   const float threshold_max = 524288.0f * high_target_fraction;
   const float adc_target    = 524288.0f * target_fraction;
 
-  float frequency[kNumFreq];
+  float   frequency[kNumFreq];
   int32_t current[kNumFreq];
-  float impedance[kNumFreq][kMaxPhase];
-  float phase[kNumFreq][kMaxPhase];
+  float   impedance[kNumFreq][kMaxPhase];
+  float   phase[kNumFreq][kMaxPhase];
 
   if (config.avg > 8U) {
     LOGW("scanBIOZ: avg > 8, clamped to 8.");
@@ -2128,14 +2655,14 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
 
   // Initialize results to 0 or NAN as appropriate.
   for (uint8_t i = 0; i < kNumFreq; ++i) {
-    frequency[i] = 0.0f;
-    current[i] = initial_current_nA; // configurable initial seed
+    frequency[i]           = 0.0f;
+    current[i]             = initial_current_nA; // configurable initial seed
     impedance_magnitude[i] = 0.0f;
-    impedance_phase[i] = 0.0f;
+    impedance_phase[i]     = 0.0f;
     impedance_frequency[i] = 0.0f;
     for (uint8_t j = 0; j < kMaxPhase; ++j) {
       impedance[i][j] = NAN;
-      phase[i][j] = NAN;
+      phase[i][j]     = NAN;
     }
   }
 
@@ -2156,7 +2683,6 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
 
   setBIOZSamplingRate(fast ? 1U : 0U);  // 30 or 60 sps
   setBIOZgain(1U, true);                // 20V/V, low-noise
-  setBIOZmodulation(2U);                // chopped + LPF
 
   const float lowest_nominal_freq_hz = kNominalFreqHz[freq_end_index];
   auto selectAHpfFromLowestFrequency = [](float lowest_frequency_hz) -> uint8_t {
@@ -2239,6 +2765,14 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
     return false;
   };
 
+  auto blocksForSamples = [&](uint8_t samples) -> uint8_t {
+    uint8_t blocks = static_cast<uint8_t>((samples + avg - 1U) / avg);
+    return blocks == 0U ? 1U : blocks;
+  };
+
+  const uint8_t default_settle_blocks = blocksForSamples(settle_samples);
+  const uint8_t current_change_settle_blocks = blocksForSamples(current_change_settle_samples);
+
   auto robustMeanFromBiozBuffer = [&]() -> float {
     // Compute a robust mean of the samples in the BIOZ FIFO buffer 
     // with simple outlier rejection.
@@ -2295,7 +2829,7 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
     return filtered_sum / static_cast<float>(filtered_n);
   };
 
-  auto measurePhaseRaw = [&](uint8_t phase_selector, float &raw_mean, bool &range_or_invalid) -> bool {
+  auto measurePhaseRaw = [&](uint8_t phase_selector, uint8_t discard_blocks, float &raw_mean, bool &range_or_invalid) -> bool {
     // Measure raw BIOZ ADC values at the given phase offset index, and compute a robust mean.
     // Returns true if a valid mean was computed, false if no valid data was detected or an error occurred.
     // Range_or_invalid is set to true if the data is suspected to be out of range or invalid, which can occur if the signal is saturating or too low.
@@ -2309,11 +2843,29 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
     afe_irq_pending = false;
     afe_irq1_pending = false;
     afe_irq2_pending = false;
+    valid_data_detected = false;
+    over_voltage_detected = false;
+    under_voltage_detected = false;
 
     const float sps = (BIOZ_samplingRate > 1.0f) ? BIOZ_samplingRate : 1.0f;
     const uint32_t timeout_ms = static_cast<uint32_t>(
       (1000.0f * (static_cast<float>(avg) + 2.0f) / sps) + static_cast<float>(timeout_margin_ms)
     );
+
+    for (uint8_t discard = 0U; discard < discard_blocks; ++discard) {
+      if (!waitForBiozData(timeout_ms)) {
+        LOGW("scanBIOZ: timeout waiting for discard samples (phase idx=%u, discard=%u/%u).",
+             phase_selector, discard + 1U, discard_blocks);
+        break;
+      }
+      bioz_available = false;
+      readBIOZ_FIFO(true);
+      BIOZ_data.clear();
+      valid_data_detected = false;
+      over_voltage_detected = false;
+      under_voltage_detected = false;
+    }
+
     if (!waitForBiozData(timeout_ms)) {
       LOGW("scanBIOZ: timeout waiting for BIOZ data (phase idx=%u).", phase_selector);
       raw_mean = NAN;
@@ -2341,8 +2893,11 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
     bool accepted = false;
     for (uint8_t attempt = 0U; attempt < max_retries; ++attempt) {
 
+      const int32_t previous_current_nA = BIOZ_cgmag;
       setBIOZmag(current[freq_idx]);
       current[freq_idx] = BIOZ_cgmag; // actual value after device quantization/limits
+      const bool current_changed_for_attempt = (current[freq_idx] != previous_current_nA);
+      setBIOZmodulation((current[freq_idx] < 8000) ? 0U : 1U);
 
       float max_abs_raw = 0.0f;
       bool saw_invalid_or_range = false;
@@ -2354,7 +2909,10 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
       for (uint8_t phase_selector = 0U; phase_selector < num_phase_measurements; ++phase_selector) {
         float raw_mean = NAN;
         bool range_or_invalid = false;
-        const bool got_sample = measurePhaseRaw(phase_selector, raw_mean, range_or_invalid);
+        const uint8_t discard_blocks = (phase_selector == 0U && current_changed_for_attempt)
+                                         ? current_change_settle_blocks
+                                         : default_settle_blocks;
+        const bool got_sample = measurePhaseRaw(phase_selector, discard_blocks, raw_mean, range_or_invalid);
         phase[freq_idx][phase_selector] = BIOZ_phase; // degree value set by phase selector routine
 
         if (!got_sample) {
@@ -2379,14 +2937,13 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
         }
 
         // Convert raw ADC code to Ohms for fitting.
-        const float denom = 524288.0f * static_cast<float>(BIOZ_cgmag) * static_cast<float>(BIOZ_gain) * 1e-9f;
+        const float vref_volts = static_cast<float>(V_ref) * 1e-3f;
+        const float current_amps = static_cast<float>(BIOZ_cgmag) * 1e-9f;
+        const float denom = 524288.0f * current_amps * static_cast<float>(BIOZ_gain);
         impedance[freq_idx][phase_selector] = (denom > 0.0f)
-                                              ? (raw_mean * static_cast<float>(V_ref)) / denom
+                                              ? (raw_mean * vref_volts) / denom
                                               : NAN;
 
-        LOGD("scanBIOZ: f=%.1fHz, phase=%.2fdeg, raw=%.1f, Z=%.2fohm, I=%ldnA",
-             frequency[freq_idx], phase[freq_idx][phase_selector], raw_mean,
-             impedance[freq_idx][phase_selector], static_cast<long>(current[freq_idx]));
       } // all phases -------
 
       if (!saw_valid) {
@@ -2430,7 +2987,9 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
       LOGW("scanBIOZ: using best-effort data at frequency %.1fHz.", frequency[freq_idx]);
     }
 
-    const ImpedanceModel result = fitImpedance(phase[freq_idx], impedance[freq_idx], num_phase_measurements);
+    const ImpedanceModel result = use_internal_resistor
+                                    ? fitImpedanceTriangular(phase[freq_idx], impedance[freq_idx], num_phase_measurements)
+                                    : fitImpedanceCosine(phase[freq_idx], impedance[freq_idx], num_phase_measurements);
     impedance_magnitude[freq_idx] = result.magnitude;
     impedance_phase[freq_idx] = result.phase;
     impedance_frequency[freq_idx] = frequency[freq_idx];
@@ -2443,141 +3002,5 @@ void MAX30001G::scanBIOZ(const BIOZScanConfig& config, bool reuseCurrents) {
   _scanProfileFast = fast;
 
 }
-
-int32_t MAX30001G::closestCurrent(int32_t input) {
-/* Returns the current matching requested current with least error
- * Input current in nanoamps
- */
-
-  // The list of selectable values sorted in ascending order
-  int32_t currentValues[] = {0, 55, 110, 220, 330, 440, 550, 660, 880, 1100, 8000, 16000, 32000, 48000, 64000, 80000, 96000};
-  int size = sizeof(currentValues) / sizeof(currentValues[0]);
-
-  // If the input is smaller than or equal to the smallest element, return 0
-  if (input <= currentValues[0]) {
-    return currentValues[0];
-  }
-
-  // Iterate over the array to find the closest smaller or equal value
-  for (int i = 1; i < size; i++) {
-    if (currentValues[i] >= input) {
-      if ((input - currentValues[i - 1]) < (currentValues[i] - input)) {
-        return currentValues[i - 1];
-      } else {
-        return currentValues[i];
-      }
-    } 
-  }
-
-  // If input is larger than the largest value, return the largest value
-  return currentValues[size - 1];
-}
-
-float MAX30001G::impedancemodel(float phase_offset_deg, float magnitude_ohm, float phase_deg) {
-  /*
-    Model used by demodulation-based BIOZ measurement at a fixed injection frequency:
-      measurement = |Z| * cos(phase - phase_offset)
-    All phase arguments are in degrees.
-  */
-  const float deg_to_rad = static_cast<float>(PI) / 180.0f;
-  return magnitude_ohm * cosf((phase_deg - phase_offset_deg) * deg_to_rad);
-}
-
-ImpedanceModel MAX30001G::fitImpedance(const float* phase_offsets, const float* measurements, int num_phase_measurements) {
-/*
- * Fit the measured impedance data (measurements, phase_offsetes) to a model of the form:
- * 
- * Z = A * cos(theta) + B * sin(theta)
- * 
- * Measurements represent: V/I = |Z| cos(theta - phase_offset) and are in Ohms
- * 
- * V:             voltage measured by the AFE (BIOZ signal)
- * I:             current set for the AFE current generator
- * phase_offset:  phase offset of the demodulator compared to the current generator 
- * Z:             impedance computed
- * |Z|:           magntidue of impedance
- * theta:         phase computed
- * A:             resistance computed
- * B:             reactance comuted
- * 
- * The function returns the magnitude (|Z|) and phase (theta) of the impedance model via a least squares fitting approach.
- * The returned phase is in degrees.
- * 
- * This function handles all impedance measurement approaches:
- * - 2 phase offset of 0 and 90 degrees (quadrature demodulation) 
- *     [sin_sin, cos_cos terms = 1, cos_sin, sin_cos terms = 0]
- * - phase offsets at uniform intervals covering 0 to 360 degrees 
- *     [cos_sin, sin_cos terms = 0]
- * - phase offsets at arbitrary intervals
- * 
- * Urs Utzinger and ChatGPT
- */
-    if ((phase_offsets == nullptr) || (measurements == nullptr) || (num_phase_measurements < 2)) {
-      return {0.0f, 0.0f};
-    }
-
-    // Initialize sums for least squares
-    float sum_cos_cos = 0.0f;
-    float sum_sin_sin = 0.0f;
-    float sum_cos_sin = 0.0f;
-    float sum_measurements_cos = 0.0f;
-    float sum_measurements_sin = 0.0f;
-    int num_valid_points = 0;
-    const float deg_to_rad = static_cast<float>(PI) / 180.0f;
-
-    for (int i = 0; i < num_phase_measurements; ++i) {
-      if (isfinite(measurements[i]) && isfinite(phase_offsets[i])) {
-        num_valid_points++;
-        const float phi = phase_offsets[i] * deg_to_rad;
-        const float cos_theta = cosf(phi);
-        const float sin_theta = sinf(phi);
-        sum_cos_cos += cos_theta * cos_theta;
-        sum_sin_sin += sin_theta * sin_theta;
-        sum_cos_sin += cos_theta * sin_theta;
-        sum_measurements_cos += measurements[i] * cos_theta;
-        sum_measurements_sin += measurements[i] * sin_theta;
-      }
-    }
-
-    if (num_valid_points < 2) {
-      return {0.0f, 0.0f}; // Need at least two valid points.
-    }
-
-    // Compute the determinant
-    const float denom = sum_cos_cos * sum_sin_sin - sum_cos_sin * sum_cos_sin;
-    if (fabsf(denom) < 1.0e-6f) {
-      // Handle singularity (e.g., insufficient variation in phase offsets)
-      return {0.0f, 0.0f};
-    }
-
-    // Solve for A and B
-    const float A = (sum_measurements_cos * sum_sin_sin - sum_measurements_sin * sum_cos_sin) / denom;
-    const float B = (sum_measurements_sin * sum_cos_cos - sum_measurements_cos * sum_cos_sin) / denom;
-
-    // Compute magnitude and phase
-    const float magnitude = sqrtf(A * A + B * B);
-    const float phase_deg = atan2f(B, A) * (180.0f / static_cast<float>(PI));
-
-    return {magnitude, phase_deg};
-}
-
-/******************************************************************************************************/
-// Enable ECG, BIOZ, RtoR
-/******************************************************************************************************/
-
-void MAX30001G::enableAFE(bool enableECG, bool enableBIOZ, bool enableRtoR) {
-  cnfg_gen.all   = readRegister24(MAX30001_CNFG_GEN);
-  cnfg_rtor1.all = readRegister24(MAX30001_CNFG_RTOR1);
-
-  cnfg_gen.bit.en_ecg    = enableECG ? 1 : 0;
-  cnfg_gen.bit.en_bioz   = enableBIOZ ? 1 : 0;  
-  cnfg_rtor1.bit.en_rtor = enableRtoR ? 1 : 0;
-
-  if (enableRtoR && !enableECG) {
-    cnfg_gen.bit.en_ecg  = 1;
-    LOGW("To enable RtoR you must enable ECG. ECG enabled.");
-  }
-  writeRegister(MAX30001_CNFG_GEN, cnfg_gen.all);
-  writeRegister(MAX30001_CNFG_RTOR1, cnfg_rtor1.all);
-}
+*/
 

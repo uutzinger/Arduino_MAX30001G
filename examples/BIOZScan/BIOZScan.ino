@@ -2,9 +2,9 @@
 #include "max30001g.h"
 #include "logger.h"
 
-const uint8_t AFE_CS_PIN = 10;
-const int AFE_INT1_PIN = 2;
-const int AFE_INT2_PIN = -1;
+const uint8_t AFE_CS_PIN = 6;
+const int AFE_INT1_PIN = 12;
+const int AFE_INT2_PIN = 13;
 
 MAX30001G afe(AFE_CS_PIN, AFE_INT1_PIN, AFE_INT2_PIN);
 bool scanStarted = false;

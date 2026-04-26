@@ -2,7 +2,9 @@
 
 This is the MAX30001 library for Arduino. It attempts to be `complete` and supports impedance spectroscopy.
 
-This library is currently untested.
+This library has been validated for ECG, continuous BIOZ, combined ECG+BIOZ, internal calibration paths, and the refactored nonblocking BIOZ scan flow that is driven through `setup...()`, `start()`, and repeated `update()`.
+
+Impedance spectroscopy calibration with external known samples is still in progress.
 
 # Installation
 
@@ -99,6 +101,28 @@ void loop() {
 }
 ```
 
+BIOZ spectroscopy uses the same configure/start/update lifecycle, but `setupBIOZScan(...)` only configures the scan. Call `start()` once, then keep calling `update()` until a spectrum becomes available in `BIOZ_spectrum`.
+
+# Example Sketches
+
+The maintained example sketches match the current driver structure:
+
+- `examples/ECG/ECG.ino`: continuous ECG using `setupECG(...)`, `start()`, and repeated `update()`
+- `examples/BIOZ/BIOZ.ino`: continuous fixed-frequency BIOZ using `setupBIOZ(...)`
+- `examples/ECGandBIOZ/ECGandBIOZ.ino`: simultaneous ECG and BIOZ using `setupECGandBIOZ(...)`
+- `examples/BIOZScan/BIOZScan.ino`: external nonblocking BIOZ spectroscopy using `setupBIOZScan(...)`
+- `examples/BIOZScan_Internal/BIOZScan_Internal.ino`: internal-resistor scan validation using the same scan-owned state machine
+- `examples/Hardware_HealthCheck/Hardware_HealthCheck.ino`: startup communication and hardware checks
+- `examples/MAX30001G/MAX30001G.ino`: interactive serial test program covering mode switches, setup helpers, calibration, scan control, and register inspection
+- `examples/ECG_FIFOInterruptValidation/ECG_FIFOInterruptValidation.ino`: ECG FIFO interrupt and `ECG_data` validation
+- `examples/BIOZ_FIFOInterruptValidation/BIOZ_FIFOInterruptValidation.ino`: BIOZ FIFO interrupt and `BIOZ_data` validation
+- `examples/ECGandBIOZ_FIFOInterruptValidation/ECGandBIOZ_FIFOInterruptValidation.ino`: combined FIFO drain validation
+- `examples/BIOZ_Internal_ImpedanceCalibration/BIOZ_Internal_ImpedanceCalibration.ino`: internal BIST point measurements outside the scan flow
+- `examples/BIOZ_External_ImpedanceCalibration/BIOZ_External_ImpedanceCalibration.ino`: external known-load impedance calibration
+- `examples/BIOZ_SignalCalibration/BIOZ_SignalCalibration.ino` and `examples/ECG_SignalCalibration/ECG_SignalCalibration.ino`: internal signal-generator calibration paths
+
+If you want one sketch that reflects the latest driver organization most closely, start with `examples/MAX30001G/MAX30001G.ino` for interactive coverage or `examples/BIOZScan_Internal/BIOZScan_Internal.ino` for the current BIOZ scan lifecycle.
+
 # Documentation
  - [API Documentation (generated)](https://uutzinger.github.io/Arduino_MAX30001G/)
  - \subpage md_Global_Variables "Global Variables"
@@ -115,7 +139,7 @@ void loop() {
 # Contributing
 
 - Urs Utzinger, 2025-2026
-- GPT-5.3
+- GPT, 2025- 2026
 
 # License
 
