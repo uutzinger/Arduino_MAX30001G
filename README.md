@@ -16,6 +16,19 @@ This driver depends on
 - [Arduino Ring Buffer](https://github.com/uutzinger/Arduino_RingBuffer)
 - [Arduino Logger](https://github.com/uutzinger/logger)
 
+# Documentation
+- [API Documentation (generated)](https://uutzinger.github.io/Arduino_MAX30001G/)
+- [Global Variables](Global%20Variables.md)
+- [Interrupt Handling](Interrupts.md)
+- [Changelog](CHANGELOG.md)
+
+# Hardware with MAX30001G
+
+- [MediBrick ECG and BIOZ](https://github.com/MediBrick/ECG_BIOZ_Brick)
+- [Protocentral tinyECG](https://protocentral.com/product/protocentral-tinyecg-max30001-ecg-respiration-module-for-qt-py-xiao/)
+- [Protocentral MAX30001](https://protocentral.com/product/protocentral-max30001/)
+- [Protocentral Healthy Pi 5](https://protocentral.com/product/healthypi-5-vital-signs-monitoring-hat-kit)
+
 # Quick Start
 
 Using Arduino-style `setup()` / `loop()` with `setup` + `start/update/stop`:
@@ -197,20 +210,6 @@ The maintained example sketches match the current driver structure:
 - `examples/BIOZ_Internal_ImpedanceCalibration/BIOZ_Internal_ImpedanceCalibration.ino`: internal BIST point measurements outside the scan flow
 - `examples/BIOZ_External_ImpedanceCalibration/BIOZ_External_ImpedanceCalibration.ino`: external known-load impedance calibration
 - `examples/BIOZ_SignalCalibration/BIOZ_SignalCalibration.ino` and `examples/ECG_SignalCalibration/ECG_SignalCalibration.ino`: internal signal-generator calibration paths
-
-
-# Documentation
- - [API Documentation (generated)](https://uutzinger.github.io/Arduino_MAX30001G/)
- - \subpage md_Global_Variables "Global Variables"
- - \subpage md_Interrupts "Interrupt Handling"
- - \subpage md_CHANGELOG "Changelog"
-
-# Hardware with MAX30001G
-
-- [MediBrick ECG and BIOZ](https://github.com/MediBrick/ECG_BIOZ_Brick)
-- [Protocentral tinyECG](https://protocentral.com/product/protocentral-tinyecg-max30001-ecg-respiration-module-for-qt-py-xiao/)
-- [Protocentral MAX30001](https://protocentral.com/product/protocentral-max30001/)
-- [Protocentral Healthy Pi 5](https://protocentral.com/product/healthypi-5-vital-signs-monitoring-hat-kit)
 
 # Contributing
 
