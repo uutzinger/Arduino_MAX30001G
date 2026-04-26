@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['interruptevent_794',['InterruptEvent',['../classMAX30001G.html#afd5657c975d738da119bedededfa6b4d',1,'MAX30001G']]]
+  ['biozscanphaserange_799',['BIOZScanPhaseRange',['../max30001g__typedefs_8h.html#a6f5b594efa21a6cf207ae3b8d5e7d09e',1,'max30001g_typedefs.h']]]
 ];

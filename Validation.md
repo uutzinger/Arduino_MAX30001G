@@ -24,6 +24,7 @@ Do not attach a subject until all bench tests in Phase 1 pass.
 - `examples/BIOZ_Internal_ImpedanceCalibration/BIOZ_Internal_ImpedanceCalibration.ino`
 - `examples/BIOZ_Internal_ImpedanceSweep/BIOZ_Internal_ImpedanceSweep.ino`
 - `examples/BIOZScan_Internal/BIOZScan_Internal.ino`
+- `examples/BIOZScan_Internal_Fast/BIOZScan_Internal_Fast.ino`
 - `examples/BIOZ_SettlingCharacterization/BIOZ_SettlingCharacterization.ino`
 - `examples/ECG_FIFOInterruptValidation/ECG_FIFOInterruptValidation.ino`
 - `examples/BIOZ_FIFOInterruptValidation/BIOZ_FIFOInterruptValidation.ino`
@@ -32,7 +33,7 @@ Do not attach a subject until all bench tests in Phase 1 pass.
 - `examples/BIOZ/BIOZ.ino`
 - `examples/ECGandBIOZ/ECGandBIOZ.ino`
 - `examples/BIOZScan/BIOZScan.ino`
-- `examples/MAX30001G_Test/MAX30001G_Test.ino`
+- `examples/MAX30001G/MAX30001G.ino`
 
 ## Hardware Checklist
 - [ ] MAX30001G board powered correctly
@@ -145,7 +146,7 @@ Recorded result:
 - Confirmed signal-calibration mode must report raw FIFO values as `BIOZ_Cal_[raw]`; Ohms conversion is not valid because the BIOZ current generator is disabled
 - Confirmed the prior `inf` output was caused by converting VCAL voltage calibration samples to Ohms with zero BIOZ drive current
 - Confirmed the periodic raw output remained after bypassing DLPF, so the non-square shape is not caused by the BIOZ digital low-pass filter
-- Updated `MAX30001G_Test.ino` BIOZ calibration mode to use raw BIOZ FIFO reads and `BIOZ_Cal_[raw]` labeling
+- Updated `MAX30001G.ino` BIOZ calibration mode to use raw BIOZ FIFO reads and `BIOZ_Cal_[raw]` labeling
 
 ### Test 1.4: BIOZ Internal Impedance Calibration
 Objective: verify impedance measurement using the MAX30001 internal test impedance.
@@ -605,11 +606,210 @@ Continuous BIOZ still depends on this path:
 - [x] Decide whether `BIOZScan_Internal.ino` should read raw FIFO samples directly during scan states or consume only samples already pushed by the common update/FIFO-drain path.
   - The refactored scan state machine reads FIFO data through scan-owned states after interrupt/status polling, so scan correctness no longer depends on the continuous streaming FIFO-drain path.
 
-### Update MAX30001G_Test
+### Update MAX30001G
 
-- [ ] Rename the MAX30001G_Test.ino into simpy MAX30001G. 
-- [ ] Printing settings please report the meanigful numbers not just a number.  For modulation and freqeucny in calibration settings I would like to get real units.
-- [ ] Similar for other items: when I enter `Ba1` for example it should respond with actual frequency used for AHPF.
+- [x] Rename the interactive sketch from `MAX30001G_Test.ino` to `MAX30001G.ino`.
+- [x] Update `showSettings()` so it reports meaningful engineering values with units instead of raw selector integers where possible.
+  - ECG and BIOZ settings should print rates in `sps`, gain in `V/V`, frequency in `Hz`, current in `nA`, phase in `deg`, and filter settings as real cutoff frequencies or `bypass`.
+  - Internal-BIST calibration settings should print resistor in `Ohm`, RMOD step size in `Ohm`, and modulation frequency in `Hz`.
+- [x] Update interactive command acknowledgements so entries like `Ba1`, `Bd2`, `Bh1`, `Bs1`, `Cm3`, and `Cf4` respond with meaningful values and units instead of only echoing the selector code.
+- [x] Use applied driver globals after setup when reporting effective hardware settings.
+  - Prefer `BIOZ_frequency`, `BIOZ_cgmag`, `BIOZ_phase`, `BIOZ_ahpf`, `BIOZ_dlpf`, `BIOZ_dhpf`, `BIOZ_samplingRate`, `BIOZ_gain`, `BIOZ_test_rnom`, `BIOZ_test_rmod`, and `BIOZ_test_frequency`.
+  - Prefer `ECG_samplingRate`, `ECG_gain`, `ECG_hpf`, and `ECG_lpf` for ECG reporting.
+
+### Add Reduced Phase Scan Option
+
+Reason for task:
+- Current BIOZ scan uses all hardware-supported phase settings at each frequency:
+  - `128 kHz`: 4 phase points
+  - `80 kHz`: 8 phase points
+  - `40 kHz` and below: 16 phase points
+- This is conservative and robust, but each phase transition adds settling time.
+- We want a configurable reduced-phase mode that keeps scan quality acceptable while reducing elapsed scan time.
+- External/tissue fitting is still under investigation.
+  - Current production code uses cosine fit for external scans and triangular fit for internal BIST.
+  - Because MAX30001G BIOZ uses switched/square-wave style excitation and synchronous demodulation, external known-load validation must decide whether cosine remains adequate or whether a triangular or other model is more accurate for production.
+  - Do not change the external fit model in this task; this task is about configurable phase-count reduction and validation infrastructure.
+
+Implementation plan:
+- [x] Add a phase-range/phase-density field to `BIOZScanConfig`.
+  - Recommended shape:
+    - `BIOZ_SCAN_PHASE_FULL`: use all hardware-supported phase points
+    - `BIOZ_SCAN_PHASE_REDUCED`: use 4 phase points at every scanned frequency
+  - Keep the default as `FULL` so existing behavior remains unchanged unless explicitly requested.
+- [x] Add the new enum/field to the public scan configuration API in `src/max30001g_typedefs.h` and document it in `src/max30001g.h`.
+- [x] Update `setupBIOZScan(...)` sanitization so the new phase-range option is validated and stored in `_scanRuntimeConfig`.
+- [x] Update `biozScanPhaseCountForFreq(...)` so phase count depends on the selected phase-range mode:
+  - `FULL`:
+    - frequency index `0` (`128 kHz`) -> 4 points
+    - frequency index `1` (`80 kHz`) -> 8 points
+    - remaining frequencies -> 16 points
+  - `REDUCED`:
+    - all frequencies -> 4 points
+- [x] Keep reduced-phase selection frequency-aware rather than blindly taking the first 4 selector codes.
+  - At `128 kHz`, the hardware already only supports 4 points.
+  - At `80 kHz`, reduced mode should still use 45 degree increments by stepping the hardware selector in 22.5 degree units.
+  - At `40 kHz` and below, reduced mode should use 45 degree increments by stepping the hardware selector in 11.25 degree units.
+  - Therefore `REDUCED` should always target the same actual phase set: `0`, `45`, `90`, `135` degrees.
+    - `128 kHz`: selectors `0,1,2,3`
+    - `80 kHz`: selectors `0,2,4,6`
+    - `40 kHz` and below: selectors `0,4,8,12`
+- [x] Add a helper for reduced-phase selector mapping so `stepBIOZScan()` can still iterate phase index `0..N-1` while translating to the correct hardware selector values.
+  - Do not overload `_scanPhaseIndex` with raw hardware selector meaning if reduced mode skips selector codes.
+- [x] Ensure the scan stores the actual applied `BIOZ_phase` values in `_scanPhaseDeg[][]`, not just the logical reduced-phase index.
+- [x] Keep both reduced and full modes compatible with:
+  - internal BIST triangular fit
+  - external scan fit path
+  - current auto-ranging
+  - sample-count settling
+  - scan result publication through `BIOZ_spectrum`
+
+Validation plan:
+- [x] Add a dedicated fast reduced-phase internal validation sketch:
+  - `examples/BIOZScan_Internal_Fast/BIOZScan_Internal_Fast.ino`
+- [x] `BIOZScan_Internal_Fast.ino` should:
+  - use `BIOZScanConfig`
+  - set `fast = true`
+  - set reduced phase range
+  - otherwise use the same BIOZ scan configuration as the full-phase internal validation sketch
+  - use the standard full validation frequency span already used by the full-phase internal validation sketch
+  - use internal resistor mode with `internal_resistor_ohm = 1000`
+  - use the current validation baseline for settling unless later characterization proves a faster baseline is acceptable
+  - print final `frequency_hz,magnitude_ohm,phase_deg`
+- [x] `BIOZScan_Internal_Fast.ino` should also report total elapsed time to build one spectrum.
+- [x] Keep `BIOZScan_Internal.ino` as the full-phase validation sketch unless explicitly renamed or redefined later.
+- [x] Update `BIOZScan_Internal.ino` to report total elapsed time to build one full-phase spectrum so reduced vs full timing can be compared directly.
+- [x] Compare reduced-phase and full-phase internal-BIST results:
+  - same hardware
+  - same resistor
+  - same current start
+  - same averaging
+  - same frequency range
+  - same settling defaults
+- [x] Record for each frequency:
+  - fitted magnitude difference between full and reduced phase scan
+  - fitted phase difference between full and reduced phase scan
+  - total elapsed scan time
+- [x] Record repeated-run variability across separate validation runs.
+- [ ] Decide whether reduced-phase mode is acceptable for internal regression if:
+  - magnitude error versus full-phase baseline stays within a defined target
+  - fitted phase remains stable enough for the intended use
+  - scan time reduction is meaningful
+- [ ] After internal validation, repeat the same comparison with external known loads once the fixture is available.
+  - Test pure resistors first.
+  - Then test RC loads with measurable reactance.
+  - Use that dataset to decide whether external scans can safely use reduced phase count in production.
+
+Questions this task should answer:
+- [ ] Is 4-phase reduced scan sufficient for accurate internal-BIST magnitude regression?
+- [ ] Is 4-phase reduced scan sufficient for external known-load magnitude and phase extraction?
+- [x] Does reduced-phase mode materially reduce elapsed scan time after accounting for phase-change settling?
+- [ ] Does reduced-phase mode interact badly with current auto-ranging at any frequency?
+- [ ] Does external fitting still behave correctly with reduced phase density, or does it become too sensitive to model mismatch/noise?
+
+Expected output of this task:
+- [x] Public `BIOZScanConfig` option for `FULL` vs `REDUCED` phase range
+- [x] Driver support for reduced-phase scan orchestration
+- [x] `BIOZScan_Internal_Fast.ino` example sketch
+- [x] Validation notes comparing reduced-phase and full-phase internal scans
+- [ ] A go/no-go decision for using reduced phase count in later external-load calibration tests
+
+Validation results:
+
+Timing summary:
+
+| Mode | Scan time (ms) | Scan time (s) | Relative to fast reduced |
+|---|---:|---:|---:|
+| Fast reduced | 9893 | 9.9 | 1.0x |
+| Slow reduced | 19706 | 19.7 | 2.0x |
+| Fast full | 39167 | 39.2 | 4.0x |
+| Slow full | 78041 | 78.0 | 7.9x |
+
+Observed timing behavior:
+- Slow sampling versus fast sampling is almost exactly a factor of `2`.
+- Full phase range versus reduced phase range is almost exactly a factor of `4`.
+- Fast sampling with reduced phase range completes one internal spectrum in about `10 s`.
+- The timing ratios match the expected phase-point counts:
+  - reduced scan: `4` phase points per frequency
+  - full scan: up to `16` phase points per frequency
+
+Raw result logs:
+
+Fast reduced:
+
+```text
+frequency_hz,magnitude_ohm,phase_deg
+18204.0,903.671,0.250
+8192.0,902.111,0.500
+4096.0,901.310,1.000
+2048.0,897.851,2.000
+1024.0,882.811,3.750
+spectrum_build_time_ms,9893
+BIOZ internal-resistor fast reduced-phase scan complete in 9894 ms.
+```
+
+Slow reduced:
+
+```text
+frequency_hz,magnitude_ohm,phase_deg
+18204.0,904.818,0.250
+8192.0,903.348,0.500
+4096.0,902.412,1.000
+2048.0,898.534,2.000
+1024.0,884.000,3.750
+spectrum_build_time_ms,19706
+BIOZ internal-resistor slow reduced-phase scan complete in 19706 ms.
+```
+
+Fast full:
+
+```text
+frequency_hz,magnitude_ohm,phase_deg
+18204.0,904.667,0.250
+8192.0,902.939,0.500
+4096.0,901.060,0.750
+2048.0,898.473,1.750
+1024.0,885.150,3.250
+spectrum_build_time_ms,39167
+BIOZ internal-resistor fast full-phase scan complete in 39168 ms.
+```
+
+Slow full:
+
+```text
+frequency_hz,magnitude_ohm,phase_deg
+18204.0,905.751,0.250
+8192.0,903.852,0.500
+4096.0,902.153,0.750
+2048.0,899.501,1.750
+1024.0,886.270,3.250
+spectrum_build_time_ms,78041
+BIOZ internal-resistor slow full-phase scan complete in 78041 ms.
+```
+
+Accuracy observations from this internal `1 kOhm` BIST dataset:
+- Fast sampling produces slightly lower fitted magnitude than slow sampling, by about `0.1%`.
+- Reduced phase range produces a slightly higher fitted phase than full phase range, typically about `0.25` to `0.5 deg` at the lower frequencies in this dataset.
+- Reduced phase range changes fitted magnitude only slightly relative to full phase range, roughly `+0.03%` to `-0.26%` in these measurements.
+- For internal BIST regression, reduced phase range appears promising because it preserves magnitude closely while reducing scan time by about `4x`.
+- This does not yet establish that reduced phase range is acceptable for external known-load or tissue measurements; that still requires fixture-based validation.
+
+Repeatability observations from four repeated `fast reduced` internal `1 kOhm` BIST runs:
+
+| Frequency (Hz) | Mean magnitude (ohm) | Min-max spread (ohm) | Spread (%) |
+|---|---:|---:|---:|
+| 18204 | 903.519 | 0.046 | 0.005 |
+| 8192 | 902.120 | 0.117 | 0.013 |
+| 4096 | 901.130 | 0.117 | 0.013 |
+| 2048 | 897.854 | 0.276 | 0.031 |
+| 1024 | 882.600 | 0.060 | 0.007 |
+
+Repeatability conclusions:
+- The repeated `fast reduced` runs are highly stable for internal BIST.
+- Fitted phase was identical across all four runs at every test frequency: `0.25`, `0.5`, `1.0`, `2.0`, and `3.75 deg`.
+- Spectrum build time was also stable at `9893` to `9894 ms`.
+- The largest observed run-to-run magnitude spread was `0.276 ohm` at `2048 Hz`, which is about `0.031%`.
+- These repeated-run results suggest the earlier differences between `fast` versus `slow` and `reduced` versus `full` are dominated by systematic configuration effects, not random run-to-run noise.
 
 ### BIOZ Calibration Program Task
 - [ ] Create a dedicated BIOZ calibration utility program before subject/sample measurements.
@@ -811,7 +1011,7 @@ Result: [ ] PASS  [ ] FAIL
 Notes: ___________________________________________
 
 ## Interactive Test Program Coverage
-`MAX30001G_Test.ino` should be used as the consolidated manual test utility. It is expected to support:
+`MAX30001G.ino` should be used as the consolidated manual test utility. It is expected to support:
 - SPI/register health check
 - ECG mode
 - BIOZ impedance mode

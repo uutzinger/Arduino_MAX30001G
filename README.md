@@ -103,6 +103,78 @@ void loop() {
 
 BIOZ spectroscopy uses the same configure/start/update lifecycle, but `setupBIOZScan(...)` only configures the scan. Call `start()` once, then keep calling `update()` until a spectrum becomes available in `BIOZ_spectrum`.
 
+# Main Sketch
+
+The sketch that reflects the latest driver organization most closely is `examples/MAX30001G/MAX30001G.ino`.
+
+It is an interactive serial utility for exercising the current driver layers, switching modes, applying settings, running health checks, and validating scan/calibration flows from one sketch.
+
+When you open the serial monitor and type `?`, the sketch prints this help menu:
+
+```text
+================================================================================
+| MAX30001G ECG and Bio-Impedance Program                                      |
+| 2026 Urs Utzinger 7 GPT                                                      |
+================================================================================
+| GENERAL COMMANDS                       | DATA COMMANDS                       |
+|----------------------------------------|-------------------------------------|
+| ?: help screen                         | z: toggle data display on/off       |
+| s: show current settings               | c: reset sample counter             |
+| h: run health check                    | (: save config snapshot             |
+| i: print device info                   | ): restore config snapshot          |
+| r: print all registers                 | p: print config registers           |
+| t: print status registers              | f: FIFO reset                       |
+|========================================|=====================================|
+| OPERATION MODES (auto-stop previous)   | START/STOP                          |
+|----------------------------------------|-------------------------------------|
+| m1: ECG mode                           | .: toggle start/stop                |
+| m2: BIOZ mode                          | >: start measurement                |
+| m3: ECG + BIOZ mode                    | <: stop measurement                 |
+| m4: ECG calibration                    |                                     |
+| m5: BIOZ calibration                   |                                     |
+| m6: BIOZ internal cal                  |                                     |
+| m7: BIOZ external cal                  |                                     |
+| m8: BIOZ scan                          |                                     |
+|========================================|=====================================|
+| ECG SETTINGS                           | BIOZ SETTINGS                       |
+|----------------------------------------|-------------------------------------|
+| Es<n>: speed      (0-2)     Es1        | Bs<n>: speed      (0-1)     Bs0     |
+| Eg<n>: gain       (0-3)     Eg2        | Bg<n>: gain       (0-3)     Bg1     |
+| El<n>: leads      (2 or 3)  El3        | Ba<n>: analog HPF (0-7)     Ba1     |
+| Er<n>: R-to-R     (0=off,1) Er1        | Bd<n>: digital LPF(0-3)     Bd1     |
+|                                        | Bh<n>: digital HPF(0-3)     Bh0     |
+|                                        | Bf<n>: frequency Hz         Bf8000  |
+|                                        | Bc<n>: current nA           Bc8000  |
+|                                        | Bp<n>: phase deg            Bp0     |
+|                                        | Bl<n>: lead bias  (0=off,1) Bl1     |
+|                                        | Bo<n>: lead-off   (0=off,1) Bo0     |
+|                                        | Bw<n>: wires      (2 or 4)  Bw2     |
+|========================================|=====================================|
+| SCAN SETTINGS                          | CALIBRATION SETTINGS                |
+|----------------------------------------|-------------------------------------|
+| Sa<n>: averages   (1-8)     Sa8        | Cr<n>: internal resistor    Cr1000  |
+| Sf<n>: fast mode  (0=off,1) Sf0        | Cm<n>: cal modulation(0-3)  Cm0     |
+| Sr<n>: full range (0=off,1) Sr0        | Cf<n>: mod frequency(0-4)   Cf3     |
+| Si<n>: source     (0=ext,1=int) Si0    |                                     |
+|========================================|=====================================|
+| LOG LEVEL                              | SPECIAL                             |
+|----------------------------------------|-------------------------------------|
+| l0: none (silent)                      | w: software reset                   |
+| l1: errors only                        | y: synchronize                      |
+| l2: warnings                           | k: clear latched status flags       |
+| l3: info (default)                     | a: apply current settings (re-setup)|
+| l4: debug (verbose)                    |                                     |
+================================================================================
+
+Examples:
+  m1       - Switch to ECG mode
+  Eg3      - Set ECG gain to 160 V/V (level 3)
+  Bf40000  - Set BIOZ frequency to 40 kHz
+  .        - Start/stop measurement
+  z        - Toggle continuous data display
+```
+
+
 # Example Sketches
 
 The maintained example sketches match the current driver structure:
@@ -121,7 +193,6 @@ The maintained example sketches match the current driver structure:
 - `examples/BIOZ_External_ImpedanceCalibration/BIOZ_External_ImpedanceCalibration.ino`: external known-load impedance calibration
 - `examples/BIOZ_SignalCalibration/BIOZ_SignalCalibration.ino` and `examples/ECG_SignalCalibration/ECG_SignalCalibration.ino`: internal signal-generator calibration paths
 
-If you want one sketch that reflects the latest driver organization most closely, start with `examples/MAX30001G/MAX30001G.ino` for interactive coverage or `examples/BIOZScan_Internal/BIOZScan_Internal.ino` for the current BIOZ scan lifecycle.
 
 # Documentation
  - [API Documentation (generated)](https://uutzinger.github.io/Arduino_MAX30001G/)

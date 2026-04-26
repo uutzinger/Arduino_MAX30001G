@@ -9,7 +9,9 @@ DO_SYNC_DOCS=1
 DO_TAG=1
 DO_PUSH=0
 DO_RELEASE=0
+DO_COMMIT=1
 ALLOW_DIRTY=0
+COMMIT_MESSAGE=""
 
 usage() {
   cat <<'EOF'
@@ -21,21 +23,26 @@ Reads version from library.properties and uses it as the single source of truth.
 Actions:
   1. Mirrors the version into Doxyfile PROJECT_NUMBER
   2. Regenerates docs via scripts/generate_docs.sh
-  3. Creates git tag if it does not already exist
-  4. Optionally pushes the tag
-  5. Optionally creates a GitHub release with gh
+  3. Stages and commits repo changes for the release version
+  4. Creates git tag if it does not already exist
+  5. Optionally pushes the tag
+  6. Optionally creates a GitHub release with gh
 
 Options:
   --prefix <value>   Tag prefix, default: v
   --no-docs          Skip Doxyfile sync and docs generation
+  --no-commit        Skip auto-stage/commit before tagging
+  --commit-message <msg>
+                     Override commit message, default: "Prepare release <version>"
   --no-tag           Skip tag creation/check
   --push             Push the tag to origin
   --release          Create GitHub release with gh (implies --push)
-  --allow-dirty      Allow tagging from a dirty worktree
+  --allow-dirty      Allow tagging from a dirty worktree when --no-commit is used
   --help             Show this help
 
 Examples:
   scripts/release_from_library_version.sh
+  scripts/release_from_library_version.sh --no-commit --allow-dirty
   scripts/release_from_library_version.sh --push
   scripts/release_from_library_version.sh --release
   scripts/release_from_library_version.sh --prefix ""
@@ -51,6 +58,14 @@ while [[ $# -gt 0 ]]; do
     --no-docs)
       DO_SYNC_DOCS=0
       shift
+      ;;
+    --no-commit)
+      DO_COMMIT=0
+      shift
+      ;;
+    --commit-message)
+      COMMIT_MESSAGE="$2"
+      shift 2
       ;;
     --no-tag)
       DO_TAG=0
@@ -88,9 +103,21 @@ if [[ -z "${VERSION}" ]]; then
 fi
 
 TAG="${TAG_PREFIX}${VERSION}"
+if [[ -z "$COMMIT_MESSAGE" ]]; then
+  COMMIT_MESSAGE="Prepare release $VERSION"
+fi
 
 if [[ "$DO_SYNC_DOCS" -eq 1 ]]; then
   bash scripts/generate_docs.sh
+fi
+
+if [[ "$DO_COMMIT" -eq 1 ]]; then
+  git add -A .
+  if ! git diff --cached --quiet; then
+    git commit -m "$COMMIT_MESSAGE"
+  else
+    echo "No staged changes to commit for release $VERSION."
+  fi
 fi
 
 if [[ "$DO_TAG" -eq 0 ]]; then
@@ -99,7 +126,7 @@ if [[ "$DO_TAG" -eq 0 ]]; then
 fi
 
 if [[ "$ALLOW_DIRTY" -ne 1 ]] && [[ -n "$(git status --short)" ]]; then
-  echo "Worktree is dirty. Commit version/docs changes before tagging, or rerun with --allow-dirty." >&2
+  echo "Worktree is dirty. Commit/stash unrelated changes, or rerun with --allow-dirty." >&2
   exit 1
 fi
 

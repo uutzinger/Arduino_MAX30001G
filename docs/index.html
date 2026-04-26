@@ -26,7 +26,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">MAX30001G
-   &#160;<span id="projectnumber">1.1.0</span>
+   &#160;<span id="projectnumber">1.1.2</span>
    </div>
    <div id="projectbrief">Arduino library for MAX30001G ECG and BIOZ AFE</div>
   </td>
@@ -187,6 +187,71 @@ Quick Start</h1>
 <div class="ttc" id="amax30001g__globals_8cpp_html_af5f23e5189683022c4c3b8c7972292c1"><div class="ttname"><a href="max30001g__globals_8cpp.html#af5f23e5189683022c4c3b8c7972292c1">ECG_data</a></div><div class="ttdeci">RingBuffer&lt; float, 128 &gt; ECG_data</div><div class="ttdef"><b>Definition:</b> max30001g_globals.cpp:13</div></div>
 </div><!-- fragment --><p>BIOZ spectroscopy uses the same configure/start/update lifecycle, but <code>setupBIOZScan(...)</code> only configures the scan. Call <code>start()</code> once, then keep calling <code>update()</code> until a spectrum becomes available in <code>BIOZ_spectrum</code>.</p>
 <h1><a class="anchor" id="autotoc_md4"></a>
+Main Sketch</h1>
+<p>The sketch that reflects the latest driver organization most closely is <code>examples/MAX30001G/MAX30001G.ino</code>.</p>
+<p>It is an interactive serial utility for exercising the current driver layers, switching modes, applying settings, running health checks, and validating scan/calibration flows from one sketch.</p>
+<p>When you open the serial monitor and type <code>?</code>, the sketch prints this help menu:</p>
+<div class="fragment"><div class="line">================================================================================</div>
+<div class="line">| MAX30001G ECG and Bio-Impedance Program                                      |</div>
+<div class="line">| 2026 Urs Utzinger 7 GPT                                                      |</div>
+<div class="line">================================================================================</div>
+<div class="line">| GENERAL COMMANDS                       | DATA COMMANDS                       |</div>
+<div class="line">|----------------------------------------|-------------------------------------|</div>
+<div class="line">| ?: help screen                         | z: toggle data display on/off       |</div>
+<div class="line">| s: show current settings               | c: reset sample counter             |</div>
+<div class="line">| h: run health check                    | (: save config snapshot             |</div>
+<div class="line">| i: print device info                   | ): restore config snapshot          |</div>
+<div class="line">| r: print all registers                 | p: print config registers           |</div>
+<div class="line">| t: print status registers              | f: FIFO reset                       |</div>
+<div class="line">|========================================|=====================================|</div>
+<div class="line">| OPERATION MODES (auto-stop previous)   | START/STOP                          |</div>
+<div class="line">|----------------------------------------|-------------------------------------|</div>
+<div class="line">| m1: ECG mode                           | .: toggle start/stop                |</div>
+<div class="line">| m2: BIOZ mode                          | &gt;: start measurement                |</div>
+<div class="line">| m3: ECG + BIOZ mode                    | &lt;: stop measurement                 |</div>
+<div class="line">| m4: ECG calibration                    |                                     |</div>
+<div class="line">| m5: BIOZ calibration                   |                                     |</div>
+<div class="line">| m6: BIOZ internal cal                  |                                     |</div>
+<div class="line">| m7: BIOZ external cal                  |                                     |</div>
+<div class="line">| m8: BIOZ scan                          |                                     |</div>
+<div class="line">|========================================|=====================================|</div>
+<div class="line">| ECG SETTINGS                           | BIOZ SETTINGS                       |</div>
+<div class="line">|----------------------------------------|-------------------------------------|</div>
+<div class="line">| Es&lt;n&gt;: speed      (0-2)     Es1        | Bs&lt;n&gt;: speed      (0-1)     Bs0     |</div>
+<div class="line">| Eg&lt;n&gt;: gain       (0-3)     Eg2        | Bg&lt;n&gt;: gain       (0-3)     Bg1     |</div>
+<div class="line">| El&lt;n&gt;: leads      (2 or 3)  El3        | Ba&lt;n&gt;: analog HPF (0-7)     Ba1     |</div>
+<div class="line">| Er&lt;n&gt;: R-to-R     (0=off,1) Er1        | Bd&lt;n&gt;: digital LPF(0-3)     Bd1     |</div>
+<div class="line">|                                        | Bh&lt;n&gt;: digital HPF(0-3)     Bh0     |</div>
+<div class="line">|                                        | Bf&lt;n&gt;: frequency Hz         Bf8000  |</div>
+<div class="line">|                                        | Bc&lt;n&gt;: current nA           Bc8000  |</div>
+<div class="line">|                                        | Bp&lt;n&gt;: phase deg            Bp0     |</div>
+<div class="line">|                                        | Bl&lt;n&gt;: lead bias  (0=off,1) Bl1     |</div>
+<div class="line">|                                        | Bo&lt;n&gt;: lead-off   (0=off,1) Bo0     |</div>
+<div class="line">|                                        | Bw&lt;n&gt;: wires      (2 or 4)  Bw2     |</div>
+<div class="line">|========================================|=====================================|</div>
+<div class="line">| SCAN SETTINGS                          | CALIBRATION SETTINGS                |</div>
+<div class="line">|----------------------------------------|-------------------------------------|</div>
+<div class="line">| Sa&lt;n&gt;: averages   (1-8)     Sa8        | Cr&lt;n&gt;: internal resistor    Cr1000  |</div>
+<div class="line">| Sf&lt;n&gt;: fast mode  (0=off,1) Sf0        | Cm&lt;n&gt;: cal modulation(0-3)  Cm0     |</div>
+<div class="line">| Sr&lt;n&gt;: full range (0=off,1) Sr0        | Cf&lt;n&gt;: mod frequency(0-4)   Cf3     |</div>
+<div class="line">| Si&lt;n&gt;: source     (0=ext,1=int) Si0    |                                     |</div>
+<div class="line">|========================================|=====================================|</div>
+<div class="line">| LOG LEVEL                              | SPECIAL                             |</div>
+<div class="line">|----------------------------------------|-------------------------------------|</div>
+<div class="line">| l0: none (silent)                      | w: software reset                   |</div>
+<div class="line">| l1: errors only                        | y: synchronize                      |</div>
+<div class="line">| l2: warnings                           | k: clear latched status flags       |</div>
+<div class="line">| l3: info (default)                     | a: apply current settings (re-setup)|</div>
+<div class="line">| l4: debug (verbose)                    |                                     |</div>
+<div class="line">================================================================================</div>
+<div class="line"> </div>
+<div class="line">Examples:</div>
+<div class="line">  m1       - Switch to ECG mode</div>
+<div class="line">  Eg3      - Set ECG gain to 160 V/V (level 3)</div>
+<div class="line">  Bf40000  - Set BIOZ frequency to 40 kHz</div>
+<div class="line">  .        - Start/stop measurement</div>
+<div class="line">  z        - Toggle continuous data display</div>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md5"></a>
 Example Sketches</h1>
 <p>The maintained example sketches match the current driver structure:</p>
 <ul>
@@ -204,8 +269,7 @@ Example Sketches</h1>
 <li><code>examples/BIOZ_External_ImpedanceCalibration/BIOZ_External_ImpedanceCalibration.ino</code>: external known-load impedance calibration</li>
 <li><code>examples/BIOZ_SignalCalibration/BIOZ_SignalCalibration.ino</code> and <code>examples/ECG_SignalCalibration/ECG_SignalCalibration.ino</code>: internal signal-generator calibration paths</li>
 </ul>
-<p>If you want one sketch that reflects the latest driver organization most closely, start with <code>examples/MAX30001G/MAX30001G.ino</code> for interactive coverage or <code>examples/BIOZScan_Internal/BIOZScan_Internal.ino</code> for the current BIOZ scan lifecycle.</p>
-<h1><a class="anchor" id="autotoc_md5"></a>
+<h1><a class="anchor" id="autotoc_md6"></a>
 Documentation</h1>
 <ul>
 <li><a href="https://uutzinger.github.io/Arduino_MAX30001G/">API Documentation (generated)</a></li>
@@ -213,7 +277,7 @@ Documentation</h1>
 <li><a class="el" href="md_Interrupts.html">Interrupt Handling</a></li>
 <li><a class="el" href="md_CHANGELOG.html">Changelog</a></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md6"></a>
+<h1><a class="anchor" id="autotoc_md7"></a>
 Hardware with MAX30001G</h1>
 <ul>
 <li><a href="https://github.com/MediBrick/ECG_BIOZ_Brick">MediBrick ECG and BIOZ</a></li>
@@ -221,25 +285,25 @@ Hardware with MAX30001G</h1>
 <li><a href="https://protocentral.com/product/protocentral-max30001/">Protocentral MAX30001</a></li>
 <li><a href="https://protocentral.com/product/healthypi-5-vital-signs-monitoring-hat-kit">Protocentral Healthy Pi 5</a></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md7"></a>
+<h1><a class="anchor" id="autotoc_md8"></a>
 Contributing</h1>
 <ul>
 <li>Urs Utzinger, 2025-2026</li>
 <li>GPT, 2025- 2026</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md8"></a>
+<h1><a class="anchor" id="autotoc_md9"></a>
 License</h1>
 <p>See <a href="License.txt">LICENSE</a>.</p>
-<h1><a class="anchor" id="autotoc_md9"></a>
+<h1><a class="anchor" id="autotoc_md10"></a>
 Block Diagram of MAX 30001G</h1>
 <p>The <a class="el" href="classMAX30001G.html" title="MAX30001G device driver class used by Arduino sketches.">MAX30001G</a> is a highly integrated analog front end that consists of a differential <code>ECG channel</code> with optional right-leg drive. It employs standard high-pass and low-pass filters, an instrumentation amplifier, and an analog-to-digital converter.</p>
 <p>The impedance unit consists of a current driver, analog high-pass filter, and phase-shifted demodulator to measure impedance from 128kHz down to 125Hz modulation frequency at varying phase shifts. Since the analog HPF has limited ability to suppress 60Hz noise, measurements below 500Hz might not be reliable.</p>
 <p><a href="assets/Blockdiagram.png" target="_blank"><img src="assets/Blockdiagram.png" alt="" style="width: 800px;" class="inline"/> </a></p>
-<h1><a class="anchor" id="autotoc_md10"></a>
+<h1><a class="anchor" id="autotoc_md11"></a>
 Input MUX ECG</h1>
 <p>Besides ESD protection, the input MUX can detect lead-off and lead-on conditions. In addition, it can switch input electrode polarity and correct common-voltage bias on the subject. Input can be turned off and replaced with an internal signal generator for testing purposes.</p>
 <p><a href="assets/ECG_InputMUX.png" target="_blank"><img src="assets/ECG_InputMUX.png" alt="" style="width: 800px;" class="inline"/> </a></p>
-<h1><a class="anchor" id="autotoc_md11"></a>
+<h1><a class="anchor" id="autotoc_md12"></a>
 Input MUX BIOZ</h1>
 <p>Similar to the ECG input MUX, the BIOZ input MUX has ESD protection as well as lead-on and lead-off detection. Besides input signal calibration, a programmable resistor can be measured internally as simulated impedance.</p>
 <p><a href="assets/BIOZ_InputMUX.png" target="_blank"><img src="assets/BIOZ_InputMUX.png" alt="" style="width: 800px;" class="inline"/> </a> </p>

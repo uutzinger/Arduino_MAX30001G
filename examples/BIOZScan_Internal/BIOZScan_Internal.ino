@@ -50,6 +50,10 @@ void printSpectrum() {
     Serial.print(',');
     Serial.println(spectrum.phase[i], 3);
   }
+
+  const uint32_t elapsed_ms = millis() - scanStartMs;
+  Serial.print("spectrum_build_time_ms,");
+  Serial.println(elapsed_ms);
 }
 
 void setup() {
@@ -97,7 +101,7 @@ void setup() {
 
   Serial.println("MAX30001G BIOZ internal-resistor scan example started.");
   Serial.println("Internal 1kOhm BIST validation scan range: 17.78kHz down to 1kHz.");
-  Serial.println("Validation settings: avg=8, current=8000nA, settle=24 samples, current-change settle=32 samples.");
+  Serial.println("Validation settings: avg=8, fast=false, phase_range=full, current=8000nA, settle=24 samples, current-change settle=32 samples.");
   Serial.println("Final spectrum table follows when the scan completes.");
 }
 
@@ -112,7 +116,9 @@ void loop() {
     printSpectrum();
     scanReported = true;
     afe.stop();
-    Serial.println("BIOZ internal-resistor scan complete.");
+    Serial.print("BIOZ internal-resistor full-phase scan complete in ");
+    Serial.print(millis() - scanStartMs);
+    Serial.println(" ms.");
     return;
   }
 

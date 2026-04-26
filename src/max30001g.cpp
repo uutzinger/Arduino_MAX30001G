@@ -1645,6 +1645,7 @@ void MAX30001G::setupBIOZScan(const BIOZScanConfig& config, bool reuseCurrents) 
  * timeout_margin_ms:     margin in milliseconds for FIFO read timeout when waiting for samples at each point
  * freq_start_index:      index of first modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
  * freq_end_index:        index of last modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
+ * phase_range:           FULL uses all supported phase points; REDUCED uses 0/45/90/135 degree points
  * initial_current_nA:    initial current magnitude in nanoAmps (55..96,000)
  * 
  */
@@ -1692,6 +1693,10 @@ void MAX30001G::setupBIOZScan(const BIOZScanConfig& config, bool reuseCurrents) 
     const uint8_t tmp = sanitized_config.freq_start_index;
     sanitized_config.freq_start_index = sanitized_config.freq_end_index;
     sanitized_config.freq_end_index = tmp;
+  }
+  if ((sanitized_config.phase_range != BIOZ_SCAN_PHASE_FULL) &&
+      (sanitized_config.phase_range != BIOZ_SCAN_PHASE_REDUCED)) {
+    sanitized_config.phase_range = BIOZ_SCAN_PHASE_FULL;
   }
   if (sanitized_config.initial_current_nA < 55) { sanitized_config.initial_current_nA = 55; }
   if (sanitized_config.initial_current_nA > 96000) { sanitized_config.initial_current_nA = 96000; }
@@ -1775,9 +1780,38 @@ void MAX30001G::stopBIOZScan() {
  * Returns the number of phases to scan for a given frequency index.
  */
 uint8_t MAX30001G::biozScanPhaseCountForFreq(uint8_t freq_idx) const {
+  if (_scanRuntimeConfig.phase_range == BIOZ_SCAN_PHASE_REDUCED) {
+    return 4U;
+  }
   if (freq_idx == 0U) { return 4U; }
   if (freq_idx == 1U) { return 8U; }
   return MAX30001_BIOZ_NUM_PHASES;
+}
+
+uint8_t MAX30001G::biozScanPhaseSelectorForStep(uint8_t freq_idx, uint8_t phase_step_idx) const {
+  if (_scanRuntimeConfig.phase_range != BIOZ_SCAN_PHASE_REDUCED) {
+    return phase_step_idx;
+  }
+
+  // REDUCED mode always uses 45 degree phase increments:
+  // 128kHz: 0/45/90/135 -> selectors 0,1,2,3
+  //  80kHz: 0/45/90/135 -> selectors 0,2,4,6
+  // <=40kHz: 0/45/90/135 -> selectors 0,4,8,12
+  static const uint8_t reduced_phase_selectors_128k[4] = {0U, 1U, 2U, 3U};
+  static const uint8_t reduced_phase_selectors_80k[4]  = {0U, 2U, 4U, 6U};
+  static const uint8_t reduced_phase_selectors_low[4]  = {0U, 4U, 8U, 12U};
+
+  if (phase_step_idx > 3U) {
+    phase_step_idx = 3U;
+  }
+
+  if (freq_idx == 0U) {
+    return reduced_phase_selectors_128k[phase_step_idx];
+  }
+  if (freq_idx == 1U) {
+    return reduced_phase_selectors_80k[phase_step_idx];
+  }
+  return reduced_phase_selectors_low[phase_step_idx];
 }
 
 /* 
@@ -2096,7 +2130,8 @@ void MAX30001G::stepBIOZScan() {
         return;
       }
 
-      setBIOZPhaseOffsetbyIndex(_scanPhaseIndex);
+      const uint8_t phase_selector = biozScanPhaseSelectorForStep(_scanFreqIndex, _scanPhaseIndex);
+      setBIOZPhaseOffsetbyIndex(phase_selector);
       _scanPhaseDeg[_scanFreqIndex][_scanPhaseIndex] = BIOZ_phase;
 
       _BIOZScanState = BIOZ_SCAN_BEGIN_POINT;

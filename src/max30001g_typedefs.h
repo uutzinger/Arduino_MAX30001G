@@ -45,6 +45,16 @@ struct HealthCheckResult {
 };
 
 /**
+ * @brief BIOZ scan phase-density selection.
+ * @details FULL uses all hardware-supported phase offsets for the active FCGEN.
+ * @details REDUCED uses four 45 degree steps: 0, 45, 90, and 135 degrees.
+ */
+enum BIOZScanPhaseRange : uint8_t {
+  BIOZ_SCAN_PHASE_FULL = 0,
+  BIOZ_SCAN_PHASE_REDUCED
+};
+
+/**
  * @brief BIOZScanConfig configuration structure fields:
  * @details config.avg = 2                       number of samples to average at each frequency/phase point (1-8)
  * @details config.fast = false                  if true, use 60sps BIOZ sampling rate; otherwise use 30sps
@@ -58,6 +68,7 @@ struct HealthCheckResult {
  * @details config.timeout_margin_ms = 50        margin in milliseconds for FIFO read timeout when waiting for samples at each point
  * @details config.freq_start_index = 0          index of first modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
  * @details config.freq_end_index = 7            index of last modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
+ * @details config.phase_range = BIOZ_SCAN_PHASE_FULL use all supported phase points; REDUCED uses 0/45/90/135 degree points
  * @details config.initial_current_nA = 8000     initial current magnitude in nanoAmps (55..96,000)
  * @details config.settle_samples = 24           samples to discard after phase/frequency/filter changes
  * @details config.current_change_settle_samples = 32 samples to discard after drive-current changes
@@ -77,6 +88,7 @@ struct BIOZScanConfig {
   uint16_t timeout_margin_ms;
   uint8_t freq_start_index;
   uint8_t freq_end_index;
+  BIOZScanPhaseRange phase_range;
   int32_t initial_current_nA;
   uint8_t settle_samples;
   uint8_t current_change_settle_samples;
@@ -96,6 +108,7 @@ struct BIOZScanConfig {
         timeout_margin_ms(50),
         freq_start_index(0),
         freq_end_index(7),
+        phase_range(BIOZ_SCAN_PHASE_FULL),
         initial_current_nA(8000),
         settle_samples(24),
         current_change_settle_samples(32) {}

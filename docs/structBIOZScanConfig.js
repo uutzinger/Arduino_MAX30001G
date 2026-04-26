@@ -14,6 +14,7 @@ var structBIOZScanConfig =
     [ "max_retries", "structBIOZScanConfig.html#acc651e3648e56163c3ee2e7ffff39c94", null ],
     [ "outlier_min_samples", "structBIOZScanConfig.html#aa903cfb2abbd1ff467702d029d703174", null ],
     [ "outlier_sigma", "structBIOZScanConfig.html#a9f7418f511194f2e8132daa664a4851e", null ],
+    [ "phase_range", "structBIOZScanConfig.html#a594f0a1ab334494d7fbe9dda7931a1d1", null ],
     [ "settle_samples", "structBIOZScanConfig.html#a598f7f674693a49cb3931eb555a83409", null ],
     [ "target_fraction", "structBIOZScanConfig.html#a664475d516c4dd5c8e4d9e8915c15287", null ],
     [ "timeout_margin_ms", "structBIOZScanConfig.html#ab98f968b4bb1f7397ca8a3f7446f0361", null ],

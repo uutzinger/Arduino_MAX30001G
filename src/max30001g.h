@@ -308,6 +308,7 @@ public:
    * @details config.timeout_margin_ms = 50        margin in milliseconds for FIFO read timeout when waiting for samples at each point
    * @details config.freq_start_index = 0          index of first modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
    * @details config.freq_end_index = 7            index of last modulation frequency to scan (0-10, corresponding to 128kHz..125Hz)
+   * @details config.phase_range = BIOZ_SCAN_PHASE_FULL use all supported phase points; REDUCED uses 0/45/90/135 degree points
    * @details config.initial_current_nA = 8000     initial current magnitude in nanoAmps (55..96,000)
    * @details config.settle_samples = 24           samples to discard after phase/frequency/filter changes
    * @details config.current_change_settle_samples = 32 samples to discard after drive-current changes
@@ -1200,6 +1201,7 @@ private:
   ImpedanceModel fitImpedanceTriangular(const float* phases, const float* impedances, int num_points);
 
   uint8_t biozScanPhaseCountForFreq(uint8_t freq_idx) const;
+  uint8_t biozScanPhaseSelectorForStep(uint8_t freq_idx, uint8_t phase_step_idx) const;
   uint8_t biozScanSelectAHPF(float lowest_frequency_hz) const;
   float   biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, float outlier_sigma, bool& hasSamples);
 

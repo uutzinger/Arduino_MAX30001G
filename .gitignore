@@ -189,6 +189,7 @@ cython_debug/
 
 # IDE/editor folders and caches
 .vscode/
+.codex/
 *.code-workspace
 *.swp
 *.swo

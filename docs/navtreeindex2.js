@@ -1,5 +1,12 @@
 var NAVTREEINDEX2 =
 {
+"structImpedanceSpectrum.html#ae55f33f783431f7210ac1a636450e6c5":[2,0,4,2],
+"structImpedanceSpectrum.html#af5ec6cecbac739c5bd4ddbc987f541a1":[2,0,4,0],
+"unionmax30001__bioz__burst__reg__t.html":[2,0,5],
+"unionmax30001__bioz__burst__reg__t.html#a6013fb212dfd37ace640b3c17755af6c":[2,0,5,3],
+"unionmax30001__bioz__burst__reg__t.html#acd06b4fe451ee1c07dfcf5d2cba8ecc7":[2,0,5,4],
+"unionmax30001__bioz__burst__reg__t.html#adc7369c9e7ee75a3e6a6f4dc2e432e64":[2,0,5,2],
+"unionmax30001__bioz__burst__reg__t.html#adf420efc6cc6cd22b3d6eedc3bcc8e7f":[2,0,5,1],
 "unionmax30001__bioz__burst__reg__t.html#ae92f1596a32e54532a0ba1c171e2fd4d":[2,0,5,0],
 "unionmax30001__cnfg__bioz__lc__reg__t.html":[2,0,6],
 "unionmax30001__cnfg__bioz__lc__reg__t.html#a18d51f0dfe1caf56d0e88b6c5cd1e619":[2,0,6,5],

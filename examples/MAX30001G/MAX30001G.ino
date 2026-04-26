@@ -159,11 +159,139 @@ const char* getModeName(OperationMode mode) {
   }
 }
 
+const char* onOffLabel(bool enabled) {
+  return enabled ? "ON" : "OFF";
+}
+
+float requestedEcgSamplingRateSps(uint8_t selector) {
+  switch (selector) {
+    case 0: return 125.0f;
+    case 1: return 256.0f;
+    case 2: return 512.0f;
+    default: return 0.0f;
+  }
+}
+
+float requestedBiozSamplingRateSps(uint8_t selector) {
+  return (selector == 0U) ? 32.0f : 64.0f;
+}
+
+float requestedBiozAhpfHz(uint8_t selector) {
+  switch (selector) {
+    case 0: return 60.0f;
+    case 1: return 150.0f;
+    case 2: return 500.0f;
+    case 3: return 1000.0f;
+    case 4: return 2000.0f;
+    case 5: return 4000.0f;
+    default: return 0.0f;
+  }
+}
+
+float requestedBiozDlpfHz(uint8_t selector) {
+  switch (selector) {
+    case 1: return 4.0f;
+    case 2: return 8.0f;
+    case 3: return 16.0f;
+    default: return 0.0f;
+  }
+}
+
+float requestedBiozDhpfHz(uint8_t selector) {
+  switch (selector) {
+    case 1: return 0.05f;
+    case 2: return 0.5f;
+    default: return 0.0f;
+  }
+}
+
+float requestedCalibrationModulationFrequencyHz(uint8_t selector) {
+  switch (selector) {
+    case 1: return 0.0625f;
+    case 2: return 0.25f;
+    case 3: return 1.0f;
+    case 4: return 4.0f;
+    default: return 4.0f;
+  }
+}
+
+float requestedCalibrationModulationOhm(uint32_t resistance, uint8_t modulation) {
+  if (modulation == 0U || resistance > 5000U) {
+    return 0.0f;
+  }
+
+  const uint16_t rnom_thresholds[] = {2500U, 1667U, 1250U, 1000U, 833U, 714U, 625U, 0U};
+  const float rmod_table[8][4] = {
+    {0.0f, 247.5f, 980.6f, 2960.7f},
+    {0.0f,  61.9f, 245.2f,  740.4f},
+    {0.0f,  27.5f, 109.0f,  329.1f},
+    {0.0f,   0.0f,  61.3f,  185.1f},
+    {0.0f,   0.0f,  39.2f,  118.5f},
+    {0.0f,   0.0f,  27.2f,   82.3f},
+    {0.0f,   0.0f,  20.0f,   60.5f},
+    {0.0f,   0.0f,  15.3f,   46.3f}
+  };
+
+  uint8_t row = 7U;
+  for (uint8_t i = 0U; i < 8U; ++i) {
+    if (resistance > rnom_thresholds[i]) {
+      row = i;
+      break;
+    }
+  }
+
+  if (modulation > 3U) {
+    modulation = 3U;
+  }
+  return rmod_table[row][modulation];
+}
+
+void printHzOrBypass(float hz, uint8_t decimals = 2U) {
+  if (hz <= 0.0f) {
+    Serial.print("bypass");
+  } else {
+    Serial.print(hz, decimals);
+    Serial.print(" Hz");
+  }
+}
+
+void printAppliedBiozSummary() {
+  Serial.print("  Applied BIOZ: ");
+  Serial.print(BIOZ_samplingRate, 1);
+  Serial.print(" sps, ");
+  Serial.print(BIOZ_gain);
+  Serial.print(" V/V, AHPF ");
+  printHzOrBypass(BIOZ_ahpf, 0U);
+  Serial.print(", DLPF ");
+  printHzOrBypass(BIOZ_dlpf, 2U);
+  Serial.print(", DHPF ");
+  printHzOrBypass(BIOZ_dhpf, 2U);
+  Serial.print(", ");
+  Serial.print(BIOZ_frequency, 1);
+  Serial.print(" Hz, ");
+  Serial.print(BIOZ_cgmag);
+  Serial.print(" nA, ");
+  Serial.print(BIOZ_phase, 2);
+  Serial.println(" deg");
+}
+
+void printAppliedEcgSummary() {
+  Serial.print("  Applied ECG: ");
+  Serial.print(ECG_samplingRate, 1);
+  Serial.print(" sps, ");
+  Serial.print(ECG_gain);
+  Serial.print(" V/V, HPF ");
+  printHzOrBypass(ECG_hpf, 2U);
+  Serial.print(", LPF ");
+  printHzOrBypass(ECG_lpf, 0U);
+  Serial.println();
+}
+
 // Help Menu
 void helpMenu() {
   Serial.println("================================================================================");
   Serial.println("| MAX30001G ECG and Bio-Impedance Program                                      |");  
-  Serial.println("| 2026 Urs Utzinger 7 GPT                                                      |");
+  Serial.println("| 2026 Urs Utzinger & GPT                                                      |");
   Serial.println("================================================================================");
   Serial.println("| GENERAL COMMANDS                       | DATA COMMANDS                       |");
   Serial.println("|----------------------------------------|-------------------------------------|");
@@ -203,7 +331,7 @@ void helpMenu() {
   Serial.println("|----------------------------------------|-------------------------------------|");
   Serial.println("| Sa<n>: averages   (1-8)     Sa8        | Cr<n>: internal resistor    Cr1000  |");
   Serial.println("| Sf<n>: fast mode  (0=off,1) Sf0        | Cm<n>: cal modulation(0-3)  Cm0     |");
-  Serial.println("| Sr<n>: full range (0=off,1) Sr0        | Cf<n>: mod frequency(0-3)   Cf3     |");
+  Serial.println("| Sr<n>: full range (0=off,1) Sr0        | Cf<n>: mod frequency(0-4)   Cf3     |");
   Serial.println("| Si<n>: source     (0=ext,1=int) Si0    |                                     |");
   Serial.println("|========================================|=====================================|");
   Serial.println("| LOG LEVEL                              | SPECIAL                             |");
@@ -237,51 +365,66 @@ void showSettings() {
   Serial.println(data_reporting ? "ON" : "OFF");
   Serial.println("--------------------------------------------------------------------------------");
   Serial.println("ECG Settings:");
-  Serial.print("  Speed: ");
+  Serial.print("  Requested Speed: ~");
+  Serial.print(requestedEcgSamplingRateSps(ecg_speed), 0);
+  Serial.print(" sps (selector ");
   Serial.print(ecg_speed);
-  Serial.print(" (~");
-  Serial.print(ecg_speed == 0 ? 125 : (ecg_speed == 1 ? 256 : 512));
-  Serial.println(" sps)");
-  Serial.print("  Gain: ");
-  Serial.print(ecg_gain);
-  Serial.print(" (");
+  Serial.println(")");
+  Serial.print("  Requested Gain: ");
   Serial.print(20 << ecg_gain);
-  Serial.println(" V/V)");
+  Serial.print(" V/V (selector ");
+  Serial.print(ecg_gain);
+  Serial.println(")");
   Serial.print("  Leads: ");
   Serial.println(ecg_threeleads ? "3-lead" : "2-lead");
   Serial.print("  R-to-R: ");
-  Serial.println(ecg_rtor ? "ENABLED" : "DISABLED");
+  Serial.println(onOffLabel(ecg_rtor));
+  if (current_mode == MODE_ECG || current_mode == MODE_ECG_BIOZ || current_mode == MODE_ECG_CAL) {
+    printAppliedEcgSummary();
+  }
   Serial.println("--------------------------------------------------------------------------------");
   Serial.println("BIOZ Settings:");
-  Serial.print("  Speed: ");
+  Serial.print("  Requested Speed: ~");
+  Serial.print(requestedBiozSamplingRateSps(bioz_speed), 0);
+  Serial.print(" sps (selector ");
   Serial.print(bioz_speed);
-  Serial.print(" (~");
-  Serial.print(bioz_speed == 0 ? 32 : 64);
-  Serial.println(" sps)");
-  Serial.print("  Gain: ");
-  Serial.print(bioz_gain);
-  Serial.print(" (");
+  Serial.println(")");
+  Serial.print("  Requested Gain: ");
   Serial.print(10 * (1 << bioz_gain));
-  Serial.println(" V/V)");
-  Serial.print("  Analog HPF: ");
+  Serial.print(" V/V (selector ");
+  Serial.print(bioz_gain);
+  Serial.println(")");
+  Serial.print("  Requested AHPF: ");
+  printHzOrBypass(requestedBiozAhpfHz(bioz_ahpf), 0U);
+  Serial.print(" (selector ");
   Serial.print(bioz_ahpf);
-  Serial.print(" | Digital LPF: ");
+  Serial.print(") | Requested DLPF: ");
+  printHzOrBypass(requestedBiozDlpfHz(bioz_dlpf), 0U);
+  Serial.print(" (selector ");
   Serial.print(bioz_dlpf);
-  Serial.print(" | Digital HPF: ");
-  Serial.println(bioz_dhpf);
-  Serial.print("  Frequency: ");
+  Serial.print(") | Requested DHPF: ");
+  printHzOrBypass(requestedBiozDhpfHz(bioz_dhpf), 2U);
+  Serial.print(" (selector ");
+  Serial.print(bioz_dhpf);
+  Serial.println(")");
+  Serial.print("  Requested Frequency: ");
   Serial.print(bioz_frequency);
-  Serial.print(" Hz | Current: ");
+  Serial.print(" Hz | Requested Current: ");
   Serial.print(bioz_current);
-  Serial.print(" nA | Phase: ");
+  Serial.print(" nA | Requested Phase: ");
   Serial.print(bioz_phase, 1);
   Serial.println(" deg");
   Serial.print("  Lead Bias: ");
-  Serial.print(bioz_leadbias ? "ON" : "OFF");
+  Serial.print(onOffLabel(bioz_leadbias));
   Serial.print(" | Lead-Off Detect: ");
-  Serial.print(bioz_leadsoffdetect ? "ON" : "OFF");
+  Serial.print(onOffLabel(bioz_leadsoffdetect));
   Serial.print(" | Wires: ");
   Serial.println(bioz_fourleads ? "4-wire" : "2-wire");
+  if (current_mode == MODE_BIOZ || current_mode == MODE_ECG_BIOZ ||
+      current_mode == MODE_BIOZ_CAL || current_mode == MODE_BIOZ_INTERNAL_CAL ||
+      current_mode == MODE_BIOZ_EXTERNAL_CAL) {
+    printAppliedBiozSummary();
+  }
   Serial.println("--------------------------------------------------------------------------------");
   Serial.println("Scan Settings:");
   Serial.print("  Averages: ");
@@ -294,12 +437,31 @@ void showSettings() {
   Serial.println(scan_internal ? "Internal Resistor" : "External");
   Serial.println("--------------------------------------------------------------------------------");
   Serial.println("Calibration Settings:");
-  Serial.print("  Resistor: ");
+  Serial.print("  Requested Resistor: ");
   Serial.print(cal_resistance);
-  Serial.print(" Ohm | Modulation: ");
+  Serial.print(" Ohm | Requested Modulation: ");
+  if (cal_modulation == 0U) {
+    Serial.print("DC only");
+  } else {
+    Serial.print(requestedCalibrationModulationOhm(cal_resistance, cal_modulation), 1);
+    Serial.print(" Ohm step");
+  }
+  Serial.print(" (selector ");
   Serial.print(cal_modulation);
-  Serial.print(" | Mod Frequency: ");
-  Serial.println(cal_mod_freq);
+  Serial.print(") | Requested Mod Frequency: ");
+  Serial.print(requestedCalibrationModulationFrequencyHz(cal_mod_freq), 4);
+  Serial.print(" Hz (selector ");
+  Serial.print(cal_mod_freq);
+  Serial.println(")");
+  if (current_mode == MODE_BIOZ_INTERNAL_CAL) {
+    Serial.print("  Applied BIST: RNOM ");
+    Serial.print(BIOZ_test_rnom, 1);
+    Serial.print(" Ohm, RMOD ");
+    Serial.print(BIOZ_test_rmod, 1);
+    Serial.print(" Ohm, RMOD freq ");
+    Serial.print(BIOZ_test_frequency, 4);
+    Serial.println(" Hz");
+  }
   Serial.println("================================================================================");
 }
 
@@ -319,6 +481,7 @@ void applySettings() {
     case MODE_ECG:
       afe.setupECG(ecg_speed, ecg_gain, ecg_threeleads);
       Serial.println("ECG mode configured");
+      printAppliedEcgSummary();
       break;
 
     case MODE_BIOZ:
@@ -326,6 +489,7 @@ void applySettings() {
                     bioz_frequency, bioz_current, bioz_phase,
                     bioz_leadbias, bioz_leadsoffdetect, bioz_fourleads);
       Serial.println("BIOZ mode configured");
+      printAppliedBiozSummary();
       break;
 
     case MODE_ECG_BIOZ:
@@ -334,11 +498,14 @@ void applySettings() {
                           bioz_frequency, bioz_current, bioz_phase,
                           bioz_leadbias, bioz_leadsoffdetect, bioz_fourleads);
       Serial.println("ECG+BIOZ mode configured");
+      printAppliedEcgSummary();
+      printAppliedBiozSummary();
       break;
 
     case MODE_ECG_CAL:
       afe.setupECGSignalCalibration(ecg_speed, ecg_gain);
       Serial.println("ECG calibration mode configured");
+      printAppliedEcgSummary();
       break;
 
     case MODE_BIOZ_CAL:
@@ -347,6 +514,7 @@ void applySettings() {
                         BIOZ_CAL_0P5_MV, BIOZ_CAL_FCAL_1HZ, BIOZ_CAL_DUTY_PERCENT);
       afe.setBIOZfilter(BIOZ_CAL_AHPF_BYPASS, BIOZ_CAL_DLPF_BYPASS, BIOZ_CAL_DHPF_BYPASS);
       Serial.println("BIOZ calibration mode configured: raw bipolar 0.5mV VCAL at ~1Hz, filters bypassed");
+      printAppliedBiozSummary();
       break;
 
     case MODE_BIOZ_INTERNAL_CAL:
@@ -354,11 +522,20 @@ void applySettings() {
                                          bioz_frequency, bioz_current, bioz_phase,
                                          cal_resistance, cal_modulation, cal_mod_freq);
       Serial.println("BIOZ internal calibration mode configured");
+      printAppliedBiozSummary();
+      Serial.print("  Applied BIST: RNOM ");
+      Serial.print(BIOZ_test_rnom, 1);
+      Serial.print(" Ohm, RMOD ");
+      Serial.print(BIOZ_test_rmod, 1);
+      Serial.print(" Ohm, RMOD freq ");
+      Serial.print(BIOZ_test_frequency, 4);
+      Serial.println(" Hz");
       break;
 
     case MODE_BIOZ_EXTERNAL_CAL:
       afe.setupBIOZExternalImpedanceCalibration(bioz_frequency, bioz_phase);
       Serial.println("BIOZ external calibration mode configured");
+      printAppliedBiozSummary();
       break;
 
     case MODE_BIOZ_SCAN:
@@ -377,6 +554,13 @@ void applySettings() {
         Serial.print("BIOZ scan mode configured (");
         Serial.print(scan_internal ? "internal resistor" : "external electrodes");
         Serial.println(")");
+        Serial.print("  Requested scan start current: ");
+        Serial.print(config.initial_current_nA);
+        Serial.print(" nA | settle: ");
+        Serial.print(config.settle_samples);
+        Serial.print(" samples | current-change settle: ");
+        Serial.print(config.current_change_settle_samples);
+        Serial.println(" samples");
       }
       break;
 
@@ -597,8 +781,11 @@ void handleParameterCommand(const char* command) {
       case 's':  // ECG speed
         if (value >= 0 && value <= 2) {
           ecg_speed = value;
-          Serial.print("ECG speed set to: ");
-          Serial.println(value);
+          Serial.print("ECG speed requested: ~");
+          Serial.print(requestedEcgSamplingRateSps(ecg_speed), 0);
+          Serial.print(" sps (selector ");
+          Serial.print(ecg_speed);
+          Serial.println(")");
         } else {
           Serial.println("ECG speed must be 0-2");
         }
@@ -607,8 +794,11 @@ void handleParameterCommand(const char* command) {
       case 'g':  // ECG gain
         if (value >= 0 && value <= 3) {
           ecg_gain = value;
-          Serial.print("ECG gain set to: ");
-          Serial.println(value);
+          Serial.print("ECG gain requested: ");
+          Serial.print(20 << ecg_gain);
+          Serial.print(" V/V (selector ");
+          Serial.print(ecg_gain);
+          Serial.println(")");
         } else {
           Serial.println("ECG gain must be 0-3");
         }
@@ -617,8 +807,8 @@ void handleParameterCommand(const char* command) {
       case 'l':  // ECG leads
         if (value == 2 || value == 3) {
           ecg_threeleads = (value == 3);
-          Serial.print("ECG leads set to: ");
-          Serial.println(value);
+          Serial.print("ECG leads requested: ");
+          Serial.println(ecg_threeleads ? "3-lead" : "2-lead");
         } else {
           Serial.println("ECG leads must be 2 or 3");
         }
@@ -627,8 +817,8 @@ void handleParameterCommand(const char* command) {
       case 'r':  // ECG R-to-R
         if (value == 0 || value == 1) {
           ecg_rtor = (value == 1);
-          Serial.print("ECG R-to-R set to: ");
-          Serial.println(value ? "ON" : "OFF");
+          Serial.print("ECG R-to-R requested: ");
+          Serial.println(onOffLabel(ecg_rtor));
         } else {
           Serial.println("ECG R-to-R must be 0 or 1");
         }
@@ -647,8 +837,11 @@ void handleParameterCommand(const char* command) {
       case 's':  // BIOZ speed
         if (value >= 0 && value <= 1) {
           bioz_speed = value;
-          Serial.print("BIOZ speed set to: ");
-          Serial.println(value);
+          Serial.print("BIOZ speed requested: ~");
+          Serial.print(requestedBiozSamplingRateSps(bioz_speed), 0);
+          Serial.print(" sps (selector ");
+          Serial.print(bioz_speed);
+          Serial.println(")");
         } else {
           Serial.println("BIOZ speed must be 0-1");
         }
@@ -657,8 +850,11 @@ void handleParameterCommand(const char* command) {
       case 'g':  // BIOZ gain
         if (value >= 0 && value <= 3) {
           bioz_gain = value;
-          Serial.print("BIOZ gain set to: ");
-          Serial.println(value);
+          Serial.print("BIOZ gain requested: ");
+          Serial.print(10 * (1 << bioz_gain));
+          Serial.print(" V/V (selector ");
+          Serial.print(bioz_gain);
+          Serial.println(")");
         } else {
           Serial.println("BIOZ gain must be 0-3");
         }
@@ -667,8 +863,11 @@ void handleParameterCommand(const char* command) {
       case 'a':  // BIOZ analog HPF
         if (value >= 0 && value <= 7) {
           bioz_ahpf = value;
-          Serial.print("BIOZ analog HPF set to: ");
-          Serial.println(value);
+          Serial.print("BIOZ analog HPF requested: ");
+          printHzOrBypass(requestedBiozAhpfHz(bioz_ahpf), 0U);
+          Serial.print(" (selector ");
+          Serial.print(bioz_ahpf);
+          Serial.println(")");
         } else {
           Serial.println("BIOZ analog HPF must be 0-7");
         }
@@ -677,8 +876,11 @@ void handleParameterCommand(const char* command) {
       case 'd':  // BIOZ digital LPF
         if (value >= 0 && value <= 3) {
           bioz_dlpf = value;
-          Serial.print("BIOZ digital LPF set to: ");
-          Serial.println(value);
+          Serial.print("BIOZ digital LPF requested: ");
+          printHzOrBypass(requestedBiozDlpfHz(bioz_dlpf), 0U);
+          Serial.print(" (selector ");
+          Serial.print(bioz_dlpf);
+          Serial.println(")");
         } else {
           Serial.println("BIOZ digital LPF must be 0-3");
         }
@@ -687,8 +889,11 @@ void handleParameterCommand(const char* command) {
       case 'h':  // BIOZ digital HPF
         if (value >= 0 && value <= 3) {
           bioz_dhpf = value;
-          Serial.print("BIOZ digital HPF set to: ");
-          Serial.println(value);
+          Serial.print("BIOZ digital HPF requested: ");
+          printHzOrBypass(requestedBiozDhpfHz(bioz_dhpf), 2U);
+          Serial.print(" (selector ");
+          Serial.print(bioz_dhpf);
+          Serial.println(")");
         } else {
           Serial.println("BIOZ digital HPF must be 0-3");
         }
@@ -697,7 +902,7 @@ void handleParameterCommand(const char* command) {
       case 'f':  // BIOZ frequency
         if (value >= 125 && value <= 128000) {
           bioz_frequency = value;
-          Serial.print("BIOZ frequency set to: ");
+          Serial.print("BIOZ frequency requested: ");
           Serial.print(value);
           Serial.println(" Hz");
         } else {
@@ -708,7 +913,7 @@ void handleParameterCommand(const char* command) {
       case 'c':  // BIOZ current
         if (value >= 0 && value <= 96000) {
           bioz_current = value;
-          Serial.print("BIOZ current set to: ");
+          Serial.print("BIOZ current requested: ");
           Serial.print(value);
           Serial.println(" nA");
         } else {
@@ -718,16 +923,16 @@ void handleParameterCommand(const char* command) {
 
       case 'p':  // BIOZ phase
         bioz_phase = value;
-        Serial.print("BIOZ phase set to: ");
+        Serial.print("BIOZ phase requested: ");
         Serial.print(value);
-        Serial.println(" degrees");
+        Serial.println(" deg");
         break;
 
       case 'l':  // BIOZ lead bias
         if (value == 0 || value == 1) {
           bioz_leadbias = (value == 1);
-          Serial.print("BIOZ lead bias set to: ");
-          Serial.println(value ? "ON" : "OFF");
+          Serial.print("BIOZ lead bias requested: ");
+          Serial.println(onOffLabel(bioz_leadbias));
         } else {
           Serial.println("BIOZ lead bias must be 0 or 1");
         }
@@ -736,8 +941,8 @@ void handleParameterCommand(const char* command) {
       case 'o':  // BIOZ lead-off detect
         if (value == 0 || value == 1) {
           bioz_leadsoffdetect = (value == 1);
-          Serial.print("BIOZ lead-off detect set to: ");
-          Serial.println(value ? "ON" : "OFF");
+          Serial.print("BIOZ lead-off detect requested: ");
+          Serial.println(onOffLabel(bioz_leadsoffdetect));
         } else {
           Serial.println("BIOZ lead-off must be 0 or 1");
         }
@@ -746,8 +951,8 @@ void handleParameterCommand(const char* command) {
       case 'w':  // BIOZ wires
         if (value == 2 || value == 4) {
           bioz_fourleads = (value == 4);
-          Serial.print("BIOZ wires set to: ");
-          Serial.println(value);
+          Serial.print("BIOZ wiring requested: ");
+          Serial.println(bioz_fourleads ? "4-wire" : "2-wire");
         } else {
           Serial.println("BIOZ wires must be 2 or 4");
         }
@@ -766,7 +971,7 @@ void handleParameterCommand(const char* command) {
       case 'a':  // Scan averages
         if (value >= 1 && value <= 8) {
           scan_avg = value;
-          Serial.print("Scan averages set to: ");
+          Serial.print("Scan averages requested: ");
           Serial.println(value);
         } else {
           Serial.println("Scan averages must be 1-8");
@@ -776,8 +981,8 @@ void handleParameterCommand(const char* command) {
       case 'f':  // Scan fast mode
         if (value == 0 || value == 1) {
           scan_fast = (value == 1);
-          Serial.print("Scan fast mode set to: ");
-          Serial.println(value ? "ON" : "OFF");
+          Serial.print("Scan speed requested: ");
+          Serial.println(scan_fast ? "~64 sps BIOZ" : "~32 sps BIOZ");
         } else {
           Serial.println("Scan fast mode must be 0 or 1");
         }
@@ -786,8 +991,8 @@ void handleParameterCommand(const char* command) {
       case 'r':  // Scan full range
         if (value == 0 || value == 1) {
           scan_fullrange = (value == 1);
-          Serial.print("Scan full range set to: ");
-          Serial.println(value ? "ON" : "OFF");
+          Serial.print("Scan range requested: ");
+          Serial.println(scan_fullrange ? "128 kHz down to 125 Hz" : "128 kHz down to 1 kHz");
         } else {
           Serial.println("Scan full range must be 0 or 1");
         }
@@ -796,7 +1001,7 @@ void handleParameterCommand(const char* command) {
       case 'i':  // Scan internal resistor
         if (value == 0 || value == 1) {
           scan_internal = (value == 1);
-          Serial.print("Scan source set to: ");
+          Serial.print("Scan source requested: ");
           Serial.println(scan_internal ? "INTERNAL RESISTOR" : "EXTERNAL ELECTRODES");
         } else {
           Serial.println("Scan source must be 0 or 1");
@@ -816,7 +1021,7 @@ void handleParameterCommand(const char* command) {
       case 'r':  // Calibration resistor
         if (value > 0 && value <= 100000) {
           cal_resistance = value;
-          Serial.print("Calibration resistor set to: ");
+          Serial.print("Calibration resistor requested: ");
           Serial.print(value);
           Serial.println(" Ohm");
         } else {
@@ -827,20 +1032,30 @@ void handleParameterCommand(const char* command) {
       case 'm':  // Calibration modulation
         if (value >= 0 && value <= 3) {
           cal_modulation = value;
-          Serial.print("Calibration modulation set to: ");
-          Serial.println(value);
+          Serial.print("Calibration modulation requested: ");
+          if (cal_modulation == 0U) {
+            Serial.println("DC only");
+          } else {
+            Serial.print(requestedCalibrationModulationOhm(cal_resistance, cal_modulation), 1);
+            Serial.print(" Ohm step (selector ");
+            Serial.print(cal_modulation);
+            Serial.println(")");
+          }
         } else {
           Serial.println("Calibration modulation must be 0-3");
         }
         break;
 
       case 'f':  // Calibration modulation frequency
-        if (value >= 0 && value <= 3) {
+        if (value >= 0 && value <= 4) {
           cal_mod_freq = value;
-          Serial.print("Calibration modulation frequency set to: ");
-          Serial.println(value);
+          Serial.print("Calibration modulation frequency requested: ");
+          Serial.print(requestedCalibrationModulationFrequencyHz(cal_mod_freq), 4);
+          Serial.print(" Hz (selector ");
+          Serial.print(cal_mod_freq);
+          Serial.println(")");
         } else {
-          Serial.println("Calibration mod frequency must be 0-3");
+          Serial.println("Calibration mod frequency must be 0-4");
         }
         break;
 
