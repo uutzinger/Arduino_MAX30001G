@@ -144,19 +144,20 @@ When you open the serial monitor and type `?`, the sketch prints this help menu:
 | m1: ECG mode                           | .: toggle start/stop                |
 | m2: BIOZ mode                          | >: start measurement                |
 | m3: ECG + BIOZ mode                    | <: stop measurement                 |
-| m4: ECG calibration                    |                                     |
-| m5: BIOZ calibration                   |                                     |
-| m6: BIOZ internal cal                  |                                     |
-| m7: BIOZ external cal                  |                                     |
-| m8: BIOZ scan                          |                                     |
+| m4: ECG signal calibration             |                                     |
+| m5: BIOZ signal calibration            |                                     |
+| m6: BIOZ internal impedance            |                                     |
+| m7: BIOZ external impedance            |                                     |
+| m8: BIOZ impedance spectroscopy        |                                     |
 |========================================|=====================================|
 | ECG SETTINGS                           | BIOZ SETTINGS                       |
 |----------------------------------------|-------------------------------------|
 | Es<n>: speed      (0-2)     Es1        | Bs<n>: speed      (0-1)     Bs0     |
 | Eg<n>: gain       (0-3)     Eg2        | Bg<n>: gain       (0-3)     Bg1     |
-| El<n>: leads      (2 or 3)  El3        | Ba<n>: analog HPF (0-7)     Ba1     |
-| Er<n>: R-to-R     (0=off,1) Er1        | Bd<n>: digital LPF(0-3)     Bd1     |
-|                                        | Bh<n>: digital HPF(0-3)     Bh0     |
+| El<n>: dig LPF (0-3,255)   El255       | Ba<n>: analog HPF (0-7)     Ba1     |
+| Eh<n>: dig HPF (0-1,255)   Eh255       | Bd<n>: digital LPF(0-3)     Bd1     |
+| Ee<n>: leads      (2 or 3)  Ee3        | Bh<n>: digital HPF(0-3)     Bh0     |
+| Er<n>: R-to-R     (0=off,1) Er1        |                                     |
 |                                        | Bf<n>: frequency Hz         Bf8000  |
 |                                        | Bc<n>: current nA           Bc8000  |
 |                                        | Bp<n>: phase deg            Bp0     |
@@ -169,8 +170,8 @@ When you open the serial monitor and type `?`, the sketch prints this help menu:
 | Sa<n>: averages   (1-8)     Sa8        | Cr<n>: internal resistor    Cr1000  |
 | Sf<n>: fast mode  (0=off,1) Sf0        | Cm<n>: cal modulation(0-3)  Cm0     |
 | Sr<n>: full range (0=off,1) Sr0        | Cf<n>: mod frequency(0-4)   Cf3     |
-| Si<n>: source     (0=ext,1=int) Si0    |                                     |
-| Sp<n>: phase rng  (0=full,1) Sp0       |                                     |
+| Si<n>: source     (0=ext,1=int) Si0    | Ce<n>: ECG sig mode(0/1)   Ce1     |
+| Sp<n>: phase rng  (0=full,1) Sp0       | Cb<n>: BIOZ sig mode(0/1)  Cb0     |
 | Sh<n>: int AHPF   (255,0-7) Sh255      |                                     |
 | St<n>: settle     (1-64)    St24       |                                     |
 | Sc<n>: cur settle (1-64)    Sc24       |                                     |

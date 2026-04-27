@@ -42,6 +42,19 @@
 // Serial Communication
 #define BAUD_RATE 115200  
 
+// Startup, FIFO, and timeout policy
+const uint32_t PLL_STARTUP_SETTLE_MS            = 500U;
+const uint32_t PLL_STATUS_CLEAR_MS              = 10U;
+const uint32_t SCAN_TIMEOUT_MS                  = 180000U;
+const uint32_t ECG_DATA_TIMEOUT_MIN_MS          = 100U;
+const uint32_t BIOZ_DATA_TIMEOUT_MIN_MS         = 250U;
+const uint8_t  ECG_FIFO_INTERRUPT_THRESHOLD     = 32U;
+const uint8_t  BIOZ_FIFO_INTERRUPT_THRESHOLD    = 8U;
+const uint8_t  ECG_CAL_FIFO_INTERRUPT_THRESHOLD = 8U;
+const uint8_t  BIOZ_IMPEDANCE_FIFO_THRESHOLD    = 1U;
+const uint8_t  NO_FIFO_THRESHOLD_OVERRIDE       = 255U;
+const uint8_t  ECG_FILTER_AUTO                  = 255U;
+
 // Hardware Pin Connections
 // Adjust these to match your hardware configuration
 const uint8_t AFE_CS_PIN  = 6;    // SPI chip select
@@ -75,6 +88,8 @@ uint8_t ecg_speed = 1;        // 0=~125sps, 1=~256sps, 2=~512sps
 uint8_t ecg_gain = 2;         // 0=20V/V, 1=40V/V, 2=80V/V, 3=160V/V
 bool ecg_threeleads = true;   // true=3-lead, false=2-lead
 bool ecg_rtor = true;         // Enable R-to-R detection
+uint8_t ecg_lpf = ECG_FILTER_AUTO; // 0=bypass, 1=40Hz, 2=100Hz, 3=150Hz, 255=mode default
+uint8_t ecg_hpf = ECG_FILTER_AUTO; // 0=bypass, 1=0.5Hz, 255=mode default
 
 // BIOZ Configuration  
 uint8_t bioz_speed = 0;       // 0=low-rate (~25-32sps), 1=high-rate (~50-64sps)
@@ -103,12 +118,13 @@ uint8_t scan_current_change_settle_samples = 24U; // Samples to discard after cu
 uint32_t cal_resistance = 1000;  // Internal calibration resistor value (Ohms)
 uint8_t cal_modulation = 0;      // Calibration modulation mode
 uint8_t cal_mod_freq = 3;        // Calibration modulation frequency
+bool ecg_cal_unipolar = true;    // ECG VCAL mode: true=unipolar, false=bipolar
+bool bioz_cal_unipolar = false;  // BIOZ VCAL mode: true=unipolar, false=bipolar
 
 // BIOZ signal calibration uses internal VCAL voltage, not drive current.
 // Keep this mode raw because Ohm conversion divides by BIOZ current magnitude.
 const bool BIOZ_CAL_ROUTE_ECG = false;
 const bool BIOZ_CAL_ROUTE_BIOZ = true;
-const bool BIOZ_CAL_UNIPOLAR = false; // false=bipolar, true=unipolar
 const bool BIOZ_CAL_0P5_MV = true;    // false=0.25mV, true=0.5mV
 const uint8_t BIOZ_CAL_FCAL_1HZ = 0b100;
 const uint8_t BIOZ_CAL_DUTY_PERCENT = 50;
@@ -125,6 +141,14 @@ float sampling_rate = 0.0f;
 char serial_input_buff[128];
 uint8_t serial_index = 0;
 bool serial_command_complete = false;
+uint32_t last_ecg_data_ms = 0;
+uint32_t last_bioz_data_ms = 0;
+uint32_t mode_start_ms = 0;
+uint8_t active_ecg_fifo_threshold = ECG_FIFO_INTERRUPT_THRESHOLD;
+uint8_t active_bioz_fifo_threshold = BIOZ_FIFO_INTERRUPT_THRESHOLD;
+bool ecg_timeout_reported = false;
+bool bioz_timeout_reported = false;
+bool scan_timeout_reported = false;
 const char waitmsg[] = {"Waiting for serial terminal (5 seconds, press Enter to skip)"};
 extern int currentLogLevel;
 
@@ -134,6 +158,236 @@ MAX30001G afe(AFE_CS_PIN, AFE_INT1_PIN, AFE_INT2_PIN);
 /******************************************************************************************************/
 // Helper Functions
 /******************************************************************************************************/
+
+void displayData();
+void printHzOrBypass(float hz, uint8_t decimals = 2U);
+
+struct ModeRuntimePolicy {
+  bool expect_ecg;
+  bool expect_bioz;
+  bool bioz_raw;
+  bool expect_scan;
+  bool warmup_update_before_settle;
+  bool synch_after_post_reset;
+  uint8_t ecg_fifo_threshold;
+  uint8_t bioz_fifo_threshold;
+  const char* ecg_label;
+  const char* bioz_label;
+};
+
+ModeRuntimePolicy getModeRuntimePolicy(OperationMode mode) {
+  switch (mode) {
+    case MODE_ECG:
+      return {true, false, false, false, false, false,
+              ECG_FIFO_INTERRUPT_THRESHOLD, BIOZ_FIFO_INTERRUPT_THRESHOLD,
+              "ECG [mV]: ", nullptr};
+    case MODE_BIOZ:
+      return {false, true, false, false, false, false,
+              ECG_FIFO_INTERRUPT_THRESHOLD, BIOZ_FIFO_INTERRUPT_THRESHOLD,
+              nullptr, "BIOZ [Ohm]: "};
+    case MODE_ECG_BIOZ:
+      return {true, true, false, false, false, false,
+              ECG_FIFO_INTERRUPT_THRESHOLD, BIOZ_FIFO_INTERRUPT_THRESHOLD,
+              "ECG [mV]: ", "BIOZ [Ohm]: "};
+    case MODE_ECG_CAL:
+      return {true, false, false, false, false, false,
+              ECG_CAL_FIFO_INTERRUPT_THRESHOLD, BIOZ_FIFO_INTERRUPT_THRESHOLD,
+              "ECG_Cal_[mV]: ", nullptr};
+    case MODE_BIOZ_CAL:
+      return {false, true, true, false, false, false,
+              ECG_FIFO_INTERRUPT_THRESHOLD, BIOZ_FIFO_INTERRUPT_THRESHOLD,
+              nullptr, "BIOZ_Cal_[raw]: "};
+    case MODE_BIOZ_INTERNAL_CAL:
+      return {false, true, false, false, false, true,
+              ECG_FIFO_INTERRUPT_THRESHOLD, BIOZ_IMPEDANCE_FIFO_THRESHOLD,
+              nullptr, "BIOZ [Ohm]: "};
+    case MODE_BIOZ_EXTERNAL_CAL:
+      return {false, true, false, false, false, true,
+              ECG_FIFO_INTERRUPT_THRESHOLD, BIOZ_IMPEDANCE_FIFO_THRESHOLD,
+              nullptr, "BIOZ [Ohm]: "};
+    case MODE_BIOZ_SCAN:
+      return {false, false, false, true, true, false,
+              NO_FIFO_THRESHOLD_OVERRIDE, NO_FIFO_THRESHOLD_OVERRIDE,
+              nullptr, nullptr};
+    case MODE_IDLE:
+    default:
+      return {false, false, false, false, false, false,
+              NO_FIFO_THRESHOLD_OVERRIDE, NO_FIFO_THRESHOLD_OVERRIDE,
+              nullptr, nullptr};
+  }
+}
+
+void clearDataBuffers() {
+  ECG_data.clear();
+  BIOZ_data.clear();
+  RTOR_data.clear();
+  BIOZ_spectrum.clear();
+}
+
+void resetRuntimeMonitoringState() {
+  const uint32_t now = millis();
+  last_ecg_data_ms = now;
+  last_bioz_data_ms = now;
+  mode_start_ms = now;
+  ecg_timeout_reported = false;
+  bioz_timeout_reported = false;
+  scan_timeout_reported = false;
+}
+
+void applyModeFifoThresholds(const ModeRuntimePolicy& policy) {
+  if (policy.ecg_fifo_threshold == NO_FIFO_THRESHOLD_OVERRIDE ||
+      policy.bioz_fifo_threshold == NO_FIFO_THRESHOLD_OVERRIDE) {
+    active_ecg_fifo_threshold = ECG_FIFO_INTERRUPT_THRESHOLD;
+    active_bioz_fifo_threshold = BIOZ_FIFO_INTERRUPT_THRESHOLD;
+    return;
+  }
+
+  active_ecg_fifo_threshold = policy.ecg_fifo_threshold;
+  active_bioz_fifo_threshold = policy.bioz_fifo_threshold;
+  afe.setFIFOInterruptThreshold(active_ecg_fifo_threshold, active_bioz_fifo_threshold);
+}
+
+uint32_t computeDataTimeoutMs(float sampling_rate_sps, uint8_t fifo_threshold, uint8_t multiplier, uint32_t minimum_ms) {
+  if (sampling_rate_sps <= 0.0f || fifo_threshold == 0U) {
+    return minimum_ms;
+  }
+
+  const float threshold_period_ms = (1000.0f * static_cast<float>(fifo_threshold)) / sampling_rate_sps;
+  const uint32_t computed_ms = static_cast<uint32_t>(threshold_period_ms * static_cast<float>(multiplier));
+  return (computed_ms < minimum_ms) ? minimum_ms : computed_ms;
+}
+
+uint32_t getEcgDataTimeoutMs() {
+  return computeDataTimeoutMs(ECG_samplingRate, active_ecg_fifo_threshold, 3U, ECG_DATA_TIMEOUT_MIN_MS);
+}
+
+uint32_t getBiozDataTimeoutMs() {
+  return computeDataTimeoutMs(BIOZ_samplingRate, active_bioz_fifo_threshold, 4U, BIOZ_DATA_TIMEOUT_MIN_MS);
+}
+
+bool reportPllStatus(const char* context) {
+  afe.readStatusRegisters();
+  const uint32_t status_word = status.all & 0x00FFFFFFUL;
+  const bool pll_unlocked = ((status_word & MAX30001_STATUS_PLLINT) != 0U);
+
+  Serial.print(context);
+  Serial.print(" PLL: ");
+  Serial.print(pll_unlocked ? "UNLOCKED" : "OK");
+  Serial.print(" (STATUS=0x");
+  Serial.print(status_word, HEX);
+  Serial.println(")");
+
+  if (pll_unlocked) {
+    Serial.println("PLL remains unlocked after startup; check the MAX30001G external clock/oscillator.");
+  }
+
+  return !pll_unlocked;
+}
+
+void handlePostStartActions() {
+  const ModeRuntimePolicy policy = getModeRuntimePolicy(current_mode);
+  if (policy.warmup_update_before_settle) {
+    afe.update(current_mode == MODE_BIOZ_CAL);
+  }
+
+  delay(PLL_STARTUP_SETTLE_MS);
+  afe.readStatusRegisters(); // Clear startup PLLINT if it latched before PLL settled.
+  delay(PLL_STATUS_CLEAR_MS);
+  afe.FIFOReset(); // Discard samples collected during PLL warm-up.
+  if (policy.synch_after_post_reset) {
+    afe.synch();
+  }
+  clearDataBuffers();
+  resetRuntimeMonitoringState();
+  reportPllStatus("Startup active");
+}
+
+void startMeasurement() {
+  afe.start();
+  measurement_running = true;
+  sample_count = 0;
+  last_sample_count = 0;
+  last_time = millis();
+  clearDataBuffers();
+  resetRuntimeMonitoringState();
+  handlePostStartActions();
+  Serial.println("Measurement started");
+}
+
+void stopMeasurement() {
+  afe.stop();
+  measurement_running = false;
+  ecg_timeout_reported = false;
+  bioz_timeout_reported = false;
+  scan_timeout_reported = false;
+}
+
+void checkDataTimeouts() {
+  if (!measurement_running) {
+    return;
+  }
+
+  const ModeRuntimePolicy policy = getModeRuntimePolicy(current_mode);
+  const uint32_t now = millis();
+
+  if (policy.expect_scan && !scan_timeout_reported && ((now - mode_start_ms) >= SCAN_TIMEOUT_MS)) {
+    Serial.println("FAIL: BIOZ scan timed out before a spectrum was available.");
+    reportPllStatus("Timeout");
+    afe.printStatus();
+    scan_timeout_reported = true;
+    stopMeasurement();
+    return;
+  }
+
+  const uint32_t ecg_timeout_ms = getEcgDataTimeoutMs();
+  const uint32_t bioz_timeout_ms = getBiozDataTimeoutMs();
+  const bool ecg_timed_out = policy.expect_ecg && !ecg_timeout_reported &&
+                             ((now - last_ecg_data_ms) >= ecg_timeout_ms);
+  const bool bioz_timed_out = policy.expect_bioz && !bioz_timeout_reported &&
+                              ((now - last_bioz_data_ms) >= bioz_timeout_ms);
+
+  if (!ecg_timed_out && !bioz_timed_out) {
+    return;
+  }
+
+  if (ecg_timed_out) {
+    Serial.print("No ECG data after ");
+    Serial.print(ecg_timeout_ms);
+    Serial.println(" ms; switching to direct FIFO read.");
+    afe.readECG_FIFO(false);
+  }
+
+  if (bioz_timed_out) {
+    Serial.print("No ");
+    Serial.print(policy.bioz_raw ? "raw BIOZ" : "BIOZ");
+    Serial.print(" data after ");
+    Serial.print(bioz_timeout_ms);
+    Serial.println(" ms; switching to direct FIFO read.");
+    afe.readBIOZ_FIFO(policy.bioz_raw);
+  }
+
+  displayData();
+
+  bool report_failure = false;
+  if (ecg_timed_out && ((millis() - last_ecg_data_ms) >= ecg_timeout_ms)) {
+    Serial.println("FAIL: No ECG data from ECG_data or direct FIFO read.");
+    ecg_timeout_reported = true;
+    report_failure = true;
+  }
+
+  if (bioz_timed_out && ((millis() - last_bioz_data_ms) >= bioz_timeout_ms)) {
+    Serial.print("FAIL: No ");
+    Serial.print(policy.bioz_raw ? "raw BIOZ" : "BIOZ");
+    Serial.println(" data from BIOZ_data or direct FIFO read.");
+    bioz_timeout_reported = true;
+    report_failure = true;
+  }
+
+  if (report_failure) {
+    reportPllStatus("Failure");
+    afe.printStatus();
+  }
+}
 
 // Boot helper - prints message and waits until timeout or user input
 void serialTrigger(const char* mess, int timeout) {
@@ -167,6 +421,10 @@ const char* onOffLabel(bool enabled) {
   return enabled ? "ON" : "OFF";
 }
 
+const char* calSignalModeLabel(bool unipolar) {
+  return unipolar ? "unipolar" : "bipolar";
+}
+
 const char* scanPhaseRangeLabel(BIOZScanPhaseRange range) {
   return (range == BIOZ_SCAN_PHASE_REDUCED) ? "reduced(0/45/90/135 deg)" : "full";
 }
@@ -178,6 +436,63 @@ float requestedEcgSamplingRateSps(uint8_t selector) {
     case 2: return 512.0f;
     default: return 0.0f;
   }
+}
+
+float requestedEcgLpfHz(uint8_t selector) {
+  switch (selector) {
+    case 1: return 40.0f;
+    case 2: return 100.0f;
+    case 3: return 150.0f;
+    default: return 0.0f;
+  }
+}
+
+float requestedEcgHpfHz(uint8_t selector) {
+  return (selector == 1U) ? 0.5f : 0.0f;
+}
+
+uint8_t defaultEcgLpfSelector(OperationMode mode, uint8_t speed) {
+  (void)mode;
+  switch (speed) {
+    case 0U: return 1U;
+    case 1U: return 2U;
+    case 2U:
+    default: return 3U;
+  }
+}
+
+uint8_t defaultEcgHpfSelector(OperationMode mode) {
+  (void)mode;
+  return 0U;
+}
+
+uint8_t resolvedEcgLpfSelector(OperationMode mode) {
+  return (ecg_lpf == ECG_FILTER_AUTO) ? defaultEcgLpfSelector(mode, ecg_speed) : ecg_lpf;
+}
+
+uint8_t resolvedEcgHpfSelector(OperationMode mode) {
+  return (ecg_hpf == ECG_FILTER_AUTO) ? defaultEcgHpfSelector(mode) : ecg_hpf;
+}
+
+void printRequestedEcgFilterSummary(OperationMode mode) {
+  Serial.print("  Requested HPF: ");
+  if (ecg_hpf == ECG_FILTER_AUTO) {
+    Serial.print("auto (");
+    printHzOrBypass(requestedEcgHpfHz(defaultEcgHpfSelector(mode)), 2U);
+    Serial.print(")");
+  } else {
+    printHzOrBypass(requestedEcgHpfHz(ecg_hpf), 2U);
+  }
+
+  Serial.print(" | Requested LPF: ");
+  if (ecg_lpf == ECG_FILTER_AUTO) {
+    Serial.print("auto (");
+    printHzOrBypass(requestedEcgLpfHz(defaultEcgLpfSelector(mode, ecg_speed)), 0U);
+    Serial.print(")");
+  } else {
+    printHzOrBypass(requestedEcgLpfHz(ecg_lpf), 0U);
+  }
+  Serial.println();
 }
 
 float requestedBiozSamplingRateSps(uint8_t selector) {
@@ -269,7 +584,7 @@ const char* scanAhpfOverrideLabel(uint8_t selector) {
   }
 }
 
-void printHzOrBypass(float hz, uint8_t decimals = 2U) {
+void printHzOrBypass(float hz, uint8_t decimals) {
   if (hz <= 0.0f) {
     Serial.print("bypass");
   } else {
@@ -296,6 +611,44 @@ void printAppliedBiozSummary() {
   Serial.print(" nA, ");
   Serial.print(BIOZ_phase, 2);
   Serial.println(" deg");
+}
+
+void printAppliedBiozSignalCalibrationSummary() {
+  Serial.print("  Applied BIOZ Cal: ");
+  Serial.print(BIOZ_samplingRate, 1);
+  Serial.print(" sps, ");
+  Serial.print(BIOZ_gain);
+  Serial.print(" V/V, VCAL ");
+  Serial.print(calSignalModeLabel(bioz_cal_unipolar));
+  Serial.print(", ");
+  Serial.print(BIOZ_CAL_0P5_MV ? "0.5 mV" : "0.25 mV");
+  Serial.print(", ");
+  Serial.print(CAL_fcal, 4);
+  Serial.print(" Hz, ");
+  Serial.print(BIOZ_CAL_DUTY_PERCENT == 50 ? "50% duty" : "custom duty");
+  Serial.print(", AHPF ");
+  printHzOrBypass(BIOZ_ahpf, 0U);
+  Serial.print(", DLPF ");
+  printHzOrBypass(BIOZ_dlpf, 2U);
+  Serial.print(", DHPF ");
+  printHzOrBypass(BIOZ_dhpf, 2U);
+  Serial.println(", current generator OFF");
+}
+
+void printAppliedEcgSignalCalibrationSummary() {
+  Serial.print("  Applied ECG Cal: ");
+  Serial.print(ECG_samplingRate, 1);
+  Serial.print(" sps, ");
+  Serial.print(ECG_gain);
+  Serial.print(" V/V, VCAL ");
+  Serial.print(calSignalModeLabel(ecg_cal_unipolar));
+  Serial.print(", 0.5 mV, ");
+  Serial.print(CAL_fcal, 4);
+  Serial.print(" Hz, 50% duty, DHPF ");
+  printHzOrBypass(ECG_hpf, 2U);
+  Serial.print(", DLPF ");
+  printHzOrBypass(ECG_lpf, 0U);
+  Serial.println();
 }
 
 void printAppliedEcgSummary() {
@@ -330,19 +683,20 @@ void helpMenu() {
   Serial.println("| m1: ECG mode                           | .: toggle start/stop                |");
   Serial.println("| m2: BIOZ mode                          | >: start measurement                |");
   Serial.println("| m3: ECG + BIOZ mode                    | <: stop measurement                 |");
-  Serial.println("| m4: ECG calibration                    |                                     |");
-  Serial.println("| m5: BIOZ calibration                   |                                     |");
-  Serial.println("| m6: BIOZ internal cal                  |                                     |");
-  Serial.println("| m7: BIOZ external cal                  |                                     |");
-  Serial.println("| m8: BIOZ scan                          |                                     |");
+  Serial.println("| m4: ECG signal calibration             |                                     |");
+  Serial.println("| m5: BIOZ signal calibration            |                                     |");
+  Serial.println("| m6: BIOZ internal impedance            |                                     |");
+  Serial.println("| m7: BIOZ external impedance            |                                     |");
+  Serial.println("| m8: BIOZ impedance spectroscopy        |                                     |");
   Serial.println("|========================================|=====================================|");
   Serial.println("| ECG SETTINGS                           | BIOZ SETTINGS                       |");
   Serial.println("|----------------------------------------|-------------------------------------|");
   Serial.println("| Es<n>: speed      (0-2)     Es1        | Bs<n>: speed      (0-1)     Bs0     |");
   Serial.println("| Eg<n>: gain       (0-3)     Eg2        | Bg<n>: gain       (0-3)     Bg1     |");
-  Serial.println("| El<n>: leads      (2 or 3)  El3        | Ba<n>: analog HPF (0-7)     Ba1     |");
-  Serial.println("| Er<n>: R-to-R     (0=off,1) Er1        | Bd<n>: digital LPF(0-3)     Bd1     |");
-  Serial.println("|                                        | Bh<n>: digital HPF(0-3)     Bh0     |");
+  Serial.println("| El<n>: dig LPF (0-3,255)   El255       | Ba<n>: analog HPF (0-7)     Ba1     |");
+  Serial.println("| Eh<n>: dig HPF (0-1,255)   Eh255       | Bd<n>: digital LPF(0-3)     Bd1     |");
+  Serial.println("| Ee<n>: leads      (2 or 3)  Ee3        | Bh<n>: digital HPF(0-3)     Bh0     |");
+  Serial.println("| Er<n>: R-to-R     (0=off,1) Er1        |                                     |");
   Serial.println("|                                        | Bf<n>: frequency Hz         Bf8000  |");
   Serial.println("|                                        | Bc<n>: current nA           Bc8000  |");
   Serial.println("|                                        | Bp<n>: phase deg            Bp0     |");
@@ -355,8 +709,8 @@ void helpMenu() {
   Serial.println("| Sa<n>: averages   (1-8)     Sa8        | Cr<n>: internal resistor    Cr1000  |");
   Serial.println("| Sf<n>: fast mode  (0=off,1) Sf0        | Cm<n>: cal modulation(0-3)  Cm0     |");
   Serial.println("| Sr<n>: full range (0=off,1) Sr0        | Cf<n>: mod frequency(0-4)   Cf3     |");
-  Serial.println("| Si<n>: source     (0=ext,1=int) Si0    |                                     |");
-  Serial.println("| Sp<n>: phase rng  (0=full,1) Sp0       |                                     |");
+  Serial.println("| Si<n>: source     (0=ext,1=int) Si0    | Ce<n>: ECG sig mode(0/1)   Ce1     |");
+  Serial.println("| Sp<n>: phase rng  (0=full,1) Sp0       | Cb<n>: BIOZ sig mode(0/1)  Cb0     |");
   Serial.println("| Sh<n>: int AHPF   (255,0-7) Sh255      |                                     |");
   Serial.println("| St<n>: settle     (1-64)    St24       |                                     |");
   Serial.println("| Sc<n>: cur settle (1-64)    Sc24       |                                     |");
@@ -402,11 +756,15 @@ void showSettings() {
   Serial.print(" V/V (selector ");
   Serial.print(ecg_gain);
   Serial.println(")");
+  printRequestedEcgFilterSummary(current_mode);
   Serial.print("  Leads: ");
   Serial.println(ecg_threeleads ? "3-lead" : "2-lead");
   Serial.print("  R-to-R: ");
   Serial.println(onOffLabel(ecg_rtor));
-  if (current_mode == MODE_ECG || current_mode == MODE_ECG_BIOZ || current_mode == MODE_ECG_CAL) {
+  if (current_mode == MODE_ECG_CAL) {
+    Serial.println("  Note: ECG signal calibration uses internal VCAL; ECG digital HPF/LPF remain active.");
+    printAppliedEcgSignalCalibrationSummary();
+  } else if (current_mode == MODE_ECG || current_mode == MODE_ECG_BIOZ) {
     printAppliedEcgSummary();
   }
   Serial.println("--------------------------------------------------------------------------------");
@@ -447,9 +805,11 @@ void showSettings() {
   Serial.print(onOffLabel(bioz_leadsoffdetect));
   Serial.print(" | Wires: ");
   Serial.println(bioz_fourleads ? "4-wire" : "2-wire");
-  if (current_mode == MODE_BIOZ || current_mode == MODE_ECG_BIOZ ||
-      current_mode == MODE_BIOZ_CAL || current_mode == MODE_BIOZ_INTERNAL_CAL ||
-      current_mode == MODE_BIOZ_EXTERNAL_CAL) {
+  if (current_mode == MODE_BIOZ_CAL) {
+    Serial.println("  Note: signal calibration overrides normal BIOZ drive frequency/current/phase and forces bypass filters.");
+    printAppliedBiozSignalCalibrationSummary();
+  } else if (current_mode == MODE_BIOZ || current_mode == MODE_ECG_BIOZ ||
+             current_mode == MODE_BIOZ_INTERNAL_CAL || current_mode == MODE_BIOZ_EXTERNAL_CAL) {
     printAppliedBiozSummary();
   }
   Serial.println("--------------------------------------------------------------------------------");
@@ -488,6 +848,10 @@ void showSettings() {
   Serial.print(" Hz (selector ");
   Serial.print(cal_mod_freq);
   Serial.println(")");
+  Serial.print("  ECG Sig Mode: ");
+  Serial.print(calSignalModeLabel(ecg_cal_unipolar));
+  Serial.print(" | BIOZ Sig Mode: ");
+  Serial.println(calSignalModeLabel(bioz_cal_unipolar));
   if (current_mode == MODE_BIOZ_INTERNAL_CAL) {
     Serial.print("  Applied BIST: RNOM ");
     Serial.print(BIOZ_test_rnom, 1);
@@ -502,10 +866,11 @@ void showSettings() {
 
 // Apply current settings to AFE (setup based on mode)
 void applySettings() {
+  const ModeRuntimePolicy policy = getModeRuntimePolicy(current_mode);
+
   if (measurement_running) {
     Serial.println("Stopping measurement before applying new settings...");
-    afe.stop();
-    measurement_running = false;
+    stopMeasurement();
     delay(100);
   }
 
@@ -515,6 +880,12 @@ void applySettings() {
   switch (current_mode) {
     case MODE_ECG:
       afe.setupECG(ecg_speed, ecg_gain, ecg_threeleads);
+      afe.setECGfilter(resolvedEcgLpfSelector(current_mode), resolvedEcgHpfSelector(current_mode));
+      applyModeFifoThresholds(policy);
+      if (!ecg_rtor) {
+        afe.setDefaultNoRtoR();
+        RTOR_data.clear();
+      }
       Serial.println("ECG mode configured");
       printAppliedEcgSummary();
       break;
@@ -523,6 +894,7 @@ void applySettings() {
       afe.setupBIOZ(bioz_speed, bioz_gain, bioz_ahpf, bioz_dlpf, bioz_dhpf,
                     bioz_frequency, bioz_current, bioz_phase,
                     bioz_leadbias, bioz_leadsoffdetect, bioz_fourleads);
+      applyModeFifoThresholds(policy);
       Serial.println("BIOZ mode configured");
       printAppliedBiozSummary();
       break;
@@ -532,6 +904,12 @@ void applySettings() {
                           bioz_speed, bioz_gain, bioz_dlpf, bioz_dhpf,
                           bioz_frequency, bioz_current, bioz_phase,
                           bioz_leadbias, bioz_leadsoffdetect, bioz_fourleads);
+      afe.setECGfilter(resolvedEcgLpfSelector(current_mode), resolvedEcgHpfSelector(current_mode));
+      applyModeFifoThresholds(policy);
+      if (!ecg_rtor) {
+        afe.setDefaultNoRtoR();
+        RTOR_data.clear();
+      }
       Serial.println("ECG+BIOZ mode configured");
       printAppliedEcgSummary();
       printAppliedBiozSummary();
@@ -539,23 +917,30 @@ void applySettings() {
 
     case MODE_ECG_CAL:
       afe.setupECGSignalCalibration(ecg_speed, ecg_gain);
+      afe.setECGfilter(resolvedEcgLpfSelector(current_mode), resolvedEcgHpfSelector(current_mode));
+      afe.setTestSignal(true, false, ecg_cal_unipolar, true, 0b100, 50);
+      applyModeFifoThresholds(policy);
       Serial.println("ECG calibration mode configured");
-      printAppliedEcgSummary();
+      printAppliedEcgSignalCalibrationSummary();
       break;
 
     case MODE_BIOZ_CAL:
       afe.setupBIOZSignalCalibration(bioz_speed, bioz_gain);
-      afe.setTestSignal(BIOZ_CAL_ROUTE_ECG, BIOZ_CAL_ROUTE_BIOZ, BIOZ_CAL_UNIPOLAR,
+      applyModeFifoThresholds(policy);
+      afe.setTestSignal(BIOZ_CAL_ROUTE_ECG, BIOZ_CAL_ROUTE_BIOZ, bioz_cal_unipolar,
                         BIOZ_CAL_0P5_MV, BIOZ_CAL_FCAL_1HZ, BIOZ_CAL_DUTY_PERCENT);
       afe.setBIOZfilter(BIOZ_CAL_AHPF_BYPASS, BIOZ_CAL_DLPF_BYPASS, BIOZ_CAL_DHPF_BYPASS);
-      Serial.println("BIOZ calibration mode configured: raw bipolar 0.5mV VCAL at ~1Hz, filters bypassed");
-      printAppliedBiozSummary();
+      Serial.print("BIOZ calibration mode configured: raw ");
+      Serial.print(calSignalModeLabel(bioz_cal_unipolar));
+      Serial.println(" 0.5mV VCAL at ~1Hz, filters bypassed");
+      printAppliedBiozSignalCalibrationSummary();
       break;
 
     case MODE_BIOZ_INTERNAL_CAL:
       afe.setupBIOZImpedanceCalibration(bioz_speed, bioz_gain, bioz_ahpf, bioz_dlpf, bioz_dhpf,
                                          bioz_frequency, bioz_current, bioz_phase,
                                          cal_resistance, cal_modulation, cal_mod_freq);
+      applyModeFifoThresholds(policy);
       Serial.println("BIOZ internal calibration mode configured");
       printAppliedBiozSummary();
       Serial.print("  Applied BIST: RNOM ");
@@ -569,6 +954,7 @@ void applySettings() {
 
     case MODE_BIOZ_EXTERNAL_CAL:
       afe.setupBIOZExternalImpedanceCalibration(bioz_frequency, bioz_phase);
+      applyModeFifoThresholds(policy);
       Serial.println("BIOZ external calibration mode configured");
       printAppliedBiozSummary();
       break;
@@ -728,19 +1114,13 @@ void handleGeneralCommand(char cmd) {
 
     case '.':  // Toggle start/stop
       if (measurement_running) {
-        afe.stop();
-        measurement_running = false;
+        stopMeasurement();
         Serial.println("Measurement stopped");
       } else {
         if (current_mode == MODE_IDLE) {
           Serial.println("Cannot start - set a mode first (m1-m8)");
         } else {
-          afe.start();
-          measurement_running = true;
-          sample_count = 0;
-          last_sample_count = 0;
-          last_time = millis();
-          Serial.println("Measurement started");
+          startMeasurement();
         }
       }
       break;
@@ -749,12 +1129,7 @@ void handleGeneralCommand(char cmd) {
       if (current_mode == MODE_IDLE) {
         Serial.println("Cannot start - set a mode first (m1-m8)");
       } else if (!measurement_running) {
-        afe.start();
-        measurement_running = true;
-        sample_count = 0;
-        last_sample_count = 0;
-        last_time = millis();
-        Serial.println("Measurement started");
+        startMeasurement();
       } else {
         Serial.println("Already running");
       }
@@ -762,8 +1137,7 @@ void handleGeneralCommand(char cmd) {
 
     case '<':  // Stop
       if (measurement_running) {
-        afe.stop();
-        measurement_running = false;
+        stopMeasurement();
         Serial.println("Measurement stopped");
       } else {
         Serial.println("Not running");
@@ -845,7 +1219,41 @@ void handleParameterCommand(const char* command) {
         }
         break;
 
-      case 'l':  // ECG leads
+      case 'l':  // ECG digital LPF
+        if ((value >= 0 && value <= 3) || value == 255) {
+          ecg_lpf = static_cast<uint8_t>(value);
+          Serial.print("ECG digital LPF requested: ");
+          if (ecg_lpf == ECG_FILTER_AUTO) {
+            Serial.print("auto (");
+            printHzOrBypass(requestedEcgLpfHz(defaultEcgLpfSelector(current_mode, ecg_speed)), 0U);
+            Serial.println(")");
+          } else {
+            printHzOrBypass(requestedEcgLpfHz(ecg_lpf), 0U);
+            Serial.println();
+          }
+        } else {
+          Serial.println("ECG digital LPF must be 0-3 or 255 (auto)");
+        }
+        break;
+
+      case 'h':  // ECG digital HPF
+        if ((value >= 0 && value <= 1) || value == 255) {
+          ecg_hpf = static_cast<uint8_t>(value);
+          Serial.print("ECG digital HPF requested: ");
+          if (ecg_hpf == ECG_FILTER_AUTO) {
+            Serial.print("auto (");
+            printHzOrBypass(requestedEcgHpfHz(defaultEcgHpfSelector(current_mode)), 2U);
+            Serial.println(")");
+          } else {
+            printHzOrBypass(requestedEcgHpfHz(ecg_hpf), 2U);
+            Serial.println();
+          }
+        } else {
+          Serial.println("ECG digital HPF must be 0-1 or 255 (auto)");
+        }
+        break;
+
+      case 'e':  // ECG leads
         if (value == 2 || value == 3) {
           ecg_threeleads = (value == 3);
           Serial.print("ECG leads requested: ");
@@ -902,6 +1310,10 @@ void handleParameterCommand(const char* command) {
         break;
 
       case 'a':  // BIOZ analog HPF
+        if (current_mode == MODE_BIOZ_CAL) {
+          Serial.println("BIOZ signal calibration forces AHPF bypass; command ignored in m5.");
+          break;
+        }
         if (value >= 0 && value <= 7) {
           bioz_ahpf = value;
           Serial.print("BIOZ analog HPF requested: ");
@@ -915,6 +1327,10 @@ void handleParameterCommand(const char* command) {
         break;
 
       case 'd':  // BIOZ digital LPF
+        if (current_mode == MODE_BIOZ_CAL) {
+          Serial.println("BIOZ signal calibration forces DLPF bypass; command ignored in m5.");
+          break;
+        }
         if (value >= 0 && value <= 3) {
           bioz_dlpf = value;
           Serial.print("BIOZ digital LPF requested: ");
@@ -928,6 +1344,10 @@ void handleParameterCommand(const char* command) {
         break;
 
       case 'h':  // BIOZ digital HPF
+        if (current_mode == MODE_BIOZ_CAL) {
+          Serial.println("BIOZ signal calibration forces DHPF bypass; command ignored in m5.");
+          break;
+        }
         if (value >= 0 && value <= 3) {
           bioz_dhpf = value;
           Serial.print("BIOZ digital HPF requested: ");
@@ -1148,6 +1568,26 @@ void handleParameterCommand(const char* command) {
         }
         break;
 
+      case 'e':  // ECG signal calibration mode
+        if (value == 0 || value == 1) {
+          ecg_cal_unipolar = (value == 1);
+          Serial.print("ECG signal calibration mode requested: ");
+          Serial.println(calSignalModeLabel(ecg_cal_unipolar));
+        } else {
+          Serial.println("ECG signal calibration mode must be 0 (bipolar) or 1 (unipolar)");
+        }
+        break;
+
+      case 'b':  // BIOZ signal calibration mode
+        if (value == 0 || value == 1) {
+          bioz_cal_unipolar = (value == 1);
+          Serial.print("BIOZ signal calibration mode requested: ");
+          Serial.println(calSignalModeLabel(bioz_cal_unipolar));
+        } else {
+          Serial.println("BIOZ signal calibration mode must be 0 (bipolar) or 1 (unipolar)");
+        }
+        break;
+
       default:
         Serial.println("Unknown Calibration command");
         break;
@@ -1190,6 +1630,7 @@ void printSpectrum(const ImpedanceSpectrum& spectrum) {
 }
 
 void displayData() {
+  const ModeRuntimePolicy policy = getModeRuntimePolicy(current_mode);
   float value = 0.0f;
   bool had_data = false;
 
@@ -1197,9 +1638,11 @@ void displayData() {
   while (ECG_data.available() > 0) {
     ECG_data.pop(value);
     if (data_reporting) {
-      Serial.print("ECG [mV]: ");
+      Serial.print(policy.ecg_label != nullptr ? policy.ecg_label : "ECG [mV]: ");
       Serial.println(value, 3);
     }
+    last_ecg_data_ms = millis();
+    ecg_timeout_reported = false;
     sample_count++;
     had_data = true;
   }
@@ -1208,14 +1651,15 @@ void displayData() {
   while (BIOZ_data.available() > 0) {
     BIOZ_data.pop(value);
     if (data_reporting) {
-      if (current_mode == MODE_BIOZ_CAL) {
-        Serial.print("BIOZ_Cal_[raw]: ");
+      Serial.print(policy.bioz_label != nullptr ? policy.bioz_label : "BIOZ [Ohm]: ");
+      if (policy.bioz_raw) {
         Serial.println(value, 0);
       } else {
-        Serial.print("BIOZ [Ohm]: ");
         Serial.println(value, 2);
       }
     }
+    last_bioz_data_ms = millis();
+    bioz_timeout_reported = false;
     sample_count++;
     had_data = true;
   }
@@ -1223,6 +1667,10 @@ void displayData() {
   // RTOR Data (R-to-R intervals)
   while (RTOR_data.available() > 0) {
     RTOR_data.pop(value);
+    if (!ecg_rtor) {
+      had_data = true;
+      continue;
+    }
     if (data_reporting) {
       Serial.print("RR [ms]: ");
       Serial.print(value, 1);
@@ -1244,12 +1692,12 @@ void displayData() {
       uint32_t time_delta = current_time - last_time;
       sampling_rate = (sample_delta * 1000.0f) / time_delta;
       
-      if (data_reporting) {
-        Serial.print("Sampling rate: ");
-        Serial.print(sampling_rate, 1);
-        Serial.print(" sps | Samples: ");
-        Serial.println(sample_count);
-      }
+      // if (data_reporting) {
+      //   Serial.print("Sampling rate: ");
+      //   Serial.print(sampling_rate, 1);
+      //   Serial.print(" sps | Samples: ");
+      //   Serial.println(sample_count);
+      // }
       
       last_sample_count = sample_count;
       last_time = current_time;
@@ -1263,7 +1711,7 @@ void displayData() {
     }
     Serial.println("BIOZ scan complete");
     printSpectrum(spectrum);
-    measurement_running = false;
+    stopMeasurement();
   }
 }
 
@@ -1337,6 +1785,7 @@ void loop() {
   if (measurement_running) {
     afe.update(current_mode == MODE_BIOZ_CAL);
     displayData();
+    checkDataTimeouts();
   }
 
   delay(1);  // Small delay to prevent overwhelming the system

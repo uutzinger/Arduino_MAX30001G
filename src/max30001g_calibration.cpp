@@ -218,8 +218,13 @@ void MAX30001G::setTestSignal(
   if (enableECGCalSignal) {
     cnfg_emux.bit.openp = 1U; // Disconnect ECGP from AFE to route calibration signal
     cnfg_emux.bit.openn = 1U; // Disconnect ECGN from AFE to route calibration signal
-    cnfg_emux.bit.calp_sel = 0b10; // VCALP interncal connection
-    cnfg_emux.bit.caln_sel = 0b11; // VCALN internal connection
+    if (unipolar) {
+      cnfg_emux.bit.calp_sel = 0b10; // ECGP = VCALP
+      cnfg_emux.bit.caln_sel = 0b01; // ECGN = VMID
+    } else {
+      cnfg_emux.bit.calp_sel = 0b10; // ECGP = VCALP
+      cnfg_emux.bit.caln_sel = 0b11; // ECGN = VCALN
+    }
   } else {
     cnfg_emux.bit.calp_sel = 0b00; // none
     cnfg_emux.bit.caln_sel = 0b00; // none
@@ -231,8 +236,13 @@ void MAX30001G::setTestSignal(
   if (enableBIOZCalSignal) {
     cnfg_bmux.bit.openp = 1U; // Open BIOZP input switch to route calibration signal
     cnfg_bmux.bit.openn = 1U; // Open BIOZN input switch to route calibration signal
-    cnfg_bmux.bit.calp_sel = 0b10; // VCALP
-    cnfg_bmux.bit.caln_sel = 0b11; // VCALN
+    if (unipolar) {
+      cnfg_bmux.bit.calp_sel = 0b10; // BIOZP = VCALP
+      cnfg_bmux.bit.caln_sel = 0b01; // BIOZN = VMID
+    } else {
+      cnfg_bmux.bit.calp_sel = 0b10; // BIOZP = VCALP
+      cnfg_bmux.bit.caln_sel = 0b11; // BIOZN = VCALN
+    }
   } else {
     cnfg_bmux.bit.calp_sel = 0b00; // none
     cnfg_bmux.bit.caln_sel = 0b00; // none
