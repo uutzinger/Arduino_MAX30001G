@@ -12,7 +12,7 @@ var searchData=
   ['intb_5ftype_160',['intb_type',['../unionmax30001__en__int__reg__t.html#a50581a9f1e692a059fa81c2a4b24ff29',1,'max30001_en_int_reg_t']]],
   ['internal_5fbist_5fahpf_161',['internal_bist_ahpf',['../structBIOZScanConfig.html#a0b019940acc92d2f42b932cf1ce6a9e1',1,'BIOZScanConfig']]],
   ['internal_5fresistor_5fohm_162',['internal_resistor_ohm',['../structBIOZScanConfig.html#ab801be3a2b996825625eb2f66451f243',1,'BIOZScanConfig']]],
-  ['interrupt_20handling_163',['Interrupt Handling',['../md_Interrupts.html',1,'']]],
+  ['interrupt_20handling_163',['Interrupt Handling',['../md_Interrupts.html',1,'index']]],
   ['interruptcallback_164',['InterruptCallback',['../classMAX30001G.html#ad998a44c2584fb26d9a55b731ec25e3f',1,'MAX30001G']]],
   ['interruptevent_165',['InterruptEvent',['../classMAX30001G.html#afd5657c975d738da119bedededfa6b4d',1,'MAX30001G']]],
   ['interrupts_2emd_166',['Interrupts.md',['../Interrupts_8md.html',1,'']]],

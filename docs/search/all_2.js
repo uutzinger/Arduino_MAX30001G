@@ -9,7 +9,7 @@ var searchData=
   ['cg_5fmode_50',['cg_mode',['../unionmax30001__cnfg__bmux__reg__t.html#afa75249cbd7a64a5b55566f138d1c483',1,'max30001_cnfg_bmux_reg_t']]],
   ['cgmag_51',['cgmag',['../unionmax30001__cnfg__bioz__reg__t.html#af88da76d000b1254ce7da67a435feeb4',1,'max30001_cnfg_bioz_reg_t']]],
   ['cgmon_52',['cgmon',['../unionmax30001__cnfg__bioz__reg__t.html#a5b006bcdab7dad22c57d7ed4e24b7546',1,'max30001_cnfg_bioz_reg_t']]],
-  ['changelog_53',['Changelog',['../md_CHANGELOG.html',1,'']]],
+  ['changelog_53',['Changelog',['../md_CHANGELOG.html',1,'index']]],
   ['changelog_2emd_54',['CHANGELOG.md',['../CHANGELOG_8md.html',1,'']]],
   ['clearallinterruptcallbacks_55',['clearAllInterruptCallbacks',['../classMAX30001G.html#ac5640f95da4ff566777dde9a0aa446e2',1,'MAX30001G']]],
   ['clearinterruptaggregatecallback_56',['clearInterruptAggregateCallback',['../classMAX30001G.html#a31b0528337007a45b14fb6e1f79914b2',1,'MAX30001G']]],
