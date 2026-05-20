@@ -18,9 +18,9 @@ This driver depends on
 
 # Documentation
 - [API Documentation (generated)](https://uutzinger.github.io/Arduino_MAX30001G/)
-- @subpage md_Global_Variables "Global Variables"
-- @subpage md_Interrupts "Interrupt Handling"
-- @subpage md_CHANGELOG "Changelog"
+- <a href="Global%20Variables.md">Global Variables</a>
+- <a href="Interrupts.md">Interrupt Handling</a>
+- <a href="CHANGELOG.md">Changelog</a>
 
 # Hardware with MAX30001G
 
