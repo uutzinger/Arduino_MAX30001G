@@ -32,6 +32,7 @@
 /******************************************************************************************************/
 
 #include <Arduino.h>
+#include <math.h>
 #include <stdlib.h> 
 #include "max30001g.h"
 #include "logger.h"
@@ -54,6 +55,7 @@ const uint8_t  ECG_CAL_FIFO_INTERRUPT_THRESHOLD = 8U;
 const uint8_t  BIOZ_IMPEDANCE_FIFO_THRESHOLD    = 1U;
 const uint8_t  NO_FIFO_THRESHOLD_OVERRIDE       = 255U;
 const uint8_t  ECG_FILTER_AUTO                  = 255U;
+const float    ECG_NOTCH_Q_DEFAULT              = 20.0f; // increase for narrower band
 
 // Hardware Pin Connections
 // Adjust these to match your hardware configuration
@@ -90,6 +92,8 @@ bool ecg_threeleads = true;   // true=3-lead, false=2-lead
 bool ecg_rtor = true;         // Enable R-to-R detection
 uint8_t ecg_lpf = ECG_FILTER_AUTO; // 0=bypass, 1=40Hz, 2=100Hz, 3=150Hz, 255=mode default
 uint8_t ecg_hpf = ECG_FILTER_AUTO; // 0=bypass, 1=0.5Hz, 255=mode default
+uint8_t ecg_notch = 0U;            // 0=off, 50=50Hz notch, 60=60Hz notch
+float ecg_notch_q = ECG_NOTCH_Q_DEFAULT; // notch Q factor, higher=narrower notch
 
 // BIOZ Configuration  
 uint8_t bioz_speed = 0;       // 0=low-rate (~25-32sps), 1=high-rate (~50-64sps)
@@ -155,12 +159,31 @@ extern int currentLogLevel;
 // Instantiate the MAX30001G driver
 MAX30001G afe(AFE_CS_PIN, AFE_INT1_PIN, AFE_INT2_PIN);
 
+struct ECGNotchFilterState {
+  bool enabled;
+  float b0;
+  float b1;
+  float b2;
+  float a1;
+  float a2;
+  float z1;
+  float z2;
+  float center_hz;
+  float sample_rate_hz;
+};
+
+ECGNotchFilterState ecg_notch_filter = {false, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+
 /******************************************************************************************************/
 // Helper Functions
 /******************************************************************************************************/
 
 void displayData();
 void printHzOrBypass(float hz, uint8_t decimals = 2U);
+void configureEcgNotchFilter();
+void resetEcgNotchFilterState();
+float applyEcgNotchFilter(float sample);
+const char* ecgNotchLabel();
 
 struct ModeRuntimePolicy {
   bool expect_ecg;
@@ -284,6 +307,67 @@ bool reportPllStatus(const char* context) {
   return !pll_unlocked;
 }
 
+void resetEcgNotchFilterState() {
+  ecg_notch_filter.z1 = 0.0f;
+  ecg_notch_filter.z2 = 0.0f;
+}
+
+const char* ecgNotchLabel() {
+  switch (ecg_notch) {
+    case 50U: return "50 Hz";
+    case 60U: return "60 Hz";
+    default:  return "OFF";
+  }
+}
+
+void configureEcgNotchFilter() {
+  ecg_notch_filter.enabled = false;
+  ecg_notch_filter.center_hz = 0.0f;
+  ecg_notch_filter.sample_rate_hz = ECG_samplingRate;
+  ecg_notch_filter.b0 = 1.0f;
+  ecg_notch_filter.b1 = 0.0f;
+  ecg_notch_filter.b2 = 0.0f;
+  ecg_notch_filter.a1 = 0.0f;
+  ecg_notch_filter.a2 = 0.0f;
+  resetEcgNotchFilterState();
+
+  if ((ecg_notch != 50U && ecg_notch != 60U) || ECG_samplingRate <= 0.0f) {
+    return;
+  }
+
+  const float f0 = static_cast<float>(ecg_notch);
+  const float nyquist = 0.5f * ECG_samplingRate;
+  if (f0 >= nyquist) {
+    LOGW("ECG notch %.1f Hz disabled because ECG sampling rate %.2f sps is too low.", f0, ECG_samplingRate);
+    return;
+  }
+
+  const float q = (ecg_notch_q > 0.0f) ? ecg_notch_q : ECG_NOTCH_Q_DEFAULT;
+  const float w0 = 2.0f * PI * f0 / ECG_samplingRate;
+  const float alpha = sinf(w0) / (2.0f * q);
+  const float cos_w0 = cosf(w0);
+  const float a0 = 1.0f + alpha;
+
+  ecg_notch_filter.b0 = 1.0f / a0;
+  ecg_notch_filter.b1 = (-2.0f * cos_w0) / a0;
+  ecg_notch_filter.b2 = 1.0f / a0;
+  ecg_notch_filter.a1 = (-2.0f * cos_w0) / a0;
+  ecg_notch_filter.a2 = (1.0f - alpha) / a0;
+  ecg_notch_filter.center_hz = f0;
+  ecg_notch_filter.enabled = true;
+}
+
+float applyEcgNotchFilter(float sample) {
+  if (!ecg_notch_filter.enabled) {
+    return sample;
+  }
+
+  const float y = (ecg_notch_filter.b0 * sample) + ecg_notch_filter.z1;
+  ecg_notch_filter.z1 = (ecg_notch_filter.b1 * sample) - (ecg_notch_filter.a1 * y) + ecg_notch_filter.z2;
+  ecg_notch_filter.z2 = (ecg_notch_filter.b2 * sample) - (ecg_notch_filter.a2 * y);
+  return y;
+}
+
 void handlePostStartActions() {
   const ModeRuntimePolicy policy = getModeRuntimePolicy(current_mode);
   if (policy.warmup_update_before_settle) {
@@ -299,6 +383,7 @@ void handlePostStartActions() {
   }
   clearDataBuffers();
   resetRuntimeMonitoringState();
+  resetEcgNotchFilterState();
   reportPllStatus("Startup active");
 }
 
@@ -492,6 +577,11 @@ void printRequestedEcgFilterSummary(OperationMode mode) {
   } else {
     printHzOrBypass(requestedEcgLpfHz(ecg_lpf), 0U);
   }
+  Serial.print(" | Requested Notch: ");
+  Serial.print(ecgNotchLabel());
+  Serial.print(" (Q=");
+  Serial.print(ecg_notch_q, 1);
+  Serial.print(")");
   Serial.println();
 }
 
@@ -660,6 +750,11 @@ void printAppliedEcgSummary() {
   printHzOrBypass(ECG_hpf, 2U);
   Serial.print(", LPF ");
   printHzOrBypass(ECG_lpf, 0U);
+  Serial.print(", Notch ");
+  Serial.print(ecgNotchLabel());
+  Serial.print(" (Q=");
+  Serial.print(ecg_notch_q, 1);
+  Serial.print(")");
   Serial.println();
 }
 
@@ -693,10 +788,12 @@ void helpMenu() {
   Serial.println("|----------------------------------------|-------------------------------------|");
   Serial.println("| Es<n>: speed      (0-2)     Es1        | Bs<n>: speed      (0-1)     Bs0     |");
   Serial.println("| Eg<n>: gain       (0-3)     Eg2        | Bg<n>: gain       (0-3)     Bg1     |");
-  Serial.println("| El<n>: dig LPF (0-3,255)   El255       | Ba<n>: analog HPF (0-7)     Ba1     |");
-  Serial.println("| Eh<n>: dig HPF (0-1,255)   Eh255       | Bd<n>: digital LPF(0-3)     Bd1     |");
+  Serial.println("| El<n>: dig LPF    (0-3,255) El255      | Ba<n>: analog HPF (0-7)     Ba1     |");
+  Serial.println("| Eh<n>: dig HPF    (0-1,255) Eh255      | Bd<n>: digital LPF(0-3)     Bd1     |");
   Serial.println("| Ee<n>: leads      (2 or 3)  Ee3        | Bh<n>: digital HPF(0-3)     Bh0     |");
   Serial.println("| Er<n>: R-to-R     (0=off,1) Er1        |                                     |");
+  Serial.println("| En<n>: notch  (0=off,50,60) En0        |                                     |");
+  Serial.println("| Eq<n>: notch Q    (1-100)   Eq20       |                                     |");
   Serial.println("|                                        | Bf<n>: frequency Hz         Bf8000  |");
   Serial.println("|                                        | Bc<n>: current nA           Bc8000  |");
   Serial.println("|                                        | Bp<n>: phase deg            Bp0     |");
@@ -881,6 +978,7 @@ void applySettings() {
     case MODE_ECG:
       afe.setupECG(ecg_speed, ecg_gain, ecg_threeleads);
       afe.setECGfilter(resolvedEcgLpfSelector(current_mode), resolvedEcgHpfSelector(current_mode));
+      configureEcgNotchFilter();
       applyModeFifoThresholds(policy);
       if (!ecg_rtor) {
         afe.setDefaultNoRtoR();
@@ -905,6 +1003,7 @@ void applySettings() {
                           bioz_frequency, bioz_current, bioz_phase,
                           bioz_leadbias, bioz_leadsoffdetect, bioz_fourleads);
       afe.setECGfilter(resolvedEcgLpfSelector(current_mode), resolvedEcgHpfSelector(current_mode));
+      configureEcgNotchFilter();
       applyModeFifoThresholds(policy);
       if (!ecg_rtor) {
         afe.setDefaultNoRtoR();
@@ -918,6 +1017,7 @@ void applySettings() {
     case MODE_ECG_CAL:
       afe.setupECGSignalCalibration(ecg_speed, ecg_gain);
       afe.setECGfilter(resolvedEcgLpfSelector(current_mode), resolvedEcgHpfSelector(current_mode));
+      configureEcgNotchFilter();
       afe.setTestSignal(true, false, ecg_cal_unipolar, true, 0b100, 50);
       applyModeFifoThresholds(policy);
       Serial.println("ECG calibration mode configured");
@@ -1270,6 +1370,26 @@ void handleParameterCommand(const char* command) {
           Serial.println(onOffLabel(ecg_rtor));
         } else {
           Serial.println("ECG R-to-R must be 0 or 1");
+        }
+        break;
+
+      case 'n':  // ECG notch
+        if (value == 0 || value == 50 || value == 60) {
+          ecg_notch = static_cast<uint8_t>(value);
+          Serial.print("ECG notch requested: ");
+          Serial.println(ecgNotchLabel());
+        } else {
+          Serial.println("ECG notch must be 0, 50, or 60");
+        }
+        break;
+
+      case 'q':  // ECG notch Q
+        if (value >= 1 && value <= 100) {
+          ecg_notch_q = static_cast<float>(value);
+          Serial.print("ECG notch Q requested: ");
+          Serial.println(ecg_notch_q, 1);
+        } else {
+          Serial.println("ECG notch Q must be 1-100");
         }
         break;
 
@@ -1637,9 +1757,21 @@ void displayData() {
   // ECG Data
   while (ECG_data.available() > 0) {
     ECG_data.pop(value);
+    const float ecg_output = applyEcgNotchFilter(value);
     if (data_reporting) {
       Serial.print(policy.ecg_label != nullptr ? policy.ecg_label : "ECG [mV]: ");
-      Serial.println(value, 3);
+      Serial.print(ecg_output, 3);
+      if (ecg_rtor && RTOR_data.available() > 0) {
+        float rr_ms = 0.0f;
+        RTOR_data.pop(rr_ms);
+        Serial.print(" RR [ms]: ");
+        Serial.print(rr_ms, 1);
+        if (rr_ms > 0.0f) {
+          Serial.print(" HR [bpm]: ");
+          Serial.print(60000.0f / rr_ms, 1);
+        }
+      }
+      Serial.println();
     }
     last_ecg_data_ms = millis();
     ecg_timeout_reported = false;
@@ -1673,12 +1805,10 @@ void displayData() {
     }
     if (data_reporting) {
       Serial.print("RR [ms]: ");
-      Serial.print(value, 1);
+      Serial.println(value, 1);
       if (value > 0.0f) {
-        Serial.print(" | HR [bpm]: ");
+        Serial.print("HR [bpm]: ");
         Serial.println(60000.0f / value, 1);
-      } else {
-        Serial.println();
       }
     }
     had_data = true;

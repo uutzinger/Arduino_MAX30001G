@@ -154,10 +154,12 @@ When you open the serial monitor and type `?`, the sketch prints this help menu:
 |----------------------------------------|-------------------------------------|
 | Es<n>: speed      (0-2)     Es1        | Bs<n>: speed      (0-1)     Bs0     |
 | Eg<n>: gain       (0-3)     Eg2        | Bg<n>: gain       (0-3)     Bg1     |
-| El<n>: dig LPF (0-3,255)   El255       | Ba<n>: analog HPF (0-7)     Ba1     |
-| Eh<n>: dig HPF (0-1,255)   Eh255       | Bd<n>: digital LPF(0-3)     Bd1     |
+| El<n>: dig LPF    (0-3,255) El255      | Ba<n>: analog HPF (0-7)     Ba1     |
+| Eh<n>: dig HPF    (0-1,255) Eh255      | Bd<n>: digital LPF(0-3)     Bd1     |
 | Ee<n>: leads      (2 or 3)  Ee3        | Bh<n>: digital HPF(0-3)     Bh0     |
 | Er<n>: R-to-R     (0=off,1) Er1        |                                     |
+| En<n>: notch  (0=off,50,60) En0        |                                     |
+| Eq<n>: notch Q    (1-100)   Eq20       |                                     |
 |                                        | Bf<n>: frequency Hz         Bf8000  |
 |                                        | Bc<n>: current nA           Bc8000  |
 |                                        | Bp<n>: phase deg            Bp0     |
@@ -196,7 +198,9 @@ Examples:
 
 # Example Sketches
 
-The maintained example sketches match the current driver structure:
+**`examples/MAX30001G/MAX30001G.ino`**: interactive serial test program covering all options of the software including mode switches, setup helpers, calibration, scan control, and register inspection.
+
+The other maintained example sketches match the current driver structure:
 
 - `examples/ECG/ECG.ino`: continuous ECG using `setupECG(...)`, `start()`, and repeated `update()`
 - `examples/BIOZ/BIOZ.ino`: continuous fixed-frequency BIOZ using `setupBIOZ(...)`
@@ -205,7 +209,6 @@ The maintained example sketches match the current driver structure:
 - `examples/BIOZScan_Internal/BIOZScan_Internal.ino`: internal-resistor scan validation using the same scan-owned state machine
 - `examples/BIOZScan_Internal_Fast/BIOZScan_Internal_Fast.ino`: fast reduced-phase internal-resistor full-spectrum validation
 - `examples/Hardware_HealthCheck/Hardware_HealthCheck.ino`: startup communication and hardware checks
-- `examples/MAX30001G/MAX30001G.ino`: interactive serial test program covering mode switches, setup helpers, calibration, scan control, and register inspection
 - `examples/ECG_FIFOInterruptValidation/ECG_FIFOInterruptValidation.ino`: ECG FIFO interrupt and `ECG_data` validation
 - `examples/BIOZ_FIFOInterruptValidation/BIOZ_FIFOInterruptValidation.ino`: BIOZ FIFO interrupt and `BIOZ_data` validation
 - `examples/ECGandBIOZ_FIFOInterruptValidation/ECGandBIOZ_FIFOInterruptValidation.ino`: combined FIFO drain validation

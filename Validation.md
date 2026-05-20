@@ -12,10 +12,11 @@ Do not attach a subject until all bench tests in Phase 1 pass.
 3. BIOZ internal signal calibration
 4. BIOZ internal impedance calibration
 5. BIOZ internal scan
-6. Subject-attached ECG test
-7. Subject-attached BIOZ impedance test
-8. Subject-attached combined ECG + BIOZ test
-9. External BIOZ scan if needed
+6. External ECG simulator test
+7. Subject-attached ECG test
+8. Subject-attached BIOZ impedance test
+9. Subject-attached combined ECG + BIOZ test
+10. External BIOZ scan if needed
 
 ## Example Sketches
 - `examples/Hardware_HealthCheck/Hardware_HealthCheck.ino`
@@ -36,12 +37,12 @@ Do not attach a subject until all bench tests in Phase 1 pass.
 - `examples/MAX30001G/MAX30001G.ino`
 
 ## Hardware Checklist
-- [ ] MAX30001G board powered correctly
-- [ ] SPI wiring verified: `MOSI`, `MISO`, `SCK`, `CS`
-- [ ] `INTB` connected if available
-- [ ] `INT2B` connected if available or set to `-1`
-- [ ] Serial monitor set to `115200`
-- [ ] No subject connected for Phase 1
+- [x] MAX30001G board powered correctly
+- [x] SPI wiring verified: `MOSI`, `MISO`, `SCK`, `CS`
+- [x] `INTB` connected if available
+- [x] `INT2B` connected if available or set to `-1`
+- [x] Serial monitor set to `115200`
+- [x] No subject connected for Phase 1
 
 ## Phase 1: Bench Tests With No Subject Attached
 
@@ -1263,11 +1264,14 @@ Create a dedicated test program and test process for known external impedance mo
   - Decide whether `fitImpedanceTriangular()` should remain internal-BIST-only, move to a validation-only output path, or be replaced by another internal-BIST summary such as max-absolute response plus scale correction.
 - [ ] Use known-load results to design the final calibration process for tissue and sample measurements.
 
-## Phase 2: Subject-Attached Tests
-Proceed only after all Phase 1 tests pass.
+## Phase 2: External Signal Tests
+Proceed only after all Phase 1 tests pass. No human subject attached in this phase.
 
-### Test 2.1: ECG Acquisition
+### Test 2.1: External ECG Simulator Acquisition
 Primary sketch: `ECG.ino`
+
+This test uses an external ECG simulator driving the normal ECG input path.
+If the ECG profile keeps RTOR enabled, the sketch must also drain `RTOR_data` or the RTOR ring buffer will overflow during longer runs.
 
 Interactive alternative:
 ```text
@@ -1281,14 +1285,128 @@ z
 ```
 
 Pass criteria:
-- [ ] ECG waveform is visible
-- [ ] QRS complexes are identifiable
-- [ ] RR intervals are reported when enabled
+- [x] ECG waveform is visible
+- [x] QRS complexes are identifiable
+- [x] RR intervals are reported when enabled
+- [x] No `RTOR ring buffer full; sample dropped.` errors are reported during steady acquisition
 
-Result: [ ] PASS  [ ] FAIL
-Notes: ___________________________________________
+Result: [x] PASS  [ ] FAIL
+Notes: Passed on 2026-05-07 with an external ECG simulator driving the normal ECG input path.
 
-### Test 2.2: BIOZ Impedance Acquisition
+Recorded result:
+- [x] `examples/ECG/ECG.ino` produced parser-safe labeled streams for `ECG Ext [mV]`, `RR [ms]`, and `HR [bpm]`
+- [x] Plotter display showed a stable repeating ECG waveform with clear narrow QRS peaks and consistent morphology
+- [x] Peak amplitude was approximately `1.0 mV`, with smaller secondary features around `0.1..0.2 mV`, consistent with the expected simulator output
+- [x] RR and HR channels were decoded successfully by the receiver after updating the sketch to drain `RTOR_data`
+- [x] No `RTOR ring buffer full; sample dropped.` errors were observed during steady acquisition
+- [x] Repeated the same test with `ECG_THREE_LEADS=false` for the 2-lead external simulator path
+- [x] Confirmed the 2-lead configuration also produced valid ECG, RR, and HR output through the same receiver/parser path
+
+## Phase 3: Subject-Attached Tests
+Proceed only after all Phase 1 and Phase 2 external-signal tests pass.
+
+### Test 3.1: Human Subject ECG Acquisition
+Primary sketch: `ECG.ino`
+
+This test uses a human subject connected to the normal ECG electrode path after the simulator validation is complete.
+
+#### LPF bypass, HP bypass, THREE_LEADS off
+Electrode configurations
+
+| LA | RA | LL | | |
+|---|---|---|---|---|
+| blu | red | blk | inverted | SNR 1 : 26 | 
+| red | bue | blk |          | **SNR 1 : 20** | 
+| red | blk | blu |          | SNR 1 : 14 | 
+| blk | red | blu | inverted | SNR:1 : 8 | 
+| blk | blu | red |          | SNR 1 : 11 | 
+| blu | blk | red | bipolar  | SNR 1 : 8 | 
+
+Simulator SNR 1 : 170
+
+#### LPF bypass, HP bypass, THREE_LEADS on
+Electrode configurations
+LA RA LL
+red bue blk          SNR 1 : 12
+Simulator            SNR same
+
+
+#### Interactive alternative:
+
+```text
+m1
+Es1
+Eg1
+Ee3
+El0
+Eh0
+Er1
+a
+.
+z
+```
+
+Switching lowpass on and off.
+
+```text
+El0
+a
+.
+z
+```
+
+
+
+Pass criteria:
+- [x] ECG waveform is visible
+- [x] QRS complexes are sharp and identifiable
+- [x] RR intervals are reported when enabled
+- [x] No `RTOR ring buffer full; sample dropped.` errors are reported during steady acquisition
+- [x] No lead-off or saturation messages were observed during normal attachment
+- [x] `40 Hz` low pass attenuates visible `60 Hz` ripple/noise
+
+Result: [x] PASS  [ ] FAIL
+Notes: Human-subject ECG was visible, QRS complexes were sharp, RR was reported, and no RTOR buffer-full messages were observed. No lead-off or saturation messages were seen during the run. Observed that enabling the `40 Hz` ECG low-pass attenuated the visible `60 Hz` ripple compared with LPF bypass.
+
+
+#### Notch Filter Request
+
+Significant `60 Hz` noise was observed during human-subject ECG testing. A software ECG notch filter was added to `examples/MAX30001G/MAX30001G.ino` for interactive evaluation.
+
+Implemented command interface:
+- `En0` disables the ECG software notch filter
+- `En50` enables a `50 Hz` ECG software notch filter
+- `En60` enables a `60 Hz` ECG software notch filter
+- `Eq<n>` sets the ECG notch `Q` factor in the range `1..100` (default `Eq20`)
+
+Implementation details:
+- The notch is implemented as a `2nd-order IIR biquad` applied only to the ECG data stream after samples are popped from `ECG_data` and before they are printed.
+- The filter is software-only in `MAX30001G.ino`; the core driver/library data path is unchanged.
+- Coefficients are recomputed from the current `ECG_samplingRate`, so the notch tracks the active ECG sample rate selected by `Es<n>`.
+- The implementation uses a narrow-band notch design with configurable `Q`; the default is `Q = 20`, intended to reject mains interference while preserving ECG morphology.
+- Filter state is reset when settings are applied and after measurement start/reset handling to avoid stale-history artifacts.
+- If the requested notch frequency is at or above Nyquist for the active ECG sample rate, the notch is automatically disabled and a warning is emitted.
+
+Expected usage:
+```text
+m1
+Es1
+En60
+Eq20
+a
+.
+z
+```
+
+Expected behavior:
+- `En60` should attenuate visible `60 Hz` ripple without broadly low-pass filtering the ECG.
+- `En50` should be used for regions with `50 Hz` mains interference.
+- Lower `Q` widens the notch and may remove more hum at the cost of more nearby signal attenuation; higher `Q` narrows the notch and preserves more ECG detail.
+- `El<n>` remains the hardware ECG digital low-pass control; `En<n>` is an additional software notch stage for mains rejection.
+
+
+
+### Test 3.2: BIOZ Impedance Acquisition
 Primary sketch: `BIOZ.ino`
 
 Interactive alternative:
@@ -1311,7 +1429,7 @@ Pass criteria:
 Result: [ ] PASS  [ ] FAIL
 Notes: ___________________________________________
 
-### Test 2.3: Combined ECG + BIOZ
+### Test 3.3: Combined ECG + BIOZ
 Primary sketch: `ECGandBIOZ.ino`
 
 Interactive alternative:
@@ -1336,7 +1454,7 @@ Pass criteria:
 Result: [ ] PASS  [ ] FAIL
 Notes: ___________________________________________
 
-### Test 2.4: External BIOZ Scan
+### Test 3.4: External BIOZ Scan
 Primary sketch: `BIOZScan.ino`
 
 Interactive alternative:
