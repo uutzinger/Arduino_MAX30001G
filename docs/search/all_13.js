@@ -1,4 +1,8 @@
 var searchData=
 [
-  ['wndw_442',['wndw',['../unionmax30001__cnfg__rtor1__reg__t.html#aba7b410a67a7ef391ef914b403452cdd',1,'max30001_cnfg_rtor1_reg_t']]]
+  ['under_5fvoltage_5fdetected_0',['under_voltage_detected',['../max30001g__globals_8cpp.html#aaa6bda01e48ed7c2fcf376559d335d70',1,'under_voltage_detected:&#160;max30001g_globals.cpp'],['../max30001g__globals_8h.html#aaa6bda01e48ed7c2fcf376559d335d70',1,'under_voltage_detected:&#160;max30001g_globals.cpp']]],
+  ['update_1',['update',['../classMAX30001G.html#afa0d732bf2ac96107fb0729f5894c380',1,'MAX30001G']]],
+  ['updateraw_2',['updateRaw',['../classMAX30001G.html#af30db73121bc625084d0a691bb58c800',1,'MAX30001G']]],
+  ['usage_3',['Interrupt Usage',['../md_Interrupts.html#autotoc_md17',1,'']]],
+  ['use_5finternal_5fresistor_4',['use_internal_resistor',['../structBIOZScanConfig.html#a044eb575fcf82d51bc1e143072c30186',1,'BIOZScanConfig']]]
 ];

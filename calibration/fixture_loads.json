@@ -1,0 +1,235 @@
+{
+  "fixture": "external_bioz_calibration_fixture",
+  "revision": "initial",
+  "notes": "Fixture options transcribed from External BioZ Test Process.md. R0 is a short check; high-impedance loads are useful for boundary/parasitic characterization and may be excluded from final scale fitting.",
+  "loads": [
+    {
+      "id": "R0",
+      "description": "0 ohm short",
+      "fit_hint": "offset_check",
+      "network": { "type": "resistor", "ohm": 0.0 }
+    },
+    {
+      "id": "R100",
+      "description": "100 ohm resistor",
+      "fit_hint": "calibration",
+      "network": { "type": "resistor", "ohm": 100.0 }
+    },
+    {
+      "id": "R330",
+      "description": "330 ohm resistor",
+      "fit_hint": "calibration",
+      "network": { "type": "resistor", "ohm": 330.0 }
+    },
+    {
+      "id": "R1K",
+      "description": "1 kohm resistor",
+      "fit_hint": "calibration",
+      "network": { "type": "resistor", "ohm": 1000.0 }
+    },
+    {
+      "id": "R3K3",
+      "description": "3.3 kohm resistor",
+      "fit_hint": "calibration",
+      "network": { "type": "resistor", "ohm": 3300.0 }
+    },
+    {
+      "id": "R10K",
+      "description": "10 kohm resistor",
+      "fit_hint": "calibration",
+      "network": { "type": "resistor", "ohm": 10000.0 }
+    },
+    {
+      "id": "R33K",
+      "description": "33 kohm resistor",
+      "fit_hint": "calibration",
+      "network": { "type": "resistor", "ohm": 33000.0 }
+    },
+    {
+      "id": "R100K",
+      "description": "100 kohm resistor",
+      "fit_hint": "boundary",
+      "network": { "type": "resistor", "ohm": 100000.0 }
+    },
+    {
+      "id": "R330K",
+      "description": "330 kohm resistor",
+      "fit_hint": "parasitic_check",
+      "network": { "type": "resistor", "ohm": 330000.0 }
+    },
+    {
+      "id": "R1M",
+      "description": "1 Mohm resistor",
+      "fit_hint": "parasitic_check",
+      "network": { "type": "resistor", "ohm": 1000000.0 }
+    },
+    {
+      "id": "P1",
+      "description": "10 kohm parallel 100 nF",
+      "fit_hint": "calibration",
+      "network": {
+        "type": "parallel",
+        "branches": [
+          { "type": "resistor", "ohm": 10000.0 },
+          { "type": "capacitor", "farad": 1e-7 }
+        ]
+      }
+    },
+    {
+      "id": "P2",
+      "description": "10 kohm parallel 10 nF",
+      "fit_hint": "calibration",
+      "network": {
+        "type": "parallel",
+        "branches": [
+          { "type": "resistor", "ohm": 10000.0 },
+          { "type": "capacitor", "farad": 1e-8 }
+        ]
+      }
+    },
+    {
+      "id": "P3",
+      "description": "10 kohm parallel 1 nF",
+      "fit_hint": "calibration",
+      "network": {
+        "type": "parallel",
+        "branches": [
+          { "type": "resistor", "ohm": 10000.0 },
+          { "type": "capacitor", "farad": 1e-9 }
+        ]
+      }
+    },
+    {
+      "id": "P4",
+      "description": "100 kohm parallel 10 nF",
+      "fit_hint": "boundary",
+      "network": {
+        "type": "parallel",
+        "branches": [
+          { "type": "resistor", "ohm": 100000.0 },
+          { "type": "capacitor", "farad": 1e-8 }
+        ]
+      }
+    },
+    {
+      "id": "P5",
+      "description": "100 kohm parallel 1 nF",
+      "fit_hint": "boundary",
+      "network": {
+        "type": "parallel",
+        "branches": [
+          { "type": "resistor", "ohm": 100000.0 },
+          { "type": "capacitor", "farad": 1e-9 }
+        ]
+      }
+    },
+    {
+      "id": "P6",
+      "description": "1000 kohm parallel 220 pF",
+      "fit_hint": "parasitic_check",
+      "network": {
+        "type": "parallel",
+        "branches": [
+          { "type": "resistor", "ohm": 1000000.0 },
+          { "type": "capacitor", "farad": 2.2e-10 }
+        ]
+      }
+    },
+    {
+      "id": "S1",
+      "description": "1 kohm series 100 nF",
+      "fit_hint": "calibration",
+      "network": {
+        "type": "series",
+        "parts": [
+          { "type": "resistor", "ohm": 1000.0 },
+          { "type": "capacitor", "farad": 1e-7 }
+        ]
+      }
+    },
+    {
+      "id": "S2",
+      "description": "1 kohm series 10 nF",
+      "fit_hint": "calibration",
+      "network": {
+        "type": "series",
+        "parts": [
+          { "type": "resistor", "ohm": 1000.0 },
+          { "type": "capacitor", "farad": 1e-8 }
+        ]
+      }
+    },
+    {
+      "id": "S3",
+      "description": "10 kohm series 10 nF",
+      "fit_hint": "calibration",
+      "network": {
+        "type": "series",
+        "parts": [
+          { "type": "resistor", "ohm": 10000.0 },
+          { "type": "capacitor", "farad": 1e-8 }
+        ]
+      }
+    },
+    {
+      "id": "S4",
+      "description": "10 kohm series 1 nF",
+      "fit_hint": "calibration",
+      "network": {
+        "type": "series",
+        "parts": [
+          { "type": "resistor", "ohm": 10000.0 },
+          { "type": "capacitor", "farad": 1e-9 }
+        ]
+      }
+    },
+    {
+      "id": "S5",
+      "description": "100 kohm series 1 nF",
+      "fit_hint": "boundary",
+      "network": {
+        "type": "series",
+        "parts": [
+          { "type": "resistor", "ohm": 100000.0 },
+          { "type": "capacitor", "farad": 1e-9 }
+        ]
+      }
+    },
+    {
+      "id": "X1",
+      "description": "(27 ohm + 47 nF series) parallel 60 ohm",
+      "fit_hint": "tissue_model",
+      "network": {
+        "type": "parallel",
+        "branches": [
+          {
+            "type": "series",
+            "parts": [
+              { "type": "resistor", "ohm": 27.0 },
+              { "type": "capacitor", "farad": 4.7e-8 }
+            ]
+          },
+          { "type": "resistor", "ohm": 60.0 }
+        ]
+      }
+    },
+    {
+      "id": "X2",
+      "description": "(620 ohm + 3.3 nF series) parallel 1 kohm",
+      "fit_hint": "tissue_model",
+      "network": {
+        "type": "parallel",
+        "branches": [
+          {
+            "type": "series",
+            "parts": [
+              { "type": "resistor", "ohm": 620.0 },
+              { "type": "capacitor", "farad": 3.3e-9 }
+            ]
+          },
+          { "type": "resistor", "ohm": 1000.0 }
+        ]
+      }
+    }
+  ]
+}

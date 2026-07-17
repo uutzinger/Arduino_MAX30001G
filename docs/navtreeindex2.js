@@ -1,8 +1,10 @@
 var NAVTREEINDEX2 =
 {
+"structImpedanceSpectrum.html":[5,0,4],
 "structImpedanceSpectrum.html#ab2642edd3d5e8a7638e96b795b26b192":[5,0,4,1],
 "structImpedanceSpectrum.html#ae55f33f783431f7210ac1a636450e6c5":[5,0,4,2],
 "structImpedanceSpectrum.html#af5ec6cecbac739c5bd4ddbc987f541a1":[5,0,4,0],
+"topics.html":[4],
 "unionmax30001__bioz__burst__reg__t.html":[5,0,5],
 "unionmax30001__bioz__burst__reg__t.html#a6013fb212dfd37ace640b3c17755af6c":[5,0,5,3],
 "unionmax30001__bioz__burst__reg__t.html#acd06b4fe451ee1c07dfcf5d2cba8ecc7":[5,0,5,4],

@@ -32,6 +32,7 @@
 /******************************************************************************************************/
 
 #include <Arduino.h>
+#include <Preferences.h>
 #include <math.h>
 #include <stdlib.h> 
 #include "max30001g.h"
@@ -136,6 +137,17 @@ const uint8_t BIOZ_CAL_AHPF_BYPASS = 6;
 const uint8_t BIOZ_CAL_DLPF_BYPASS = 0;
 const uint8_t BIOZ_CAL_DHPF_BYPASS = 0;
 
+// External BIOZ scan calibration. Source defaults are conservative; optional
+// ESP32 Preferences can persist calibration and scan defaults across reboot.
+const float BIOZ_SCAN_CAL_DEFAULT_GLOBAL_K = 1.25065f;
+const uint32_t BIOZ_SCAN_CAL_DEFAULT_GLOBAL_K_PPM = 1250650UL;
+const uint16_t BIOZ_PREF_SCHEMA_VERSION = 1U;
+const uint16_t BIOZ_SCAN_CAL_VERSION = 1U;
+const uint16_t BIOZ_RELIABILITY_MAP_VERSION = 1U;
+const char BIOZ_PREF_NAMESPACE[] = "max30001g";
+bool bioz_scan_cal_enabled = false;
+float bioz_scan_cal_global_k = BIOZ_SCAN_CAL_DEFAULT_GLOBAL_K;
+
 // Program Globals
 uint32_t current_time;
 uint32_t last_time = 0;
@@ -180,6 +192,14 @@ ECGNotchFilterState ecg_notch_filter = {false, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0
 
 void displayData();
 void printHzOrBypass(float hz, uint8_t decimals = 2U);
+void printBiozScanCalibrationSettings();
+void printPreferencesProfile();
+bool savePreferencesProfile();
+bool loadPreferencesProfile(bool report);
+bool clearPreferencesProfile();
+uint32_t biozScanCalibrationKppm();
+float correctedBiozScanMagnitude(float magnitude_ohm);
+uint8_t biozScanReliabilityScore(float frequency_hz, float corrected_magnitude_ohm, float phase_deg);
 void configureEcgNotchFilter();
 void resetEcgNotchFilterState();
 float applyEcgNotchFilter(float sample);
@@ -293,15 +313,11 @@ bool reportPllStatus(const char* context) {
   const uint32_t status_word = status.all & 0x00FFFFFFUL;
   const bool pll_unlocked = ((status_word & MAX30001_STATUS_PLLINT) != 0U);
 
-  Serial.print(context);
-  Serial.print(" PLL: ");
-  Serial.print(pll_unlocked ? "UNLOCKED" : "OK");
-  Serial.print(" (STATUS=0x");
-  Serial.print(status_word, HEX);
-  Serial.println(")");
-
   if (pll_unlocked) {
-    Serial.println("PLL remains unlocked after startup; check the MAX30001G external clock/oscillator.");
+    LOGW("%s PLL: UNLOCKED (STATUS=0x%06lX)", context, static_cast<unsigned long>(status_word));
+    LOGW("PLL remains unlocked after startup; check the MAX30001G external clock/oscillator.");
+  } else {
+    LOGI("%s PLL: OK (STATUS=0x%06lX)", context, static_cast<unsigned long>(status_word));
   }
 
   return !pll_unlocked;
@@ -368,6 +384,80 @@ float applyEcgNotchFilter(float sample) {
   return y;
 }
 
+float correctedBiozScanMagnitude(float magnitude_ohm) {
+  if (!bioz_scan_cal_enabled || bioz_scan_cal_global_k <= 0.0f) {
+    return magnitude_ohm;
+  }
+  return magnitude_ohm * bioz_scan_cal_global_k;
+}
+
+uint8_t biozScanReliabilityScore(float frequency_hz, float corrected_magnitude_ohm, float phase_deg) {
+  if (scan_internal) {
+    return 0U;
+  }
+  if (corrected_magnitude_ohm <= 0.0f || frequency_hz <= 0.0f) {
+    return 0U;
+  }
+
+  // Provisional external-scan validity score from fixture analysis.
+  // 3=validated region,
+  // 2=near boundary,
+  // 1=questionable,
+  // 0=outside validated region.
+  //
+  // Base table:
+  //           Frequency (Hz)
+  //  Mag      1024 2048 4096 8192 >=18204
+  //       <20 1    1    1    1    1
+  //   20- 10k 3    3    3    3    3
+  //  10k- 33k 3    3    3    3    1
+  //  33k- 50k 3    3    3    1    1
+  //  50k-100k 2    2    1    1    1
+  // 100k-150k 1    0    0    0    0
+
+  uint8_t score = 0U;
+  if (corrected_magnitude_ohm < 20.0f) {
+    score = 1U;
+  } else if (corrected_magnitude_ohm <= 10000.0f) {
+    score = 3U;
+  } else if (corrected_magnitude_ohm <= 33000.0f) {
+    score = (frequency_hz <= 8192.0f) ? 3U : 1U;
+  } else if (corrected_magnitude_ohm <= 50000.0f) {
+    score = (frequency_hz <= 4096.0f) ? 3U : 1U;
+  } else if (corrected_magnitude_ohm <= 100000.0f) {
+    score = (frequency_hz <= 2048.0f) ? 2U : 1U;
+  } else if (corrected_magnitude_ohm <= 150000.0f) {
+    score = (frequency_hz <= 1024.0f) ? 1U : 0U;
+  } else {
+    score = 0U;
+  }
+
+  if (score == 0U) {
+    return score;
+  }
+
+  const float abs_phase = fabsf(phase_deg);
+
+  // Verification run 20260717_133127 showed that high-frequency resistor stress
+  // cases can collapse into a lower measured magnitude bin and look valid if
+  // only magnitude/frequency are scored. Downgrade only moderate/high measured
+  // impedances; low-ohm RC loads and capacitive loads can legitimately have
+  // large phase and should not be rejected by this rule.
+  if (corrected_magnitude_ohm >= 5000.0f) {
+    if (frequency_hz >= 81920.0f && abs_phase >= 25.0f) {
+      if (score > 1U) {
+        score = 1U;
+      }
+    } else if (frequency_hz >= 40960.0f && abs_phase >= 20.0f) {
+      if (score > 2U) {
+        score = 2U;
+      }
+    }
+  }
+
+  return score;
+}
+
 void handlePostStartActions() {
   const ModeRuntimePolicy policy = getModeRuntimePolicy(current_mode);
   if (policy.warmup_update_before_settle) {
@@ -388,6 +478,7 @@ void handlePostStartActions() {
 }
 
 void startMeasurement() {
+  applySettings();
   afe.start();
   measurement_running = true;
   sample_count = 0;
@@ -396,7 +487,7 @@ void startMeasurement() {
   clearDataBuffers();
   resetRuntimeMonitoringState();
   handlePostStartActions();
-  Serial.println("Measurement started");
+  LOGI("Measurement started");
 }
 
 void stopMeasurement() {
@@ -416,7 +507,7 @@ void checkDataTimeouts() {
   const uint32_t now = millis();
 
   if (policy.expect_scan && !scan_timeout_reported && ((now - mode_start_ms) >= SCAN_TIMEOUT_MS)) {
-    Serial.println("FAIL: BIOZ scan timed out before a spectrum was available.");
+    LOGE("BIOZ scan timed out before a spectrum was available.");
     reportPllStatus("Timeout");
     afe.printStatus();
     scan_timeout_reported = true;
@@ -758,6 +849,172 @@ void printAppliedEcgSummary() {
   Serial.println();
 }
 
+void printBiozScanCalibrationSettings() {
+  Serial.print("  External Scan Correction: ");
+  Serial.print(bioz_scan_cal_enabled ? "ON" : "OFF");
+  Serial.print(" | Model: global median magnitude scale | K=");
+  Serial.print(bioz_scan_cal_global_k, 5);
+  Serial.println(" | Phase correction: OFF");
+}
+
+uint32_t biozScanCalibrationKppm() {
+  if (bioz_scan_cal_global_k <= 0.0f) {
+    return BIOZ_SCAN_CAL_DEFAULT_GLOBAL_K_PPM;
+  }
+  const float ppm = bioz_scan_cal_global_k * 1000000.0f;
+  if (ppm < 500000.0f) {
+    return 500000UL;
+  }
+  if (ppm > 2000000.0f) {
+    return 2000000UL;
+  }
+  return static_cast<uint32_t>(ppm + 0.5f);
+}
+
+void printPreferencesProfile() {
+  Serial.println("  Preferences profile:");
+  Serial.print("    Namespace: ");
+  Serial.println(BIOZ_PREF_NAMESPACE);
+  Serial.print("    Schema: ");
+  Serial.println(BIOZ_PREF_SCHEMA_VERSION);
+  Serial.print("    Calibration version: ");
+  Serial.println(BIOZ_SCAN_CAL_VERSION);
+  Serial.print("    Reliability map version: ");
+  Serial.println(BIOZ_RELIABILITY_MAP_VERSION);
+  Serial.print("    Correction enabled: ");
+  Serial.println(bioz_scan_cal_enabled ? "YES" : "NO");
+  Serial.print("    Global K ppm: ");
+  Serial.print(biozScanCalibrationKppm());
+  Serial.print(" (");
+  Serial.print(bioz_scan_cal_global_k, 6);
+  Serial.println(")");
+  Serial.print("    Scan: avg=");
+  Serial.print(scan_avg);
+  Serial.print(", fast=");
+  Serial.print(scan_fast ? 1 : 0);
+  Serial.print(", full=");
+  Serial.print(scan_fullrange ? 1 : 0);
+  Serial.print(", internal=");
+  Serial.print(scan_internal ? 1 : 0);
+  Serial.print(", phase=");
+  Serial.print((scan_phase_range == BIOZ_SCAN_PHASE_REDUCED) ? 1 : 0);
+  Serial.print(", AHPF=");
+  Serial.print(scan_internal_bist_ahpf);
+  Serial.print(", settle=");
+  Serial.print(scan_settle_samples);
+  Serial.print(", current-settle=");
+  Serial.println(scan_current_change_settle_samples);
+  Serial.print("    BIOZ default: current=");
+  Serial.print(bioz_current);
+  Serial.print(" nA, wires=");
+  Serial.println(bioz_fourleads ? "4" : "2");
+}
+
+bool savePreferencesProfile() {
+  Preferences prefs;
+  if (!prefs.begin(BIOZ_PREF_NAMESPACE, false)) {
+    Serial.println("Preferences save failed: namespace open failed");
+    return false;
+  }
+
+  prefs.putUShort("schema", BIOZ_PREF_SCHEMA_VERSION);
+  prefs.putUShort("cal_ver", BIOZ_SCAN_CAL_VERSION);
+  prefs.putUShort("rel_ver", BIOZ_RELIABILITY_MAP_VERSION);
+  prefs.putBool("cal_en", bioz_scan_cal_enabled);
+  prefs.putUInt("cal_k_ppm", biozScanCalibrationKppm());
+  prefs.putUChar("scan_avg", scan_avg);
+  prefs.putBool("scan_fast", scan_fast);
+  prefs.putBool("scan_full", scan_fullrange);
+  prefs.putBool("scan_int", scan_internal);
+  prefs.putUChar("scan_phase", (scan_phase_range == BIOZ_SCAN_PHASE_REDUCED) ? 1U : 0U);
+  prefs.putUChar("scan_ahpf", scan_internal_bist_ahpf);
+  prefs.putUChar("scan_settle", scan_settle_samples);
+  prefs.putUChar("scan_csettle", scan_current_change_settle_samples);
+  prefs.putUInt("bioz_current", bioz_current);
+  prefs.putBool("bioz_4wire", bioz_fourleads);
+  prefs.end();
+  Serial.println("Preferences profile saved");
+  return true;
+}
+
+bool loadPreferencesProfile(bool report) {
+  Preferences prefs;
+  if (!prefs.begin(BIOZ_PREF_NAMESPACE, true)) {
+    if (report) {
+      Serial.println("Preferences load failed: namespace open failed");
+    }
+    return false;
+  }
+
+  const uint16_t schema = prefs.getUShort("schema", 0U);
+  if (schema != BIOZ_PREF_SCHEMA_VERSION) {
+    prefs.end();
+    if (report) {
+      Serial.println("No compatible preferences profile found");
+    }
+    return false;
+  }
+
+  const uint32_t k_ppm = prefs.getUInt("cal_k_ppm", BIOZ_SCAN_CAL_DEFAULT_GLOBAL_K_PPM);
+  if (k_ppm >= 500000UL && k_ppm <= 2000000UL) {
+    bioz_scan_cal_global_k = static_cast<float>(k_ppm) / 1000000.0f;
+  }
+  bioz_scan_cal_enabled = prefs.getBool("cal_en", false);
+
+  scan_avg = prefs.getUChar("scan_avg", scan_avg);
+  if (scan_avg < 1U) { scan_avg = 1U; }
+  if (scan_avg > 8U) { scan_avg = 8U; }
+
+  scan_fast = prefs.getBool("scan_fast", scan_fast);
+  scan_fullrange = prefs.getBool("scan_full", scan_fullrange);
+  scan_internal = prefs.getBool("scan_int", scan_internal);
+  scan_phase_range = (prefs.getUChar("scan_phase", (scan_phase_range == BIOZ_SCAN_PHASE_REDUCED) ? 1U : 0U) == 1U)
+                       ? BIOZ_SCAN_PHASE_REDUCED
+                       : BIOZ_SCAN_PHASE_FULL;
+
+  scan_internal_bist_ahpf = prefs.getUChar("scan_ahpf", scan_internal_bist_ahpf);
+  if ((scan_internal_bist_ahpf > 7U) && (scan_internal_bist_ahpf != 255U)) {
+    scan_internal_bist_ahpf = 255U;
+  }
+
+  scan_settle_samples = prefs.getUChar("scan_settle", scan_settle_samples);
+  if (scan_settle_samples < 1U) { scan_settle_samples = 1U; }
+  if (scan_settle_samples > 64U) { scan_settle_samples = 64U; }
+
+  scan_current_change_settle_samples = prefs.getUChar("scan_csettle", scan_current_change_settle_samples);
+  if (scan_current_change_settle_samples < scan_settle_samples) {
+    scan_current_change_settle_samples = scan_settle_samples;
+  }
+  if (scan_current_change_settle_samples > 64U) {
+    scan_current_change_settle_samples = 64U;
+  }
+
+  bioz_current = prefs.getUInt("bioz_current", bioz_current);
+  if (bioz_current > 96000UL) {
+    bioz_current = 96000UL;
+  }
+  bioz_fourleads = prefs.getBool("bioz_4wire", bioz_fourleads);
+
+  prefs.end();
+  if (report) {
+    Serial.println("Preferences profile loaded");
+    printPreferencesProfile();
+  }
+  return true;
+}
+
+bool clearPreferencesProfile() {
+  Preferences prefs;
+  if (!prefs.begin(BIOZ_PREF_NAMESPACE, false)) {
+    Serial.println("Preferences clear failed: namespace open failed");
+    return false;
+  }
+  const bool ok = prefs.clear();
+  prefs.end();
+  Serial.println(ok ? "Preferences profile cleared" : "Preferences clear failed");
+  return ok;
+}
+
 // Help Menu
 void helpMenu() {
   Serial.println("================================================================================");
@@ -768,10 +1025,17 @@ void helpMenu() {
   Serial.println("|----------------------------------------|-------------------------------------|");
   Serial.println("| ?: help screen                         | z: toggle data display on/off       |");
   Serial.println("| s: show current settings               | c: reset sample counter             |");
-  Serial.println("| h: run health check                    | (: save config snapshot             |");
-  Serial.println("| i: print device info                   | ): restore config snapshot          |");
-  Serial.println("| r: print all registers                 | p: print config registers           |");
-  Serial.println("| t: print status registers              | f: FIFO reset                       |");
+  Serial.println("| h: run health check                    | f: FIFO reset                       |");
+  Serial.println("| i: print device info                   |                                     |");
+  Serial.println("| r: print all registers                 |                                     |");
+  Serial.println("| t: print status registers              | p: print config registers           |");
+  Serial.println("================================================================================");
+  Serial.println("| PERSISTENCE                            | RAM SNAPSHOT                        |");
+  Serial.println("|----------------------------------------|-------------------------------------|");
+  Serial.println("| Ps: save NVS preferences               | (: save volatile register snapshot  |");
+  Serial.println("| Pl: load NVS preferences               | ): restore volatile register snap   |");
+  Serial.println("| Pd: print NVS preferences              |                                     |");
+  Serial.println("| Pc: clear NVS preferences              |                                     |");
   Serial.println("|========================================|=====================================|");
   Serial.println("| OPERATION MODES (auto-stop previous)   | START/STOP                          |");
   Serial.println("|----------------------------------------|-------------------------------------|");
@@ -792,25 +1056,26 @@ void helpMenu() {
   Serial.println("| Eh<n>: dig HPF    (0-1,255) Eh255      | Bd<n>: digital LPF(0-3)     Bd1     |");
   Serial.println("| Ee<n>: leads      (2 or 3)  Ee3        | Bh<n>: digital HPF(0-3)     Bh0     |");
   Serial.println("| Er<n>: R-to-R     (0=off,1) Er1        |                                     |");
-  Serial.println("| En<n>: notch  (0=off,50,60) En0        |                                     |");
-  Serial.println("| Eq<n>: notch Q    (1-100)   Eq20       |                                     |");
-  Serial.println("|                                        | Bf<n>: frequency Hz         Bf8000  |");
-  Serial.println("|                                        | Bc<n>: current nA           Bc8000  |");
+  Serial.println("| En<n>: notch  (0=off,50,60) En0        | Bf<n>: frequency Hz         Bf8000  |");
+  Serial.println("| Eq<n>: notch Q    (1-100)   Eq20       | Bc<n>: current nA           Bc8000  |");
   Serial.println("|                                        | Bp<n>: phase deg            Bp0     |");
   Serial.println("|                                        | Bl<n>: lead bias  (0=off,1) Bl1     |");
   Serial.println("|                                        | Bo<n>: lead-off   (0=off,1) Bo0     |");
   Serial.println("|                                        | Bw<n>: wires      (2 or 4)  Bw2     |");
   Serial.println("|========================================|=====================================|");
-  Serial.println("| SCAN SETTINGS                          | CALIBRATION SETTINGS                |");
+  Serial.println("| BIOZ SCAN SETTINGS                     | INTERNAL CALIBRATION SETTINGS       |");
   Serial.println("|----------------------------------------|-------------------------------------|");
   Serial.println("| Sa<n>: averages   (1-8)     Sa8        | Cr<n>: internal resistor    Cr1000  |");
   Serial.println("| Sf<n>: fast mode  (0=off,1) Sf0        | Cm<n>: cal modulation(0-3)  Cm0     |");
   Serial.println("| Sr<n>: full range (0=off,1) Sr0        | Cf<n>: mod frequency(0-4)   Cf3     |");
-  Serial.println("| Si<n>: source     (0=ext,1=int) Si0    | Ce<n>: ECG sig mode(0/1)   Ce1     |");
-  Serial.println("| Sp<n>: phase rng  (0=full,1) Sp0       | Cb<n>: BIOZ sig mode(0/1)  Cb0     |");
+  Serial.println("| Si<n>: source     (0=ext,1=int) Si0    | Ce<n>: ECG sig mode(0/1)   Ce1      |");
+  Serial.println("| Sp<n>: phase rng  (0=full,1) Sp0       | Cb<n>: BIOZ sig mode(0/1)  Cb0      |");
   Serial.println("| Sh<n>: int AHPF   (255,0-7) Sh255      |                                     |");
   Serial.println("| St<n>: settle     (1-64)    St24       |                                     |");
   Serial.println("| Sc<n>: cur settle (1-64)    Sc24       |                                     |");
+  Serial.println("|----------------------------------------|-------------------------------------|");
+  Serial.println("| Kp:    print scan calibration          | Kr:  reset scan calibration default |");
+  Serial.println("| Kg<n>: set global K ppm (1250650)      | Ke<n>: enable correction (0/1)      |");
   Serial.println("|========================================|=====================================|");
   Serial.println("| LOG LEVEL                              | SPECIAL                             |");
   Serial.println("|----------------------------------------|-------------------------------------|");
@@ -927,6 +1192,7 @@ void showSettings() {
   Serial.print(scan_settle_samples);
   Serial.print(" | Current Settle: ");
   Serial.println(scan_current_change_settle_samples);
+  printBiozScanCalibrationSettings();
   Serial.println("--------------------------------------------------------------------------------");
   Serial.println("Calibration Settings:");
   Serial.print("  Requested Resistor: ");
@@ -971,8 +1237,7 @@ void applySettings() {
     delay(100);
   }
 
-  Serial.print("Applying settings for mode: ");
-  Serial.println(getModeName(current_mode));
+  LOGI("Applying settings for mode: %s", getModeName(current_mode));
 
   switch (current_mode) {
     case MODE_ECG:
@@ -1074,20 +1339,13 @@ void applySettings() {
         config.settle_samples = scan_settle_samples;
         config.current_change_settle_samples = scan_current_change_settle_samples;
         afe.setupBIOZScan(config);
-        Serial.print("BIOZ scan mode configured (");
-        Serial.print(scan_internal ? "internal resistor" : "external electrodes");
-        Serial.println(")");
-        Serial.print("  Requested scan start current: ");
-        Serial.print(config.initial_current_nA);
-        Serial.print(" nA | phase range: ");
-        Serial.print(scanPhaseRangeLabel(config.phase_range));
-        Serial.print(" | internal AHPF: ");
-        Serial.print(scanAhpfOverrideLabel(config.internal_bist_ahpf));
-        Serial.print(" | settle: ");
-        Serial.print(config.settle_samples);
-        Serial.print(" samples | current-change settle: ");
-        Serial.print(config.current_change_settle_samples);
-        Serial.println(" samples");
+        LOGI("BIOZ scan mode configured (%s)", scan_internal ? "internal resistor" : "external electrodes");
+        LOGI("Requested scan start current: %ld nA | phase range: %s | internal AHPF: %s | settle: %u samples | current-change settle: %u samples",
+             static_cast<long>(config.initial_current_nA),
+             scanPhaseRangeLabel(config.phase_range),
+             scanAhpfOverrideLabel(config.internal_bist_ahpf),
+             config.settle_samples,
+             config.current_change_settle_samples);
       }
       break;
 
@@ -1260,6 +1518,75 @@ void handleParameterCommand(const char* command) {
     currentLogLevel = value;
     Serial.print("Log level set to: ");
     Serial.println(value);
+    return;
+  }
+
+  // External BIOZ scan calibration commands
+  if (cmd1 == 'K') {
+    switch (cmd2) {
+      case 'p':  // Print scan calibration
+        printBiozScanCalibrationSettings();
+        Serial.println("  Reliability: 3=validated, 2=boundary, 1=questionable, 0=outside");
+        break;
+
+      case 'e':  // Enable/disable correction
+        if (value == 0 || value == 1) {
+          bioz_scan_cal_enabled = (value == 1);
+          Serial.print("BIOZ scan correction: ");
+          Serial.println(bioz_scan_cal_enabled ? "ON" : "OFF");
+        } else {
+          Serial.println("BIOZ scan correction enable must be 0 or 1");
+        }
+        break;
+
+      case 'g':  // Global K in ppm, e.g. Kg1250650 -> 1.25065
+        if (value >= 500000 && value <= 2000000) {
+          bioz_scan_cal_global_k = static_cast<float>(value) / 1000000.0f;
+          Serial.print("BIOZ scan global K set to: ");
+          Serial.println(bioz_scan_cal_global_k, 6);
+        } else {
+          Serial.println("BIOZ scan global K ppm must be 500000-2000000");
+        }
+        break;
+
+      case 'r':  // Reset runtime calibration defaults
+        bioz_scan_cal_enabled = false;
+        bioz_scan_cal_global_k = BIOZ_SCAN_CAL_DEFAULT_GLOBAL_K;
+        Serial.println("BIOZ scan calibration reset to runtime defaults");
+        printBiozScanCalibrationSettings();
+        break;
+
+      default:
+        Serial.println("Unknown BIOZ scan calibration command");
+        break;
+    }
+    return;
+  }
+
+  // Non-volatile preferences commands. These store semantic sketch settings,
+  // not raw AFE register snapshots.
+  if (cmd1 == 'P') {
+    switch (cmd2) {
+      case 's':  // Save preferences
+        savePreferencesProfile();
+        break;
+
+      case 'l':  // Load preferences
+        loadPreferencesProfile(true);
+        break;
+
+      case 'c':  // Clear preferences
+        clearPreferencesProfile();
+        break;
+
+      case 'd':  // Display active preference profile
+        printPreferencesProfile();
+        break;
+
+      default:
+        Serial.println("Unknown preferences command");
+        break;
+    }
     return;
   }
 
@@ -1736,16 +2063,28 @@ void processCommand() {
 /******************************************************************************************************/
 
 void printSpectrum(const ImpedanceSpectrum& spectrum) {
-  Serial.println("frequency_hz,magnitude_ohm,phase_deg");
+  if (bioz_scan_cal_enabled && !scan_internal) {
+    Serial.println("frequency_hz,magnitude_ohm,phase_deg,reliability");
+  } else {
+    Serial.println("frequency_hz,magnitude_ohm,phase_deg");
+  }
   for (uint8_t i = 0; i < MAX30001_BIOZ_NUM_FREQUENCIES; ++i) {
     if (spectrum.frequency[i] <= 0.0f) {
       continue;
     }
+    const float output_magnitude = (bioz_scan_cal_enabled && !scan_internal)
+      ? correctedBiozScanMagnitude(spectrum.magnitude[i])
+      : spectrum.magnitude[i];
     Serial.print(spectrum.frequency[i], 1);
     Serial.print(',');
-    Serial.print(spectrum.magnitude[i], 3);
+    Serial.print(output_magnitude, 3);
     Serial.print(',');
-    Serial.println(spectrum.phase[i], 3);
+    Serial.print(spectrum.phase[i], 3);
+    if (bioz_scan_cal_enabled && !scan_internal) {
+      Serial.print(',');
+      Serial.print(biozScanReliabilityScore(spectrum.frequency[i], output_magnitude, spectrum.phase[i]));
+    }
+    Serial.println();
   }
 }
 
@@ -1779,21 +2118,23 @@ void displayData() {
     had_data = true;
   }
 
-  // BIOZ Data
-  while (BIOZ_data.available() > 0) {
-    BIOZ_data.pop(value);
-    if (data_reporting) {
-      Serial.print(policy.bioz_label != nullptr ? policy.bioz_label : "BIOZ [Ohm]: ");
-      if (policy.bioz_raw) {
-        Serial.println(value, 0);
-      } else {
-        Serial.println(value, 2);
+  // BIOZ Data. Scan mode owns BIOZ_data internally until it publishes BIOZ_spectrum.
+  if (!policy.expect_scan) {
+    while (BIOZ_data.available() > 0) {
+      BIOZ_data.pop(value);
+      if (data_reporting) {
+        Serial.print(policy.bioz_label != nullptr ? policy.bioz_label : "BIOZ [Ohm]: ");
+        if (policy.bioz_raw) {
+          Serial.println(value, 0);
+        } else {
+          Serial.println(value, 2);
+        }
       }
+      last_bioz_data_ms = millis();
+      bioz_timeout_reported = false;
+      sample_count++;
+      had_data = true;
     }
-    last_bioz_data_ms = millis();
-    bioz_timeout_reported = false;
-    sample_count++;
-    had_data = true;
   }
 
   // RTOR Data (R-to-R intervals)
@@ -1839,7 +2180,7 @@ void displayData() {
     if (BIOZ_spectrum.pop(spectrum) != 1U) {
       break;
     }
-    Serial.println("BIOZ scan complete");
+    LOGI("BIOZ scan complete");
     printSpectrum(spectrum);
     stopMeasurement();
   }
@@ -1859,6 +2200,7 @@ void setup() {
 
   LOGI("MAX30001G Interactive Test Program Starting");
   LOGI("===========================================");
+  loadPreferencesProfile(false);
 
   // AFE Initialization
   afe.begin();

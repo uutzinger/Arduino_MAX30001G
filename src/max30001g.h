@@ -1204,6 +1204,8 @@ private:
   uint8_t biozScanPhaseCountForFreq(uint8_t freq_idx) const;
   uint8_t biozScanPhaseSelectorForStep(uint8_t freq_idx, uint8_t phase_step_idx) const;
   uint8_t biozScanSelectAHPF(uint8_t freq_idx) const;
+  int32_t biozScanMaxHighCurrentForFreq(uint8_t freq_idx);
+  int32_t biozScanClampCurrentForFreq(uint8_t freq_idx, int32_t requested_nA);
   float   biozScanRobustMeanFromBuffer(uint8_t outlier_min_samples, float outlier_sigma, bool& hasSamples);
 
   // ---------------------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['n1_728',['n1',['../unionmax30001__info__reg.html#a93792850bbf2afbbab662f28da825301',1,'max30001_info_reg']]],
-  ['n2_729',['n2',['../unionmax30001__info__reg.html#a9fb8bdced49f27c4da71b3c4fb1aa604',1,'max30001_info_reg']]],
-  ['n3_730',['n3',['../unionmax30001__info__reg.html#a3d0130ab555f9c78362be3970fe78bae',1,'max30001_info_reg']]],
-  ['n4_731',['n4',['../unionmax30001__info__reg.html#a89d988ed41cf1ba5acff0eb04f46078c',1,'max30001_info_reg']]]
+  ['n1_0',['n1',['../unionmax30001__info__reg.html#a93792850bbf2afbbab662f28da825301',1,'max30001_info_reg']]],
+  ['n2_1',['n2',['../unionmax30001__info__reg.html#a9fb8bdced49f27c4da71b3c4fb1aa604',1,'max30001_info_reg']]],
+  ['n3_2',['n3',['../unionmax30001__info__reg.html#a3d0130ab555f9c78362be3970fe78bae',1,'max30001_info_reg']]],
+  ['n4_3',['n4',['../unionmax30001__info__reg.html#a89d988ed41cf1ba5acff0eb04f46078c',1,'max30001_info_reg']]]
 ];

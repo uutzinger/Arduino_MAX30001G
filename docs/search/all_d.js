@@ -1,20 +1,10 @@
 var searchData=
 [
-  ['pavg_310',['pavg',['../unionmax30001__cnfg__rtor1__reg__t.html#a36fba1add231f453b273033cf597fe75',1,'max30001_cnfg_rtor1_reg_t']]],
-  ['pedge_311',['pedge',['../unionmax30001__status__reg__t.html#acccf2debf164cc369e4a41f0224fa0a0',1,'max30001_status_reg_t']]],
-  ['phase_312',['phase',['../structImpedanceModel.html#a3dedbf52a292705e7f16a6ae0a2f6b0c',1,'ImpedanceModel::phase()'],['../structImpedanceSpectrum.html#ae55f33f783431f7210ac1a636450e6c5',1,'ImpedanceSpectrum::phase()']]],
-  ['phase_5frange_313',['phase_range',['../structBIOZScanConfig.html#a594f0a1ab334494d7fbe9dda7931a1d1',1,'BIOZScanConfig']]],
-  ['phoff_314',['phoff',['../unionmax30001__cnfg__bioz__reg__t.html#a77bef306255a8ffec9680ef9555919f1',1,'max30001_cnfg_bioz_reg_t']]],
-  ['pll_5funlocked_315',['pll_unlocked',['../structHealthCheckResult.html#a2ba8467821edb0b61b23372d315cefc2',1,'HealthCheckResult']]],
-  ['pll_5funlocked_5foccurred_316',['pll_unlocked_occurred',['../max30001g__globals_8h.html#ac76556116bff931b2d3e9d54d65b4bcf',1,'pll_unlocked_occurred():&#160;max30001g_globals.cpp'],['../max30001g__globals_8cpp.html#ac76556116bff931b2d3e9d54d65b4bcf',1,'pll_unlocked_occurred():&#160;max30001g_globals.cpp']]],
-  ['pllint_317',['pllint',['../unionmax30001__status__reg__t.html#a3b175340c5adba8325cd610bbd8542d8',1,'max30001_status_reg_t']]],
-  ['pol_318',['pol',['../unionmax30001__cnfg__emux__reg.html#a0389f8b8fcb5cf768218e342c0bc9330',1,'max30001_cnfg_emux_reg']]],
-  ['povf_319',['povf',['../unionmax30001__status__reg__t.html#a661682e6de54eb5e53838a0e728796af',1,'max30001_status_reg_t']]],
-  ['print_320',['print',['../unionmax30001__status__reg__t.html#aae1e5342aab51b83e5b705e60db0f8c5',1,'max30001_status_reg_t']]],
-  ['printallregisters_321',['printAllRegisters',['../classMAX30001G.html#aa5e8611157fa8d16814550176abc6817',1,'MAX30001G']]],
-  ['printbiozdiagnosticregisters_322',['printBiozDiagnosticRegisters',['../classMAX30001G.html#afae7b902681bf339a03e413e3f8d2259',1,'MAX30001G']]],
-  ['printconfig_323',['printConfig',['../classMAX30001G.html#a5dd72a27d89c172de93593dd03a6dfeb',1,'MAX30001G']]],
-  ['printinfo_324',['printInfo',['../classMAX30001G.html#ade7e9f9ce37f85823559702ae0a03478',1,'MAX30001G']]],
-  ['printstatus_325',['printStatus',['../classMAX30001G.html#a9cc5de108e4bae15bf3612ba7cc15a81',1,'MAX30001G']]],
-  ['ptsf_326',['ptsf',['../unionmax30001__cnfg__rtor1__reg__t.html#a8eedbaedd6c19700aedf1ac8e1e55aa6',1,'max30001_cnfg_rtor1_reg_t']]]
+  ['of_20max30001g_0',['Block Diagram of MAX30001G',['../index.html#autotoc_md12',1,'']]],
+  ['one_20aggregate_20callback_1',['Example: One aggregate callback',['../md_Interrupts.html#autotoc_md21',1,'']]],
+  ['openn_2',['openn',['../unionmax30001__cnfg__emux__reg.html#a4a123dc8f4bb8865378fa14940b65847',1,'max30001_cnfg_emux_reg::openn'],['../unionmax30001__cnfg__bmux__reg__t.html#ac0e6044303404c3b979a177adaf80f0f',1,'max30001_cnfg_bmux_reg_t::openn']]],
+  ['openp_3',['openp',['../unionmax30001__cnfg__emux__reg.html#abb24780b2d7a36f765cfae641293d31e',1,'max30001_cnfg_emux_reg::openp'],['../unionmax30001__cnfg__bmux__reg__t.html#a81ae0709a9ea7435c90fa7d5701bea18',1,'max30001_cnfg_bmux_reg_t::openp']]],
+  ['outlier_5fmin_5fsamples_4',['outlier_min_samples',['../structBIOZScanConfig.html#aa903cfb2abbd1ff467702d029d703174',1,'BIOZScanConfig']]],
+  ['outlier_5fsigma_5',['outlier_sigma',['../structBIOZScanConfig.html#a9f7418f511194f2e8132daa664a4851e',1,'BIOZScanConfig']]],
+  ['over_5fvoltage_5fdetected_6',['over_voltage_detected',['../max30001g__globals_8cpp.html#aecdacdb0818947516a0d5b428338bb1d',1,'over_voltage_detected:&#160;max30001g_globals.cpp'],['../max30001g__globals_8h.html#aecdacdb0818947516a0d5b428338bb1d',1,'over_voltage_detected:&#160;max30001g_globals.cpp']]]
 ];

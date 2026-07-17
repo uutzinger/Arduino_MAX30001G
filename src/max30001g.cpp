@@ -1889,6 +1889,35 @@ int32_t MAX30001G::closestCurrent(int32_t input) {
   return currentValues[size - 1];
 }
 
+int32_t MAX30001G::biozScanMaxHighCurrentForFreq(uint8_t freq_idx) {
+  // Table 43 CGMAG ceilings by FCGEN index. Low-current selections below 8uA
+  // remain valid at every frequency, so this only limits high-current requests.
+  if (freq_idx <= 3U) {
+    return 96000;
+  }
+  if (freq_idx == 4U) {
+    return 80000;
+  }
+  if (freq_idx == 5U) {
+    return 32000;
+  }
+  if (freq_idx == 6U) {
+    return 16000;
+  }
+  return 8000;
+}
+
+int32_t MAX30001G::biozScanClampCurrentForFreq(uint8_t freq_idx, int32_t requested_nA) {
+  int32_t current_nA = closestCurrent(requested_nA);
+  if (current_nA >= 8000) {
+    const int32_t max_current_nA = biozScanMaxHighCurrentForFreq(freq_idx);
+    if (current_nA > max_current_nA) {
+      current_nA = max_current_nA;
+    }
+  }
+  return current_nA;
+}
+
 
 /*********************************************************
  * Empties the BIOZ data ring buffer
@@ -1996,7 +2025,7 @@ void MAX30001G::stepBIOZScan() {
 
       for (uint8_t i = 0U; i < MAX30001_BIOZ_NUM_FREQUENCIES; ++i) {
         _scanFrequency[i]      = 0.0f;
-        _scanCurrent[i]        = _scanRuntimeConfig.initial_current_nA;
+        _scanCurrent[i]        = biozScanClampCurrentForFreq(i, _scanRuntimeConfig.initial_current_nA);
         impedance_magnitude[i] = 0.0f;
         impedance_phase[i]     = 0.0f;
         impedance_frequency[i] = 0.0f;
@@ -2006,6 +2035,10 @@ void MAX30001G::stepBIOZScan() {
         }
       }
 
+      if (!use_internal_resistor) {
+        LOGI("scan_external_summary,frequency_hz,cosine_magnitude_ohm,cosine_phase_deg,triangular_magnitude_ohm,triangular_phase_deg,maxabs_ohm,current_nA,num_phase_points");
+      }
+
       const bool reuseProfile = _scanReuseCurrents &&
                                 _scanCurrentProfileValid &&
                                 (_scanProfileFreqStart == freq_start_index) &&
@@ -2013,7 +2046,7 @@ void MAX30001G::stepBIOZScan() {
                                 (_scanProfileFast == fast);
       if (reuseProfile) {
         for (uint8_t i = freq_start_index; i <= freq_end_index; ++i) {
-          _scanCurrent[i] = _scanCurrentProfile[i];
+          _scanCurrent[i] = biozScanClampCurrentForFreq(i, _scanCurrentProfile[i]);
         }
         LOGI("scanBIOZ: reusing previously optimized current profile.");
       }
@@ -2130,6 +2163,7 @@ void MAX30001G::stepBIOZScan() {
 
     case BIOZ_SCAN_CONFIG_CURRENT: {
       const int32_t previous_current_nA = BIOZ_cgmag;
+      _scanCurrent[_scanFreqIndex] = biozScanClampCurrentForFreq(_scanFreqIndex, _scanCurrent[_scanFreqIndex]);
       setBIOZmag(_scanCurrent[_scanFreqIndex]);
       _scanCurrent[_scanFreqIndex] = BIOZ_cgmag;
       _scanCurrentChangedForAttempt = (_scanCurrent[_scanFreqIndex] != previous_current_nA);
@@ -2336,6 +2370,8 @@ void MAX30001G::stepBIOZScan() {
             ));
           }
 
+          desired_current = biozScanClampCurrentForFreq(_scanFreqIndex, desired_current);
+
           if ((desired_current != _scanCurrent[_scanFreqIndex]) &&
               ((_scanAttempt + 1U) < _scanRuntimeConfig.max_retries)) {
             _scanCurrent[_scanFreqIndex] = desired_current;
@@ -2357,17 +2393,40 @@ void MAX30001G::stepBIOZScan() {
 
     case BIOZ_SCAN_FINALIZE_FREQ: {
       // fit impedance model to phase measurements at current frequency and store results
-      const ImpedanceModel result = use_internal_resistor
-                                      ? fitImpedanceTriangular(_scanPhaseDeg[_scanFreqIndex],
-                                                               _scanImpedance[_scanFreqIndex],
-                                                               _scanNumPhaseMeasurements)
-                                      : fitImpedanceCosine(_scanPhaseDeg[_scanFreqIndex],
-                                                           _scanImpedance[_scanFreqIndex],
-                                                           _scanNumPhaseMeasurements);
+      const ImpedanceModel triangular_result = fitImpedanceTriangular(_scanPhaseDeg[_scanFreqIndex],
+                                                                      _scanImpedance[_scanFreqIndex],
+                                                                      _scanNumPhaseMeasurements);
+      const ImpedanceModel cosine_result = fitImpedanceCosine(_scanPhaseDeg[_scanFreqIndex],
+                                                             _scanImpedance[_scanFreqIndex],
+                                                             _scanNumPhaseMeasurements);
+      const ImpedanceModel result = use_internal_resistor ? triangular_result : cosine_result;
       impedance_magnitude[_scanFreqIndex] = result.magnitude;
       impedance_phase[_scanFreqIndex] = result.phase;
       impedance_frequency[_scanFreqIndex] = _scanFrequency[_scanFreqIndex];
       _scanCurrentProfile[_scanFreqIndex] = _scanCurrent[_scanFreqIndex];
+
+      if (!use_internal_resistor) {
+        float max_abs_ohm = 0.0f;
+        for (uint8_t i = 0U; i < _scanNumPhaseMeasurements; ++i) {
+          const float value = _scanImpedance[_scanFreqIndex][i];
+          if (isfinite(value)) {
+            const float abs_value = fabsf(value);
+            if (abs_value > max_abs_ohm) {
+              max_abs_ohm = abs_value;
+            }
+          }
+        }
+
+        LOGI("scan_external_summary,%.1f,%.3f,%.3f,%.3f,%.3f,%.3f,%ld,%u",
+             _scanFrequency[_scanFreqIndex],
+             cosine_result.magnitude,
+             cosine_result.phase,
+             triangular_result.magnitude,
+             triangular_result.phase,
+             max_abs_ohm,
+             static_cast<long>(_scanCurrent[_scanFreqIndex]),
+             _scanNumPhaseMeasurements);
+      }
 
       _scanFreqIndex++;
       _BIOZScanState = BIOZ_SCAN_CONFIG_FREQ;

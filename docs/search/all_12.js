@@ -1,11 +1,8 @@
 var searchData=
 [
-  ['v_5favdd_434',['V_AVDD',['../max30001g__globals_8cpp.html#a14c0e09f6c279b3a39384a8f3245ee84',1,'V_AVDD():&#160;max30001g_globals.cpp'],['../max30001g__globals_8h.html#a14c0e09f6c279b3a39384a8f3245ee84',1,'V_AVDD():&#160;max30001g_globals.cpp']]],
-  ['v_5fref_435',['V_ref',['../max30001g__globals_8cpp.html#a66c6c8ff74726d690e40e4fb59673327',1,'V_ref():&#160;max30001g_globals.cpp'],['../max30001g__globals_8h.html#a66c6c8ff74726d690e40e4fb59673327',1,'V_ref():&#160;max30001g_globals.cpp']]],
-  ['valid_436',['valid',['../structConfigSnapshot.html#af589e68270c25b85f108ea197d3525de',1,'ConfigSnapshot']]],
-  ['valid_5fdata_5fdetected_437',['valid_data_detected',['../max30001g__globals_8cpp.html#a06968b23fcc97c5ccc6a9f6f5a99839c',1,'valid_data_detected():&#160;max30001g_globals.cpp'],['../max30001g__globals_8h.html#a06968b23fcc97c5ccc6a9f6f5a99839c',1,'valid_data_detected():&#160;max30001g_globals.cpp']]],
-  ['vcal_438',['vcal',['../unionmax30001__cnfg__cal__reg__t.html#af67ce6c90cfc3682aa2681c99dd2d6de',1,'max30001_cnfg_cal_reg_t']]],
-  ['vmag_439',['vmag',['../unionmax30001__cnfg__cal__reg__t.html#a6fa32d5769bb134d4216a04985f8f64a',1,'max30001_cnfg_cal_reg_t']]],
-  ['vmode_440',['vmode',['../unionmax30001__cnfg__cal__reg__t.html#a9b8587cf2766800c629f045b068784eb',1,'max30001_cnfg_cal_reg_t']]],
-  ['vth_441',['vth',['../unionmax30001__cnfg__gen__reg__t.html#a7308df38a46715eacf2debce2bca958d',1,'max30001_cnfg_gen_reg_t']]]
+  ['target_5ffraction_0',['target_fraction',['../structBIOZScanConfig.html#a664475d516c4dd5c8e4d9e8915c15287',1,'BIOZScanConfig']]],
+  ['thigh_1',['thigh',['../unionmax30001__cnfg__cal__reg__t.html#a4f394a8bec2cd760cb2f230c0e53caa6',1,'max30001_cnfg_cal_reg_t']]],
+  ['timeout_5fmargin_5fms_2',['timeout_margin_ms',['../structBIOZScanConfig.html#ab98f968b4bb1f7397ca8a3f7446f0361',1,'BIOZScanConfig']]],
+  ['tres_3',['tres',['../max30001g__globals_8cpp.html#a374dd28d67d051d50924dc1d4807c4ad',1,'tres:&#160;max30001g_globals.cpp'],['../max30001g__globals_8h.html#a374dd28d67d051d50924dc1d4807c4ad',1,'tres:&#160;max30001g_globals.cpp']]],
+  ['tt_20interruptevent_20tt_4',['Available per-event callbacks (&lt;tt&gt;InterruptEvent&lt;/tt&gt;)',['../md_Interrupts.html#autotoc_md19',1,'']]]
 ];

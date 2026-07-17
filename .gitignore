@@ -212,3 +212,7 @@ compile_commands.json
 # site/
 # Doxygen/
 # docs/doxygen/
+
+# Calibration generated data
+calibration/calibration_runs/
+calibration/calibration_analysis/

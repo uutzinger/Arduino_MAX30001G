@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['global_20variables_886',['Global Variables',['../md_Global_Variables.html',1,'']]]
+  ['arduino_20library_0',['Maxim 30001 Arduino Library',['../index.html',1,'']]]
 ];

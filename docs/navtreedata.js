@@ -25,38 +25,25 @@
 var NAVTREE =
 [
   [ "MAX30001G", "index.html", [
-    [ "Maxim 30001 Arduino Library", "index.html", [
-      [ "Installation", "index.html#autotoc_md1", null ],
-      [ "Dependencies", "index.html#autotoc_md2", null ],
-      [ "Documentation", "index.html#autotoc_md3", null ],
-      [ "Hardware with MAX30001G", "index.html#autotoc_md4", null ],
-      [ "Quick Start", "index.html#autotoc_md5", null ],
-      [ "Main Sketch", "index.html#autotoc_md6", null ],
-      [ "Example Sketches", "index.html#autotoc_md7", null ],
-      [ "Contributing", "index.html#autotoc_md8", null ],
-      [ "License", "index.html#autotoc_md9", null ],
-      [ "Block Diagram of MAX 30001G", "index.html#autotoc_md10", null ],
-      [ "Input MUX ECG", "index.html#autotoc_md11", null ],
-      [ "Input MUX BIOZ", "index.html#autotoc_md12", null ]
-    ] ],
+    [ "Maxim 30001 Arduino Library", "index.html", "index" ],
     [ "Changelog", "md_CHANGELOG.html", null ],
     [ "Interrupt Handling", "md_Interrupts.html", [
-      [ "Interrupt Usage", "md_Interrupts.html#autotoc_md15", null ],
-      [ "Configure which events drive INT1/INT2", "md_Interrupts.html#autotoc_md16", null ],
-      [ "Available per-event callbacks (<tt>InterruptEvent</tt>)", "md_Interrupts.html#autotoc_md17", null ],
-      [ "Example: Individual ECG and BIOZ FIFO callbacks", "md_Interrupts.html#autotoc_md18", null ],
-      [ "Example: One aggregate callback", "md_Interrupts.html#autotoc_md19", null ],
-      [ "Interrupt Callback API summary", "md_Interrupts.html#autotoc_md20", null ]
+      [ "Interrupt Usage", "md_Interrupts.html#autotoc_md17", null ],
+      [ "Configure which events drive INT1/INT2", "md_Interrupts.html#autotoc_md18", null ],
+      [ "Available per-event callbacks (<tt>InterruptEvent</tt>)", "md_Interrupts.html#autotoc_md19", null ],
+      [ "Example: Individual ECG and BIOZ FIFO callbacks", "md_Interrupts.html#autotoc_md20", null ],
+      [ "Example: One aggregate callback", "md_Interrupts.html#autotoc_md21", null ],
+      [ "Interrupt Callback API summary", "md_Interrupts.html#autotoc_md22", null ]
     ] ],
-    [ "Global Variables", "md_Global_Variables.html", [
-      [ "AFE globals", "md_Global_Variables.html#autotoc_md22", null ],
-      [ "BIOZ globals", "md_Global_Variables.html#autotoc_md23", null ],
-      [ "ECG globals", "md_Global_Variables.html#autotoc_md24", null ],
-      [ "Data related globals", "md_Global_Variables.html#autotoc_md25", null ],
-      [ "Impedance spectroscopy", "md_Global_Variables.html#autotoc_md26", null ],
-      [ "Error & Status globals", "md_Global_Variables.html#autotoc_md27", null ]
+    [ "Global Variables", "md_Global_01Variables.html", [
+      [ "AFE globals", "md_Global_01Variables.html#autotoc_md24", null ],
+      [ "BIOZ globals", "md_Global_01Variables.html#autotoc_md25", null ],
+      [ "ECG globals", "md_Global_01Variables.html#autotoc_md26", null ],
+      [ "Data related globals", "md_Global_01Variables.html#autotoc_md27", null ],
+      [ "Impedance spectroscopy", "md_Global_01Variables.html#autotoc_md28", null ],
+      [ "Error & Status globals", "md_Global_01Variables.html#autotoc_md29", null ]
     ] ],
-    [ "Modules", "modules.html", "modules" ],
+    [ "Topics", "topics.html", "topics" ],
     [ "Classes", "annotated.html", [
       [ "Class List", "annotated.html", "annotated_dup" ],
       [ "Class Index", "classes.html", null ],
@@ -87,8 +74,8 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"max30001g__defs_8h.html#aae7a22121ec5cf26ba05dfdad36a3096",
-"structImpedanceSpectrum.html#ab2642edd3d5e8a7638e96b795b26b192"
+"max30001g__defs_8h.html#aa6a23fd54b5298a023513cd44c4e8bec",
+"structImpedanceSpectrum.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

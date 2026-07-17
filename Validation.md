@@ -572,7 +572,10 @@ BIOZScan refactor validation plan:
   - Completed with scan-like setup/collection after the BIOZScan state-machine refactor.
   - Result supports keeping global scan defaults at `settle_samples=24` and `current_change_settle_samples=32`.
   - Frequency-only transitions may be candidates for a later per-transition optimization to `16` samples, but phase/filter/start transitions still justify the 24-sample default.
-- [ ] Run external known-load validation before claiming external scan accuracy.
+- [x] Run external known-load validation before claiming external scan accuracy.
+  - Completed with full fixture run `calibration/calibration_runs/20260716_162307`, repeatability run `calibration/calibration_runs/20260716_173454`, and corrected-output verification run `calibration/calibration_runs/20260717_133127`.
+  - Result: external scan uses cosine-fit complex impedance with global median magnitude correction `K = 1.25065`.
+  - Remaining limitation: high-frequency/high-impedance points are boundary conditions and should be interpreted using the reliability score.
 - [ ] Compare external known-load scans with internal-only restart versus restart for both internal and external paths.
 
 BIOZScan later optimization work:
@@ -1263,6 +1266,332 @@ Create a dedicated test program and test process for known external impedance mo
   - Verify whether `fitImpedanceCosine()` is correct for external resistor/RC loads.
   - Decide whether `fitImpedanceTriangular()` should remain internal-BIST-only, move to a validation-only output path, or be replaced by another internal-BIST summary such as max-absolute response plus scale correction.
 - [ ] Use known-load results to design the final calibration process for tissue and sample measurements.
+
+Recorded external fixture result:
+- [x] 2026-07-15 user-reported first `100 ohm` external fixed-frequency BIOZ check using `examples/MAX30001G/MAX30001G.ino`.
+  - Fixture/load: external `100 ohm` load.
+  - Mode: `m7` BIOZ external impedance.
+  - Requested setup: `Bf8000`, `Bc8000`, `Bp0`, then start/data display.
+  - Result: 34 reported `BIOZ [Ohm]` samples from `97.80` to `97.85 ohm`.
+  - Mean: `97.831 ohm`.
+  - Population standard deviation: `0.016 ohm`.
+  - Error versus nominal `100 ohm`: `-2.169%`.
+  - Assessment: functional pass for first external load path check; stable enough to proceed to a `100 ohm` external BIOZ scan.
+- [x] 2026-07-15 first `100 ohm` external BIOZ scan attempt captured in `/home/uutzinger/Documents/Serial.txt`.
+  - Scan settings shown by `s`: external source, `Sa8`, fast mode on, full range off, reduced phase range selected, settle/current settle `24/24`.
+  - The scan did complete and printed a spectrum, but every frequency result was `0.000,0.000`.
+  - Serial log showed per-phase BIOZ samples were present, but every frequency emitted `scanBIOZ: no valid samples` and `using best-effort data`.
+  - Root cause identified in `examples/MAX30001G/MAX30001G.ino`: `displayData()` drained `BIOZ_data` during scan mode when `Data Display` was ON, consuming scan-owned samples before `stepBIOZScan()` processed them.
+  - Corrective action: changed the interactive sketch so scan mode does not drain `BIOZ_data`; scan output should come only from `BIOZ_spectrum`.
+  - Retest required after uploading the patched `MAX30001G.ino`.
+  - Validation gap: previous internal 1 kOhm scan validation used dedicated scan examples and/or scan-focused paths that waited for `BIOZ_spectrum`; it did not exercise the merged interactive sketch with `Data Display` enabled during scan mode. Add this as a regression condition for both internal and external scan validation.
+- [x] 2026-07-15 second `100 ohm` external BIOZ scan attempt after patching the data-display drain.
+  - Data display no longer drained scan-owned `BIOZ_data`; the prior stray per-phase `BIOZ [Ohm]` output was gone.
+  - Scan still timed out before a spectrum was available.
+  - Log showed `Data Display: OFF`, external source, `Sa8`, fast mode on, full range off, and reduced phase range selected in the displayed settings.
+  - Actual scan phase stepping still used full phase density at lower frequency bins, which indicates the displayed scan settings had not been applied to the already-configured driver profile before `start()`.
+  - Log also showed auto-ranging repeatedly increasing current up to FCGEN limits, making the stale full-phase scan too slow for the `180 s` interactive timeout.
+  - Corrective action: update the interactive sketch so `startMeasurement()` applies current settings before calling `afe.start()`. Also add an explicit `a` command to the external scan process before `.` for clarity and compatibility with older uploads.
+- [x] 2026-07-15 third `100 ohm` external BIOZ scan attempt after applying settings before start.
+  - Scan completed with reduced phase range and no timeout.
+  - Output spectrum:
+    - `131072.0,82.117,-0.796`
+    - `81920.0,82.120,-0.291`
+    - `40960.0,81.971,0.174`
+    - `18204.0,81.656,0.479`
+    - `8192.0,81.499,0.853`
+    - `4096.0,81.371,1.669`
+    - `2048.0,81.041,3.640`
+    - `1024.0,80.341,1.940`
+  - Compared with the fixed-frequency external BIOZ baseline mean of `97.831 ohm`, the scan result is biased low by about `16..18%`.
+  - Assessment: external scan acquisition now runs end-to-end, but the scan summary is not yet calibrated/validated for external loads. Do not treat external scan magnitude as accurate until the phase-point data, fit model, and current-ranging behavior are checked against known loads.
+  - Follow-up: add or enable external scan diagnostics that print per-frequency current and per-phase measured Ohms/raw values so the error can be separated into acquisition scaling versus `fitImpedanceCosine()` model bias.
+- [x] 2026-07-15 scan-like continuous BIOZ check on the same `100 ohm` external load.
+  - Mode: `m2` continuous BIOZ.
+  - Settings: fast BIOZ sampling (`64.0 sps`), `20 V/V`, AHPF `150 Hz`, DLPF `4.096 Hz`, DHPF bypass, actual frequency `8192.0 Hz`, `8000 nA`, `0.00 deg`.
+  - User-reported output was stable around `93.33 ohm`.
+  - Compared with the `m7` external-calibration baseline mean of `97.831 ohm`, this scan-like continuous setup is lower by about `4.6%`.
+  - Compared with the reduced-phase scan result at `8192 Hz` (`81.499 ohm`), continuous 0-degree measurement is higher by about `14.5%`.
+  - Assessment: the scan magnitude error is not explained by the scan-like gain/filter/current setup alone. Remaining suspects are phase-fit/model bias, per-phase scan acquisition/settling, and current auto-ranging/retry behavior.
+  - Follow-up: before changing production behavior, run either fixed-phase continuous checks at `0/45/90/135 deg` or add temporary scan diagnostics that print per-phase settled values and final current for each frequency.
+- [x] 2026-07-15 conservative-settling `100 ohm` external BIOZ scan.
+  - Settings: external source, `Sa8`, fast mode on, full range off, reduced phase range, `settle_samples=48`, `current_change_settle_samples=64`, start current `8000 nA`.
+  - Output spectrum:
+    - `131072.0,82.120,-0.801`
+    - `81920.0,82.074,-0.243`
+    - `40960.0,81.893,0.224`
+    - `18204.0,81.662,0.480`
+    - `8192.0,81.502,0.881`
+    - `4096.0,81.407,1.686`
+    - `2048.0,80.927,3.631`
+    - `1024.0,80.310,1.880`
+  - Compared with the previous `St24/Sc24` scan, the `8192 Hz` result changed from `81.499 ohm` to `81.502 ohm`.
+  - Assessment: increasing global scan settling from `24/24` to `48/64` did not materially change the low external scan magnitude. The dominant error is probably not the global settle sample count.
+  - Follow-up: run manual continuous phase points at `0/45/90/135 deg` or add temporary scan diagnostics for per-phase settled Ohms/raw ADC and final current.
+- [x] 2026-07-15 manual reduced-phase continuous point check on the same `100 ohm` external load.
+  - Settings: `m2` continuous BIOZ, fast sampling (`64.0 sps`), `20 V/V`, AHPF `150 Hz`, DLPF `4.096 Hz`, DHPF bypass, actual frequency `8192.0 Hz`, `8000 nA`.
+  - Phase-point summary:
+    - `0 deg`: 360 samples, mean `93.295 ohm`, range `93.22..93.34 ohm`, population standard deviation `0.021 ohm`.
+    - `45 deg`: 280 samples, mean `46.998 ohm`, range `46.93..47.05 ohm`, population standard deviation `0.021 ohm`.
+    - `90 deg`: 288 samples, mean `0.124 ohm`, range `0.07..0.20 ohm`, population standard deviation `0.021 ohm`.
+    - `135 deg`: 320 samples, mean `-47.433 ohm`, range `-47.49..-47.37 ohm`, population standard deviation `0.023 ohm`.
+  - A no-offset cosine fit to these four manual phase points gives magnitude about `80.034 ohm`, close to the external scan result around `81.5 ohm`.
+  - Assessment: the low external scan magnitude is primarily explained by external phase-response model mismatch. The external resistor response is not sinusoidal/cosine over `0/45/90/135 deg`; it is closer to the triangular/linear behavior previously seen with internal BIST.
+  - Follow-up: evaluate a triangular or max-absolute external scan summary for known resistor loads before moving to RC loads or tissue/sample interpretation.
+- [x] 2026-07-15 added temporary external scan summary diagnostics.
+  - External scans now print one `scan_external_summary` row per completed frequency before the normal spectrum output.
+  - Diagnostic columns: `frequency_hz`, `cosine_magnitude_ohm`, `cosine_phase_deg`, `triangular_magnitude_ohm`, `triangular_phase_deg`, `maxabs_ohm`, `current_nA`, and `num_phase_points`.
+  - The normal external scan result still uses `fitImpedanceCosine()` for now; the additional triangular and max-absolute values are validation outputs only.
+  - Next validation step: repeat the conservative `100 ohm` external scan and compare the diagnostic row at `8192 Hz` against the manual reduced-phase continuous points and the `m7` baseline.
+- [x] 2026-07-15 external scan summary diagnostic run on the same `100 ohm` external load.
+  - Settings: external source, `Sa8`, fast mode on, full range off, reduced phase range, `settle_samples=48`, `current_change_settle_samples=64`, requested start current `8000 nA`.
+  - Diagnostic rows:
+    - `131072 Hz`: cosine `82.118 ohm`, triangular `97.081 ohm`, maxabs `95.631 ohm`, current `96000 nA`.
+    - `81920 Hz`: cosine `82.074 ohm`, triangular `96.647 ohm`, maxabs `95.904 ohm`, current `96000 nA`.
+    - `40960 Hz`: cosine `81.888 ohm`, triangular `96.100 ohm`, maxabs `95.928 ohm`, current `96000 nA`.
+    - `18204 Hz`: cosine `81.662 ohm`, triangular `95.658 ohm`, maxabs `95.675 ohm`, current `96000 nA`.
+    - `8192 Hz`: cosine `81.535 ohm`, triangular `95.579 ohm`, maxabs `95.476 ohm`, current `80000 nA`.
+    - `4096 Hz`: cosine `81.373 ohm`, triangular `95.395 ohm`, maxabs `95.121 ohm`, current `32000 nA`.
+    - `2048 Hz`: cosine `81.372 ohm`, triangular `95.388 ohm`, maxabs `94.970 ohm`, current `16000 nA`.
+    - `1024 Hz`: cosine `80.288 ohm`, triangular `94.609 ohm`, maxabs `93.558 ohm`, current `8000 nA`.
+  - Normal spectrum matched the cosine diagnostic columns exactly, confirming the production scan output is currently the cosine fit.
+  - Assessment: external scan acquisition is producing phase data whose max-absolute and triangular summaries are close to the fixed-frequency/continuous external baseline. The low `80..82 ohm` scan magnitude is therefore primarily a cosine-model summary bias for this reduced-phase resistor scan.
+  - Secondary observation: auto-ranging requested `96000 nA` and then clamped to FCGEN-dependent limits at lower frequencies. This did not prevent a stable diagnostic result, but the repeated warnings should be cleaned up before finalizing the scan implementation.
+  - Follow-up: keep cosine as the normal output until RC loads are tested, but use the diagnostic values to evaluate `R1K`, `R10K`, and selected RC loads. Consider changing external resistor summary/reporting only after the load-set behavior is understood.
+- [x] 2026-07-15 external scan summary diagnostic run on fixture `1 kOhm` load.
+  - Physical setup: external fixture connected in 4-wire configuration; interactive/driver setting still reported `Wires: 2-wire`.
+  - Settings: external source, `Sa8`, fast mode on, full range off, reduced phase range, `settle_samples=48`, `current_change_settle_samples=64`, requested start current `8000 nA`.
+  - Diagnostic rows:
+    - `131072 Hz`: cosine `798.688 ohm`, triangular `973.775 ohm`, maxabs `901.157 ohm`, current `8000 nA`.
+    - `81920 Hz`: cosine `807.225 ohm`, triangular `970.796 ohm`, maxabs `925.787 ohm`, current `8000 nA`.
+    - `40960 Hz`: cosine `813.897 ohm`, triangular `966.200 ohm`, maxabs `944.498 ohm`, current `8000 nA`.
+    - `18204 Hz`: cosine `816.236 ohm`, triangular `961.055 ohm`, maxabs `952.734 ohm`, current `8000 nA`.
+    - `8192 Hz`: cosine `817.341 ohm`, triangular `959.647 ohm`, maxabs `955.898 ohm`, current `8000 nA`.
+    - `4096 Hz`: cosine `817.510 ohm`, triangular `958.375 ohm`, maxabs `956.455 ohm`, current `8000 nA`.
+    - `2048 Hz`: cosine `816.295 ohm`, triangular `954.116 ohm`, maxabs `954.150 ohm`, current `8000 nA`.
+    - `1024 Hz`: cosine `812.134 ohm`, triangular `949.991 ohm`, maxabs `950.135 ohm`, current `8000 nA`.
+  - Normal spectrum matched the cosine diagnostic columns exactly.
+  - Assessment: the same model split observed on `100 ohm` repeats at `1 kOhm`. At `8192 Hz`, cosine is about `817.3 ohm` while triangular and max-absolute are about `959.6` and `955.9 ohm`. Triangular/maxabs are about `4..5%` below nominal, while cosine is about `18%` below nominal.
+  - Secondary observation: unlike the `100 ohm` run, the scan did not auto-range upward or emit current-limit warnings; all frequency bins used `8000 nA`.
+  - Follow-up: run `R10K` before RC loads to check whether the triangular/maxabs behavior remains stable at higher impedance.
+- [x] 2026-07-15 external scan summary diagnostic run on fixture `10 kOhm` load.
+  - Physical setup: external fixture connected in 4-wire configuration; interactive/driver setting still reported `Wires: 2-wire`.
+  - Settings: external source, `Sa8`, fast mode on, full range off, reduced phase range, `settle_samples=48`, `current_change_settle_samples=64`, requested start current `8000 nA`.
+  - Diagnostic rows:
+    - `131072 Hz`: cosine `5432.697 ohm`, phase `-45.334 deg`, triangular `7574.339 ohm`, triangular phase `-57.250 deg`, maxabs `5509.320 ohm`, current `8000 nA`.
+    - `81920 Hz`: cosine `6302.942 ohm`, phase `-34.019 deg`, triangular `8657.549 ohm`, triangular phase `-52.250 deg`, maxabs `6249.851 ohm`, current `1100 nA`.
+    - `40960 Hz`: cosine `7253.381 ohm`, phase `-18.458 deg`, triangular `9389.433 ohm`, triangular phase `-46.750 deg`, maxabs `7376.779 ohm`, current `1100 nA`.
+    - `18204 Hz`: cosine `7669.661 ohm`, phase `-7.901 deg`, triangular `9443.198 ohm`, triangular phase `0.250 deg`, maxabs `8521.990 ohm`, current `1100 nA`.
+    - `8192 Hz`: cosine `7862.218 ohm`, phase `-2.728 deg`, triangular `9444.657 ohm`, triangular phase `0.500 deg`, maxabs `9025.097 ohm`, current `1100 nA`.
+    - `4096 Hz`: cosine `7953.963 ohm`, phase `0.029 deg`, triangular `9442.645 ohm`, triangular phase `1.000 deg`, maxabs `9229.779 ohm`, current `1100 nA`.
+    - `2048 Hz`: cosine `7989.309 ohm`, phase `2.874 deg`, triangular `9404.938 ohm`, triangular phase `2.000 deg`, maxabs `9307.298 ohm`, current `1100 nA`.
+    - `1024 Hz`: cosine `7974.188 ohm`, phase `2.408 deg`, triangular `9358.850 ohm`, triangular phase `1.500 deg`, maxabs `9312.705 ohm`, current `1100 nA`.
+  - Normal spectrum matched the cosine diagnostic columns exactly.
+  - Assessment: at `8192 Hz`, cosine is about `7862 ohm`, triangular is about `9445 ohm`, and max-absolute is about `9025 ohm`. The triangular estimate remains closest to nominal but is about `5.6%` low; max-absolute is about `9.7%` low; cosine is about `21.4%` low.
+  - Frequency response: higher frequency bins show larger negative phase and lower magnitude, especially `131072 Hz`. This may be fixture/load parasitics, input path capacitance, current-source behavior, or the low-current/current-ranging transition; do not use high-frequency `10 kOhm` data as a pure-resistor scale check without modeling parasitics.
+  - Secondary observation: auto-ranging changed from `8000 nA` to `1100 nA` from `81920 Hz` downward and repeatedly printed `Low-current BIOZ requires BMUX_CG_MODE=0. Forcing mode 0.` These warnings are expected from the current low-current path but should be reduced or made less alarming later.
+  - Follow-up: before RC loads, either run `100 kOhm` as a higher-impedance stress test or start the selected RC loads with the understanding that high-frequency parasitic effects are now visible.
+- [x] 2026-07-15 external scan summary diagnostic run on fixture `100 kOhm` load.
+  - Physical setup: external fixture connected in 4-wire configuration; interactive/driver setting still reported `Wires: 2-wire`.
+  - Settings: external source, `Sa8`, fast mode on, full range off, reduced phase range, `settle_samples=48`, `current_change_settle_samples=64`, requested start current `8000 nA`.
+  - Diagnostic rows:
+    - `131072 Hz`: cosine `7020.149 ohm`, phase `-84.039 deg`, triangular `7481.817 ohm`, triangular phase `-77.500 deg`, maxabs `6767.197 ohm`, current `1100 nA`.
+    - `81920 Hz`: cosine `11055.985 ohm`, phase `-80.342 deg`, triangular `12420.265 ohm`, triangular phase `-75.000 deg`, maxabs `10553.880 ohm`, current `1100 nA`.
+    - `40960 Hz`: cosine `20979.338 ohm`, phase `-72.008 deg`, triangular `25873.686 ohm`, triangular phase `-70.000 deg`, maxabs `19295.898 ohm`, current `1100 nA`.
+    - `18204 Hz`: cosine `40376.883 ohm`, phase `-55.262 deg`, triangular `55331.609 ohm`, triangular phase `-61.750 deg`, maxabs `40327.355 ohm`, current `1100 nA`.
+    - `8192 Hz`: cosine `61266.023 ohm`, phase `-33.237 deg`, triangular `84382.844 ohm`, triangular phase `-52.250 deg`, maxabs `60325.074 ohm`, current `660 nA`.
+    - `4096 Hz`: cosine `71171.281 ohm`, phase `-16.949 deg`, triangular `90997.695 ohm`, triangular phase `-46.000 deg`, maxabs `73075.461 ohm`, current `440 nA`.
+    - `2048 Hz`: cosine `75093.234 ohm`, phase `-5.812 deg`, triangular `93392.312 ohm`, triangular phase `1.750 deg`, maxabs `83339.055 ohm`, current `440 nA`.
+    - `1024 Hz`: cosine `76903.797 ohm`, phase `-2.066 deg`, triangular `93248.328 ohm`, triangular phase `1.500 deg`, maxabs `87876.000 ohm`, current `440 nA`.
+  - Normal spectrum matched the cosine diagnostic columns exactly.
+  - Assessment: this is no longer a flat pure-resistor response across the scan band. At low frequencies the triangular estimate approaches nominal (`93.2..93.4 kOhm` at `1024..2048 Hz`), but at `8192 Hz` it is already `84.4 kOhm`, and the upper frequency bins collapse strongly with large negative phase.
+  - Secondary observation: scan current ranged down to `660 nA` at `8192 Hz` and `440 nA` from `4096 Hz` downward. The low-current path repeatedly printed `Low-current BIOZ requires BMUX_CG_MODE=0. Forcing mode 0.`
+  - Follow-up: `1 MOhm` can be run as a stress/limit test, but expect useful information mainly at the lowest bins. Do not treat high-frequency `100 kOhm` or `1 MOhm` results as simple resistor calibration without modeling fixture/input capacitance and current-source limits.
+- [x] 2026-07-15 external scan summary diagnostic run on fixture `1 MOhm` load.
+  - Physical setup: external fixture connected in 4-wire configuration; interactive/driver setting still reported `Wires: 2-wire`.
+  - Settings: external source, `Sa8`, fast mode on, full range off, reduced phase range, `settle_samples=48`, `current_change_settle_samples=64`, requested start current `8000 nA`.
+  - Diagnostic rows:
+    - `131072 Hz`: cosine `7046.247 ohm`, phase `-88.583 deg`, triangular `6996.213 ohm`, triangular phase `-81.250 deg`, maxabs `6830.909 ohm`, current `1100 nA`.
+    - `81920 Hz`: cosine `11121.822 ohm`, phase `-87.508 deg`, triangular `11252.189 ohm`, triangular phase `-80.250 deg`, maxabs `10780.833 ohm`, current `1100 nA`.
+    - `40960 Hz`: cosine `21908.881 ohm`, phase `-86.209 deg`, triangular `22678.793 ohm`, triangular phase `-79.250 deg`, maxabs `21203.918 ohm`, current `1100 nA`.
+    - `18204 Hz`: cosine `48863.902 ohm`, phase `-83.755 deg`, triangular `52547.316 ohm`, triangular phase `-77.500 deg`, maxabs `47099.523 ohm`, current `660 nA`.
+    - `8192 Hz`: cosine `106219.305 ohm`, phase `-78.701 deg`, triangular `122179.766 ohm`, triangular phase `-74.000 deg`, maxabs `100969.430 ohm`, current `440 nA`.
+    - `4096 Hz`: cosine `129461.242 ohm`, phase `-68.652 deg`, triangular `174922.234 ohm`, triangular phase `-71.000 deg`, maxabs `113433.492 ohm`, current `440 nA`.
+    - `2048 Hz`: cosine `137150.078 ohm`, phase `-48.328 deg`, triangular `226707.500 ohm`, triangular phase `-68.500 deg`, maxabs `113433.492 ohm`, current `440 nA`.
+    - `1024 Hz`: cosine `133026.750 ohm`, phase `-33.594 deg`, triangular `208181.266 ohm`, triangular phase `-61.250 deg`, maxabs `113433.492 ohm`, current `440 nA`.
+  - Normal spectrum matched the cosine diagnostic columns exactly.
+  - Assessment: `1 MOhm` is outside the useful resistor-calibration range for the current external scan setup. Even the best low-frequency triangular result is only about `227 kOhm`, and max-absolute appears to saturate around `113 kOhm` from `4096 Hz` downward.
+  - Frequency/phase response: all bins show large negative phase, from about `-89 deg` at high frequency to `-34 deg` at `1024 Hz`, consistent with the fixture/input path being dominated by capacitance/leakage/current limits rather than a flat `1 MOhm` resistor.
+  - Secondary observation: current ranged down to `440 nA` for `8192 Hz` and below, and the low-current path repeatedly printed `Low-current BIOZ requires BMUX_CG_MODE=0. Forcing mode 0.`
+  - Follow-up: move to the selected RC loads. Treat `100 kOhm` and `1 MOhm` as boundary/limit tests, not calibration anchors.
+- [x] 2026-07-15 external scan summary diagnostic run on fixture `X2 = (620 ohm + 3.3 nF series) || 1 kOhm`.
+  - Physical setup: external fixture connected in 4-wire configuration; interactive/driver setting still reported `Wires: 2-wire`.
+  - Settings: external source, `Sa8`, fast mode on, full range off, reduced phase range, `settle_samples=48`, `current_change_settle_samples=64`, requested start current `8000 nA`.
+  - Diagnostic rows:
+    - `131072 Hz`: cosine `346.629 ohm`, phase `-19.801 deg`, triangular `485.873 ohm`, triangular phase `-52.250 deg`, maxabs `373.426 ohm`, current `80000 nA`.
+    - `81920 Hz`: cosine `395.406 ohm`, phase `-24.242 deg`, triangular `567.047 ohm`, triangular phase `-53.750 deg`, maxabs `410.797 ohm`, current `80000 nA`.
+    - `40960 Hz`: cosine `527.112 ohm`, phase `-26.135 deg`, triangular `748.886 ohm`, triangular phase `-53.250 deg`, maxabs `527.609 ohm`, current `64000 nA`.
+    - `18204 Hz`: cosine `694.262 ohm`, phase `-17.946 deg`, triangular `923.052 ohm`, triangular phase `-48.750 deg`, maxabs `726.186 ohm`, current `8000 nA`.
+    - `8192 Hz`: cosine `770.992 ohm`, phase `-8.357 deg`, triangular `951.073 ohm`, triangular phase `0.250 deg`, maxabs `854.105 ohm`, current `8000 nA`.
+    - `4096 Hz`: cosine `794.103 ohm`, phase `-2.787 deg`, triangular `960.796 ohm`, triangular phase `1.000 deg`, maxabs `906.867 ohm`, current `8000 nA`.
+    - `2048 Hz`: cosine `803.994 ohm`, phase `1.442 deg`, triangular `957.358 ohm`, triangular phase `2.000 deg`, maxabs `930.628 ohm`, current `8000 nA`.
+    - `1024 Hz`: cosine `805.804 ohm`, phase `1.710 deg`, triangular `951.012 ohm`, triangular phase `1.500 deg`, maxabs `938.062 ohm`, current `8000 nA`.
+  - Theoretical impedance for `(620 ohm + 3.3 nF series) || 1 kOhm`:
+    - `131072 Hz`: `433.987 ohm`, phase `-17.892 deg`.
+    - `81920 Hz`: `496.030 ohm`, phase `-23.546 deg`.
+    - `40960 Hz`: `664.462 ohm`, phase `-26.220 deg`.
+    - `18204 Hz`: `876.195 ohm`, phase `-18.273 deg`.
+    - `8192 Hz`: `969.496 ohm`, phase `-9.373 deg`.
+    - `4096 Hz`: `992.040 ohm`, phase `-4.820 deg`.
+    - `2048 Hz`: `997.988 ohm`, phase `-2.427 deg`.
+    - `1024 Hz`: `999.496 ohm`, phase `-1.216 deg`.
+  - Assessment: the cosine output tracks the expected RC phase shape closely and tracks expected magnitude with an approximately consistent low scale factor of about `0.79..0.80` across most bins. The triangular output is not a valid complex-impedance phase estimator for this RC load; it over-reports low-frequency magnitude near `950..960 ohm` and gives phase near zero where the expected phase is still negative.
+  - Key model decision: resistor-only scans favored triangular/maxabs magnitude, but this reactive load shows the normal cosine fit is the more appropriate complex impedance estimator. Future calibration likely needs a gain/scale correction on cosine output rather than replacing cosine with triangular for external scans.
+  - Follow-up: run the low-impedance RC load `X1 = (27 ohm + 47 nF series) || 60 ohm` and compare cosine against theory. If cosine phase again tracks theory, keep cosine for external complex impedance and treat triangular/maxabs as resistor-only diagnostics.
+- [x] 2026-07-15 external scan summary diagnostic run on fixture `X1 = (27 ohm + 47 nF series) || 60 ohm`.
+  - Physical setup: external fixture connected in 4-wire configuration; interactive/driver setting still reported `Wires: 2-wire`.
+  - Settings: external source, `Sa8`, fast mode on, full range off, reduced phase range, `settle_samples=48`, `current_change_settle_samples=64`, requested start current `8000 nA`.
+  - Diagnostic rows:
+    - `131072 Hz`: cosine `20.430 ohm`, phase `-27.097 deg`, triangular `29.670 ohm`, triangular phase `-54.750 deg`, maxabs `20.735 ohm`, current `96000 nA`.
+    - `81920 Hz`: cosine `25.227 ohm`, phase `-30.408 deg`, triangular `36.675 ohm`, triangular phase `-55.250 deg`, maxabs `24.422 ohm`, current `96000 nA`.
+    - `40960 Hz`: cosine `34.876 ohm`, phase `-26.495 deg`, triangular `48.965 ohm`, triangular phase `-52.500 deg`, maxabs `34.226 ohm`, current `96000 nA`.
+    - `18204 Hz`: cosine `43.128 ohm`, phase `-15.042 deg`, triangular `55.684 ohm`, triangular phase `-47.000 deg`, maxabs `45.744 ohm`, current `96000 nA`.
+    - `8192 Hz`: cosine `45.990 ohm`, phase `-6.588 deg`, triangular `56.272 ohm`, triangular phase `0.250 deg`, maxabs `51.552 ohm`, current `80000 nA`.
+    - `4096 Hz`: cosine `46.911 ohm`, phase `-2.194 deg`, triangular `56.546 ohm`, triangular phase `1.000 deg`, maxabs `53.739 ohm`, current `32000 nA`.
+    - `2048 Hz`: cosine `47.454 ohm`, phase `1.358 deg`, triangular `56.731 ohm`, triangular phase `2.250 deg`, maxabs `54.823 ohm`, current `16000 nA`.
+    - `1024 Hz`: cosine `46.980 ohm`, phase `0.251 deg`, triangular `56.065 ohm`, triangular phase `1.500 deg`, maxabs `54.322 ohm`, current `8000 nA`.
+  - Theoretical impedance for `(27 ohm + 47 nF series) || 60 ohm`:
+    - `131072 Hz`: `24.706 ohm`, phase `-27.198 deg`.
+    - `81920 Hz`: `30.755 ohm`, phase `-31.434 deg`.
+    - `40960 Hz`: `43.479 ohm`, phase `-28.374 deg`.
+    - `18204 Hz`: `54.919 ohm`, phase `-16.807 deg`.
+    - `8192 Hz`: `58.839 ohm`, phase `-8.148 deg`.
+    - `4096 Hz`: `59.702 ohm`, phase `-4.137 deg`.
+    - `2048 Hz`: `59.925 ohm`, phase `-2.076 deg`.
+    - `1024 Hz`: `59.981 ohm`, phase `-1.039 deg`.
+  - Assessment: cosine again tracks the theoretical RC phase and frequency shape closely. Cosine magnitude is low by about `0.78..0.83` depending on bin, consistent with the prior X2 scale factor. Triangular/maxabs remain useful as resistor/load-shape diagnostics but do not provide the expected complex phase.
+  - Model decision: keep cosine fit for external complex impedance scans. Add calibration/scale correction to cosine magnitude rather than switching external scan output to triangular. Keep triangular and maxabs as temporary diagnostics until calibration is settled.
+  - Follow-up: implement a calibrated external scan output path. A first-order calibration could use a constant gain factor around `1.25` on cosine magnitude, but final calibration should be derived from multiple known loads and should preserve cosine phase.
+- [ ] External BIOZ scan calibration design task.
+  - Compare candidate calibration models before changing production scan output: global cosine magnitude scale, per-frequency scale table, current-range-dependent scale, and later complex offset/scale if open/short data justify it.
+  - Build a semi-automated Python calibration runner that prompts the user to select each fixture impedance, starts the scan through `MAX30001G.ino`, captures the serial response, parses `scan_external_summary` and normal spectrum rows, computes theoretical impedance, and writes raw logs plus parsed CSV.
+  - Use as many known fixture impedances as practical before selecting the final model. Include pure resistors up to and including `100 kOhm`, include the `10 kOhm` series-RC and parallel-RC loads, include `X1` and `X2`, and treat `1 MOhm`/higher impedances as boundary/parasitic checks rather than calibration anchors.
+  - Keep the temporary `scan_external_summary` output for the automated calibration dataset because it captures cosine, triangular, max-absolute, current, and phase-point count in a parser-friendly format.
+  - Initial implementation should use compile-time or runtime serial-settable calibration constants. Defer persistent storage until the calibration structure is stable.
+  - For ESP32 persistent storage, prefer `Preferences`/NVS over classic EEPROM emulation. Store version, model type, checksum, and constants.
+
+- [ ] Runtime external BIOZ scan correction and reliability validation.
+  - Selected first correction model: global median magnitude scale on cosine output.
+  - Initial scale: `K_global_median = 1.25065`.
+  - Phase is not corrected.
+  - Runtime commands in `MAX30001G.ino`:
+    - `Kp`: print BIOZ scan calibration settings.
+    - `Ke0`: disable external scan correction.
+    - `Ke1`: enable external scan correction.
+    - `Kg1250650`: set global `K` to `1.250650`, encoded as ppm.
+    - `Kr`: reset runtime calibration defaults.
+  - Corrected scan output adds a fourth column when correction is enabled:
+
+    ```text
+    frequency_hz,magnitude_ohm,phase_deg,reliability
+    ```
+
+  - Provisional reliability map:
+
+    ```text
+    Corrected       Frequency (Hz)
+    magnitude       1024  2048  4096  8192  >=18204
+    --------------------------------------------------
+    <20 ohm            1     1     1     1      1
+    20 ohm-10 kOhm     3     3     3     3      3
+    10 kOhm-33 kOhm    3     3     3     3      1
+    33 kOhm-50 kOhm    3     3     3     1      1
+    50 kOhm-100 kOhm   2     2     1     1      1
+    100 kOhm-150 kOhm  1     0     0     0      0
+    >150 kOhm          0     0     0     0      0
+    ```
+
+  - Verification subset:
+
+    ```text
+    R100, R1K, R10K, R33K, R100K, P2, P4, S3, X1, X2
+    ```
+
+  - Runner command after upload. The runner accepts both 3-column raw spectrum rows and 4-column corrected spectrum rows with `normal_reliability`.
+  - The runner defaults to raw uncorrected mode for consistency with prior calibration datasets. Use `--enable-correction` for corrected-output verification so `Ke1` and `Kg1250650` are sent after the runner opens the serial port.
+
+    ```bash
+    cd /home/uutzinger/Documents/GitHub/UUtzinger_MAX30001G/calibration
+    python3 ./bioz_calibration_runner.py --port /dev/ttyACM0 --enable-correction --load R100 --load R1K --load R10K --load R33K --load R100K --load P2 --load P4 --load S3 --load X1 --load X2
+    ```
+
+  - Expected result: validated-bin corrected magnitudes should be close to theoretical values, high-frequency/high-impedance bins should report lower reliability, and phase should remain consistent with prior cosine phase.
+  - 2026-07-17 corrected-output verification run:
+    - Run folder: `calibration/calibration_runs/20260717_133127`.
+    - Runner used `--enable-correction`.
+    - Manifest recorded `correction_enabled: true` and `correction_scale: 1.25065`.
+    - Captured 10 selected fixture loads and 80 parsed measured rows.
+    - All raw spectrum outputs used `frequency_hz,magnitude_ohm,phase_deg,reliability`.
+    - Corrected magnitude results were good for the main anchors:
+      - `R100`: mean error `+1.94%`, median `+2.03%`.
+      - `R1K`: mean error `+1.61%`, median `+1.94%`.
+      - `X1`: mean error `-0.38%`, median `-1.53%`.
+      - `X2`: mean error `-0.11%`, median `-0.20%`.
+      - `P2`: mean error `-3.00%`, median `-2.97%`.
+      - `P4`: mean error `-4.61%`, median `-4.33%`.
+    - Boundary/stress behavior remains:
+      - `R10K` high-frequency bins remain low, with `131072 Hz` at about `-32.24%` and `81920 Hz` at about `-21.41%`.
+      - `R33K` and `R100K` still collapse strongly at high frequency and show large negative phase, consistent with prior parasitic/boundary observations.
+      - `S3` high-frequency rows also remain low, while lower frequencies are closer to expected.
+    - Correction decision: keep the global median magnitude correction as the first firmware correction model.
+    - Reliability decision: do not finalize/persist the provisional reliability map yet. It is too optimistic for some high-frequency resistor stress rows because it currently scores measured corrected magnitude and frequency without knowing the fixture's intended nominal load. The next reliability pass should consider phase, selected/current range, warnings/status flags, and high-frequency/high-impedance boundary behavior without incorrectly rejecting valid capacitive samples.
+  - 2026-07-17 reliability map revision 1:
+    - Firmware keeps the base corrected-magnitude/frequency reliability table.
+    - Added high-frequency phase downgrade only for moderate/high measured impedances:
+
+      ```text
+      if corrected_magnitude >= 5 kOhm:
+        if frequency >= 81920 Hz and abs(phase) >= 25 deg:
+          reliability <= 1
+        else if frequency >= 40960 Hz and abs(phase) >= 20 deg:
+          reliability <= 2
+      ```
+
+    - Simulation against `calibration/calibration_runs/20260717_133127` changed these rows:
+      - `R10K` at `131072 Hz`: `3 -> 1`.
+      - `R10K` at `81920 Hz`: `3 -> 1`.
+      - `R33K` at `131072 Hz`: `3 -> 1`.
+      - `R100K` at `131072 Hz`: `3 -> 1`.
+      - `S3` at `131072 Hz`: `3 -> 1`.
+      - `S3` at `81920 Hz`: `3 -> 1`.
+      - `S3` at `40960 Hz`: `3 -> 2`.
+    - Low-ohm RC and capacitor-like validated loads are not downgraded by this rule.
+    - Repo sketch compile passed.
+    - Installed Arduino library sketch compile passed after syncing the updated example.
+
+- [ ] Post-test firmware cleanup decisions.
+  - [x] Clean scan current optimizer warnings so invalid current requests are not repeatedly generated under normal operation.
+    - 2026-07-17: added scan-side current clamping before requests are sent to `setBIOZmag()`.
+    - Initial, reused, and retry-adjusted high-current scan requests are now clamped to the FCGEN-specific current ceiling before being applied.
+    - Repo and installed-library builds passed.
+  - [x] Decide whether `scan_external_summary` remains a supported calibration diagnostic interface or is gated behind a debug/diagnostic command.
+    - Decision: keep `scan_external_summary` as a supported calibration diagnostic interface for the Python runner/analyzer.
+    - It is emitted with `LOGI`, so calibration runs that need diagnostic rows should use log level `INFO` or `DEBUG`.
+  - [x] Maintain Python calibration runner compatibility with both 3-column raw spectrum rows and 4-column corrected spectrum rows with reliability.
+    - 2026-07-17 parser compatibility check:
+      - Rebuilt parsed outputs from old raw run `calibration/calibration_runs/20260716_162307`; parsed 176 measured rows from 22 loads with blank `normal_reliability`.
+      - Rebuilt parsed outputs from corrected raw run `calibration/calibration_runs/20260717_133127`; parsed 80 measured rows from 10 loads with populated `normal_reliability`.
+  - [x] Add first-pass ESP32 `Preferences`/NVS persistence after runtime correction and reliability behavior are validated.
+    - Implemented at sketch level in `examples/MAX30001G/MAX30001G.ino`, not in the driver library.
+    - Existing `(`/`)` register snapshots remain volatile and separate from non-volatile Preferences.
+    - Persisted semantic fields: schema version, calibration version, reliability map version, correction enable, global `K` ppm, scan averages, scan speed/range/source/phase/internal-AHPF, settle counts, default BIOZ current, and BIOZ wire preference.
+    - Optimized scan current profiles are not persisted because they depend on attached load/electrodes and should remain runtime state.
+    - Commands: `Ps` save, `Pl` load, `Pd` print, `Pc` clear.
+    - Startup loads a compatible saved profile if present, but never auto-starts a measurement.
+  - [x] Update README and cleanup documentation after corrected-output validation.
+    - README now documents the selected global median correction model `K = 1.25065`.
+    - README documents the provisional reliability score, remaining high-frequency/high-impedance limitations, NVS Preferences commands, and `scan_external_summary` as a supported calibration diagnostic.
+    - Removed stale wording that external known-load validation is still required for production scan calibration.
 
 ## Phase 2: External Signal Tests
 Proceed only after all Phase 1 tests pass. No human subject attached in this phase.

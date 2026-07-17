@@ -2,9 +2,44 @@
 
 This is the MAX30001 library for Arduino. It attempts to be `complete` and supports impedance spectroscopy.
 
-This library has been validated for ECG, continuous BIOZ, combined ECG+BIOZ, internal calibration paths, and the refactored nonblocking BIOZ scan flow that is driven through `setup...()`, `start()`, and repeated `update()`.
+This library has been validated for ECG, continuous BIOZ, combined ECG+BIOZ, internal calibration paths, and the nonblocking BIOZ scan flow that is driven through `setup...()`, `start()`, and repeated `update()`.
 
-Impedance Spectroscopy: Internal `1 kOhm` resistor scan validation working across the full `128 kHz` down to `125 Hz` scan range. External known-load validation is still required before calling library production ready.
+## Impedance Spectroscopy 
+
+This library and example programs enable impedance spectroscopy, reporting impedance magnitude and phase versus modulation frequency.
+
+Internal `1 kOhm` resistor scan validation works across the full `128 kHz` down to `125 Hz` scan range. 
+
+External fixture validation was completed over the 1024 to 131072 Hz modulation range.
+
+External scan output uses the cosine fit to estimate complex impedance magnitude and phase.
+
+Uncorrected cosine-fit magnitude is underestimated, so a calibration model was developed. The selected first correction is a simple global magnitude scale with `K = 1.25065`.
+
+The external BIOZ scan can report a provisional reliability score with each corrected spectrum point:
+
+```text
+3 validated region
+2 near boundary
+1 questionable
+0 outside validated region
+```
+
+| Corrected magnitude | 1024 Hz | 2048 Hz | 4096 Hz | 8192 Hz | 18204 Hz | 40960 Hz | 81920 Hz | 131072 Hz |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| <20 ohm | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |
+| 20 ohm - 5 kOhm | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 3 |
+| 5 kOhm - 10 kOhm | 3 | 3 | 3 | 3 | 3 | 3,2 | 3,1 | 3,1 |
+| 10 kOhm - 33 kOhm | 3 | 3 | 3 | 3 | 1 | 1 | 1 | 1 |
+| 33 kOhm - 50 kOhm | 3 | 3 | 3 | 1 | 1 | 1 | 1 | 1 |
+| 50 kOhm - 100 kOhm | 2 | 2 | 1 | 1 | 1 | 1 | 1 | 1 |
+| 100 kOhm - 150 kOhm | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| >150 kOhm | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+Phase downgrade rules for marked cells:
+
+- `3,2`: if $|\phi| \ge 20^\circ$, then $r = 2$; otherwise $r = 3$.
+- `3,1`: if $|\phi| \ge 25^\circ$, then $r = 1$; otherwise $r = 3$.
 
 # Installation
 
@@ -134,10 +169,17 @@ When you open the serial monitor and type `?`, the sketch prints this help menu:
 |----------------------------------------|-------------------------------------|
 | ?: help screen                         | z: toggle data display on/off       |
 | s: show current settings               | c: reset sample counter             |
-| h: run health check                    | (: save config snapshot             |
-| i: print device info                   | ): restore config snapshot          |
+| h: run health check                    |                                     |
+| i: print device info                   |                                     |
 | r: print all registers                 | p: print config registers           |
 | t: print status registers              | f: FIFO reset                       |
+================================================================================
+| PERSISTENCE                            | RAM SNAPSHOT                        |
+|----------------------------------------|-------------------------------------|
+| Ps: save NVS preferences               | (: save volatile register snapshot  |
+| Pl: load NVS preferences               | ): restore volatile register snap   |
+| Pd: print NVS preferences              |                                     |
+| Pc: clear NVS preferences              |                                     |
 |========================================|=====================================|
 | OPERATION MODES (auto-stop previous)   | START/STOP                          |
 |----------------------------------------|-------------------------------------|
@@ -158,25 +200,26 @@ When you open the serial monitor and type `?`, the sketch prints this help menu:
 | Eh<n>: dig HPF    (0-1,255) Eh255      | Bd<n>: digital LPF(0-3)     Bd1     |
 | Ee<n>: leads      (2 or 3)  Ee3        | Bh<n>: digital HPF(0-3)     Bh0     |
 | Er<n>: R-to-R     (0=off,1) Er1        |                                     |
-| En<n>: notch  (0=off,50,60) En0        |                                     |
-| Eq<n>: notch Q    (1-100)   Eq20       |                                     |
-|                                        | Bf<n>: frequency Hz         Bf8000  |
-|                                        | Bc<n>: current nA           Bc8000  |
+| En<n>: notch  (0=off,50,60) En0        | Bf<n>: frequency Hz         Bf8000  |
+| Eq<n>: notch Q    (1-100)   Eq20       | Bc<n>: current nA           Bc8000  |
 |                                        | Bp<n>: phase deg            Bp0     |
 |                                        | Bl<n>: lead bias  (0=off,1) Bl1     |
 |                                        | Bo<n>: lead-off   (0=off,1) Bo0     |
 |                                        | Bw<n>: wires      (2 or 4)  Bw2     |
 |========================================|=====================================|
-| SCAN SETTINGS                          | CALIBRATION SETTINGS                |
+| BIOZ SCAN SETTINGS                     | INTERNAL CALIBRATION SETTINGS       |
 |----------------------------------------|-------------------------------------|
 | Sa<n>: averages   (1-8)     Sa8        | Cr<n>: internal resistor    Cr1000  |
 | Sf<n>: fast mode  (0=off,1) Sf0        | Cm<n>: cal modulation(0-3)  Cm0     |
 | Sr<n>: full range (0=off,1) Sr0        | Cf<n>: mod frequency(0-4)   Cf3     |
-| Si<n>: source     (0=ext,1=int) Si0    | Ce<n>: ECG sig mode(0/1)   Ce1     |
-| Sp<n>: phase rng  (0=full,1) Sp0       | Cb<n>: BIOZ sig mode(0/1)  Cb0     |
+| Si<n>: source     (0=ext,1=int) Si0    | Ce<n>: ECG sig mode(0/1)   Ce1      |
+| Sp<n>: phase rng  (0=full,1) Sp0       | Cb<n>: BIOZ sig mode(0/1)  Cb0      |
 | Sh<n>: int AHPF   (255,0-7) Sh255      |                                     |
 | St<n>: settle     (1-64)    St24       |                                     |
 | Sc<n>: cur settle (1-64)    Sc24       |                                     |
+|----------------------------------------|-------------------------------------|
+| Kp:    print scan calibration          | Kr:  reset scan calibration default |
+| Kg<n>: set global K ppm (1250650)      | Ke<n>: enable correction (0/1)      |
 |========================================|=====================================|
 | LOG LEVEL                              | SPECIAL                             |
 |----------------------------------------|-------------------------------------|
@@ -216,20 +259,25 @@ The other maintained example sketches match the current driver structure:
 - `examples/BIOZ_External_ImpedanceCalibration/BIOZ_External_ImpedanceCalibration.ino`: external known-load impedance calibration
 - `examples/BIOZ_SignalCalibration/BIOZ_SignalCalibration.ino` and `examples/ECG_SignalCalibration/ECG_SignalCalibration.ino`: internal signal-generator calibration paths
 
-# Contributing
+# Contributing Authors
 
 - Urs Utzinger, 2025-2026
-- GPT, 2025- 2026
+- OpenAI Codex, 2025-2026
 
 # License
 
 See [LICENSE](License.txt).
 
-# Block Diagram of MAX 30001G
+# Agentic Code Modification
+
+`Read Validation.md, Refactor.md, and examples/MAX30001G/MAX30001G.ino` first.
+Then start your agentic programming session.
+
+# Block Diagram of MAX30001G
 
 The MAX30001G is a highly integrated analog front end that consists of a differential `ECG channel` with optional right-leg drive. It employs standard high-pass and low-pass filters, an instrumentation amplifier, and an analog-to-digital converter.
 
-The impedance unit consists of a current driver, analog high-pass filter, and phase-shifted demodulator to measure impedance from 128kHz down to 125Hz modulation frequency at varying phase shifts. Internal-BIST validation shows coherent full-spectrum scans with dynamic AHPF selection, but the low-frequency end still rolls off below about 1kHz and external known-load validation is still required for production scan calibration.
+The impedance unit consists of a current driver, analog high-pass filter, and phase-shifted demodulator to measure impedance from 128kHz down to 125Hz modulation frequency at varying phase shifts. Internal-BIST validation shows coherent full-spectrum scans with dynamic AHPF selection. External fixture validation supports a magnitude-corrected cosine-fit scan model for the validated low/moderate impedance region, while high-frequency/high-impedance measurements should be interpreted using the reported reliability score.
 
 <a href="assets/Blockdiagram.png" target="_blank">
   <img src="assets/Blockdiagram.png" style="width: 800px;">
