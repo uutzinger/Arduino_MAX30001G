@@ -38,8 +38,8 @@ The external BIOZ scan can report a provisional reliability score with each corr
 
 Phase downgrade rules for marked cells:
 
-- `3,2`: if $|\phi| \ge 20^\circ$, then $r = 2$; otherwise $r = 3$.
-- `3,1`: if $|\phi| \ge 25^\circ$, then $r = 1$; otherwise $r = 3$.
+- `3,2`: if `abs(phase_deg) >= 20`, then `r = 2`; otherwise `r = 3`.
+- `3,1`: if `abs(phase_deg) >= 25`, then `r = 1`; otherwise `r = 3`.
 
 # Installation
 
